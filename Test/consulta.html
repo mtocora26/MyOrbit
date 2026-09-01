@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta API MyOrbit</title>
+</head>
+<body>
+    <h1>Respuesta de la API</h1>
+    <button id="btn">Probar API</button>
+    <p id="out">Sin respuesta</p>
+
+    <script>
+          document.getElementById("btn").addEventListener("click", async () => {
+          const r = await fetch("http://localhost:8080/api/saludo");
+          const t = await r.text();
+          document.getElementById("out").textContent = t;
+            });
+
+    </script>
+</body>
+</html>
