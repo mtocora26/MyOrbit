@@ -1,0 +1,35 @@
+name: Bug
+description: Algo no funciona como debería
+labels: ["bug"]
+body:
+  - type: textarea
+    id: actual
+    attributes:
+      label: Qué pasa
+      description: Comportamiento actual. Incluye endpoint, request y respuesta si aplica.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué debería pasar
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. POST /api/categories con un nombre duplicado
+        2. ...
+  - type: input
+    id: location
+    attributes:
+      label: Ubicación en el código
+      placeholder: backend/src/main/java/.../TaskService.java:896
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Criterios de cierre
+      options:
+        - label: Hay un test que reproduce el bug y ahora pasa

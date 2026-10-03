@@ -1,0 +1,38 @@
+name: Feature
+description: Nueva funcionalidad
+labels: ["feature"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: Historia de usuario
+      placeholder: Como estudiante quiero ... para ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: Contrato de API
+      description: Endpoints, request y response esperados (si aplica)
+  - type: textarea
+    id: design
+    attributes:
+      label: Diseño técnico
+      description: Capa(s) afectadas, patrón a usar (Strategy, Adapter, ...) y principio SOLID relevante
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Definition of Done
+      options:
+        - label: Cumple docs/BUENAS_PRACTICAS.md (capas, SOLID, errores, validación)
+        - label: Tests unitarios y de controller
+        - label: Endpoints documentados
