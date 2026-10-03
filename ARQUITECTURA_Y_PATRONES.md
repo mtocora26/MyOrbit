@@ -124,3 +124,7 @@ Con este marco, cada avance tecnico debe indicar:
 - Nivel afectado (Infraestructura / Arquitectura app / GoF).
 - Objetivo del cambio.
 - Evidencia de prueba.
+
+---
+
+Ver también: [docs/BUENAS_PRACTICAS.md](docs/BUENAS_PRACTICAS.md) (SOLID y convenciones de código) y [docs/BACKLOG.md](docs/BACKLOG.md) (issues y milestones).

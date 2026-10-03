@@ -1,0 +1,38 @@
+name: Refactor / Deuda técnica
+description: Mejora de diseño o calidad sin cambiar el comportamiento
+labels: ["refactor"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema actual
+      description: Qué parte del código y por qué es un problema
+    validations:
+      required: true
+  - type: dropdown
+    id: principle
+    attributes:
+      label: Principio que se aplica
+      multiple: true
+      options:
+        - SRP - Responsabilidad única
+        - OCP - Abierto/Cerrado
+        - LSP - Sustitución de Liskov
+        - ISP - Segregación de interfaces
+        - DIP - Inversión de dependencias
+        - DRY / KISS / Clean code
+        - Seguridad
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+      description: Cómo debería quedar (puedes incluir un snippet)
+    validations:
+      required: true
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: Criterios de cierre
+      options:
+        - label: El comportamiento externo no cambia (los tests existentes siguen pasando)
+        - label: Se agregaron tests donde no había
