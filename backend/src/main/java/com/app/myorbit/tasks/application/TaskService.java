@@ -50,22 +50,14 @@ public class TaskService {
 
     public Task updateStatus(String userId, String id, UpdateTaskStatusRequest request) {
         Task task = getOwned(userId, id);
-        task.setDone(request.isDone());
-        if (!task.getSubtasks().isEmpty()) {
-            task.getSubtasks().forEach(subtask -> markSubtaskTree(subtask, request.isDone()));
-        }
+        task.markAll(request.isDone());
         return taskRepository.save(task);
     }
 
     public Task addSubtask(String userId, String taskId, CreateSubtaskRequest request) {
         Task task = getOwned(userId, taskId);
         requireSubtaskTitle(request);
-        Subtask subtask = new Subtask();
-        subtask.setId(UUID.randomUUID().toString());
-        subtask.setTitle(request.title().trim());
-        subtask.setDone(false);
-        subtask.setDue(blankToNull(request.due()));
-        task.getSubtasks().add(subtask);
+        task.getSubtasks().add(newSubtask(request));
         task.setDone(false);
         return taskRepository.save(task);
     }
@@ -73,15 +65,10 @@ public class TaskService {
     public Task addNestedSubtask(String userId, String taskId, String parentSubtaskId, CreateSubtaskRequest request) {
         Task task = getOwned(userId, taskId);
         requireSubtaskTitle(request);
-        Subtask parent = findSubtask(task.getSubtasks(), parentSubtaskId);
-        if (parent == null) throw new BusinessRuleException("La subtarea padre no existe");
-        Subtask subtask = new Subtask();
-        subtask.setId(UUID.randomUUID().toString());
-        subtask.setTitle(request.title().trim());
-        subtask.setDone(false);
-        subtask.setDue(blankToNull(request.due()));
-        parent.getSubtasks().add(subtask);
-        synchronizeTaskCompletion(task);
+        Subtask parent = task.findSubtask(parentSubtaskId)
+                .orElseThrow(() -> new BusinessRuleException("La subtarea padre no existe"));
+        parent.getSubtasks().add(newSubtask(request));
+        task.synchronizeCompletion();
         return taskRepository.save(task);
     }
 
@@ -98,17 +85,17 @@ public class TaskService {
     public Task updateSubtaskStatus(String userId, String taskId, String subtaskId, UpdateSubtaskStatusRequest request) {
         Task task = getOwned(userId, taskId);
         Subtask subtask = requireSubtask(task, subtaskId);
-        markSubtaskTree(subtask, request.done());
-        synchronizeTaskCompletion(task);
+        subtask.markTree(request.done());
+        task.synchronizeCompletion();
         return taskRepository.save(task);
     }
 
     public Task deleteSubtask(String userId, String taskId, String subtaskId) {
         Task task = getOwned(userId, taskId);
-        if (!removeSubtask(task.getSubtasks(), subtaskId)) {
+        if (!task.removeSubtask(subtaskId)) {
             throw new NotFoundException("Subtarea no encontrada");
         }
-        synchronizeTaskCompletion(task);
+        task.synchronizeCompletion();
         return taskRepository.save(task);
     }
 
@@ -160,43 +147,17 @@ public class TaskService {
         }
     }
 
-    private Subtask requireSubtask(Task task, String subtaskId) {
-        Subtask subtask = findSubtask(task.getSubtasks(), subtaskId);
-        if (subtask == null) throw new NotFoundException("Subtarea no encontrada");
+    private Subtask newSubtask(CreateSubtaskRequest request) {
+        Subtask subtask = new Subtask();
+        subtask.setId(UUID.randomUUID().toString());
+        subtask.setTitle(request.title().trim());
+        subtask.setDone(false);
+        subtask.setDue(blankToNull(request.due()));
         return subtask;
     }
 
-    private Subtask findSubtask(List<Subtask> subtasks, String id) {
-        for (Subtask subtask : subtasks) {
-            if (subtask.getId().equals(id)) return subtask;
-            Subtask found = findSubtask(subtask.getSubtasks(), id);
-            if (found != null) return found;
-        }
-        return null;
-    }
-
-    private boolean removeSubtask(List<Subtask> subtasks, String id) {
-        if (subtasks.removeIf(subtask -> subtask.getId().equals(id))) return true;
-        for (Subtask subtask : subtasks) {
-            if (removeSubtask(subtask.getSubtasks(), id)) return true;
-        }
-        return false;
-    }
-
-    private void markSubtaskTree(Subtask subtask, boolean done) {
-        subtask.setDone(done);
-        subtask.getSubtasks().forEach(child -> markSubtaskTree(child, done));
-    }
-
-    private boolean synchronizeSubtaskCompletion(Subtask subtask) {
-        if (subtask.getSubtasks().isEmpty()) return subtask.isDone();
-        boolean complete = subtask.getSubtasks().stream().map(this::synchronizeSubtaskCompletion).allMatch(Boolean::booleanValue);
-        subtask.setDone(complete);
-        return complete;
-    }
-
-    private void synchronizeTaskCompletion(Task task) {
-        task.setDone(!task.getSubtasks().isEmpty() && task.getSubtasks().stream().map(this::synchronizeSubtaskCompletion).allMatch(Boolean::booleanValue));
+    private Subtask requireSubtask(Task task, String subtaskId) {
+        return task.findSubtask(subtaskId).orElseThrow(() -> new NotFoundException("Subtarea no encontrada"));
     }
 
     private String defaultText(String value, String fallback) {

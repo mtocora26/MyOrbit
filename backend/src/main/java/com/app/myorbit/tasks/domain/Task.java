@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Document(collection = "tasks")
 public class Task {
@@ -76,4 +77,30 @@ public class Task {
 
     public List<Subtask> getSubtasks() { return subtasks; }
     public void setSubtasks(List<Subtask> subtasks) { this.subtasks = subtasks == null ? new ArrayList<>() : subtasks; }
+
+    public Optional<Subtask> findSubtask(String id) {
+        for (Subtask subtask : subtasks) {
+            if (subtask.getId().equals(id)) return Optional.of(subtask);
+            Optional<Subtask> found = subtask.findDescendant(id);
+            if (found.isPresent()) return found;
+        }
+        return Optional.empty();
+    }
+
+    public boolean removeSubtask(String id) {
+        if (subtasks.removeIf(subtask -> subtask.getId().equals(id))) return true;
+        return subtasks.stream().anyMatch(subtask -> subtask.removeDescendant(id));
+    }
+
+    /** Marca la tarea y todo su árbol de subtareas. */
+    public void markAll(boolean done) {
+        this.done = done;
+        subtasks.forEach(subtask -> subtask.markTree(done));
+    }
+
+    /** La tarea con subtareas está completa solo si todas lo están. */
+    public void synchronizeCompletion() {
+        this.done = !subtasks.isEmpty()
+                && subtasks.stream().map(Subtask::synchronizeCompletion).allMatch(Boolean::booleanValue);
+    }
 }
