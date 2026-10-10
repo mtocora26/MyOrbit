@@ -40,7 +40,7 @@ public class HabitService {
         habit.setId(UUID.randomUUID().toString());
         habit.setUserId(userId);
         habit.setTitle(request.title().trim());
-        habit.setFrequency(HabitFrequency.fromValue(request.frequency()).orElse(HabitFrequency.DAILY).value());
+        habit.setFrequency(request.frequency() == null ? HabitFrequency.DAILY : request.frequency());
         habit.setDaysOfWeek(normalizeDays(request.daysOfWeek(), habit.getFrequency()));
         habit.setColor(request.color() == null || request.color().isBlank() ? "#7A5AF8" : request.color());
         habit.setIcon(request.icon() == null || request.icon().isBlank() ? "target" : request.icon());
@@ -61,8 +61,8 @@ public class HabitService {
         return true;
     }
 
-    private List<Integer> normalizeDays(List<Integer> days, String frequency) {
-        if (!HabitFrequency.CUSTOM.value().equals(frequency)) return List.of(1, 2, 3, 4, 5, 6, 7);
+    private List<Integer> normalizeDays(List<Integer> days, HabitFrequency frequency) {
+        if (frequency != HabitFrequency.CUSTOM) return List.of(1, 2, 3, 4, 5, 6, 7);
         List<Integer> validDays = days == null ? List.of() : days.stream().filter(day -> day >= 1 && day <= 7).distinct().toList();
         return validDays.isEmpty() ? List.of(1, 2, 3, 4, 5, 6, 7) : validDays;
     }

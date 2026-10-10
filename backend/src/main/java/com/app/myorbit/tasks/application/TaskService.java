@@ -43,7 +43,7 @@ public class TaskService {
         task.setUserId(userId);
         task.setTitle(request.title());
         task.setDue(defaultText(request.due(), "Sin fecha"));
-        task.setPriority(defaultText(request.priority(), Priority.MEDIUM.value()));
+        task.setPriority(request.priority() == null ? Priority.MEDIUM : request.priority());
         task.setTag(defaultText(request.tag(), "Personal"));
         task.setDone(false);
         return taskRepository.save(task);
@@ -105,7 +105,7 @@ public class TaskService {
 
         task.setTitle(defaultText(request.title(), task.getTitle()));
         task.setDue(defaultText(request.due(), task.getDue()));
-        task.setPriority(defaultPriority(request.priority(), task.getPriority()));
+        if (request.priority() != null) task.setPriority(request.priority());
         task.setTag(defaultTag(request.tag(), task.getTag()));
         return taskRepository.save(task);
     }
@@ -126,7 +126,7 @@ public class TaskService {
         t1.setUserId("demo-user");
         t1.setTitle("Entregar proyecto de Moviles");
         t1.setDue("Hoy 11:59 PM");
-        t1.setPriority(Priority.HIGH.value());
+        t1.setPriority(Priority.HIGH);
         t1.setTag("Universidad");
         t1.setDone(false);
 
@@ -135,7 +135,7 @@ public class TaskService {
         t2.setUserId("demo-user");
         t2.setTitle("Comprar materiales de cartelera");
         t2.setDue("Hoy 6:00 PM");
-        t2.setPriority(Priority.MEDIUM.value());
+        t2.setPriority(Priority.MEDIUM);
         t2.setTag("Proyecto");
         t2.setDone(false);
 
@@ -166,10 +166,6 @@ public class TaskService {
             return fallback;
         }
         return value;
-    }
-
-    private String defaultPriority(String value, String fallback) {
-        return Priority.fromValue(value).map(Priority::value).orElse(fallback);
     }
 
     private String defaultTag(String value, String fallback) {
