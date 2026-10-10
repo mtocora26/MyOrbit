@@ -1,3 +1,5 @@
+import { readErrorMessage } from "./apiError";
+
 export interface AuthSession {
   token: string;
   id: string;
@@ -31,7 +33,7 @@ async function submit(path: string, body: Record<string, string>): Promise<AuthS
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error((await response.text()) || "No fue posible iniciar sesion");
+    throw new Error(await readErrorMessage(response, "No fue posible iniciar sesion"));
   }
   const session = await response.json() as AuthSession;
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));

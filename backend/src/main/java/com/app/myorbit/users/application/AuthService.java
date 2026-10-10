@@ -2,6 +2,8 @@ package com.app.myorbit.users.application;
 
 import com.app.myorbit.users.api.AuthResponse;
 import com.app.myorbit.users.api.LoginRequest;
+import com.app.myorbit.shared.error.BusinessRuleException;
+import com.app.myorbit.shared.error.UnauthorizedException;
 import com.app.myorbit.users.api.RegisterRequest;
 import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.domain.UserSession;
@@ -29,10 +31,10 @@ public class AuthService {
         String email = normalizedEmail(request.email());
         String password = required(request.password(), "La contrasena es obligatoria");
         if (password.length() < 8) {
-            throw new IllegalArgumentException("La contrasena debe tener al menos 8 caracteres");
+            throw new BusinessRuleException("La contrasena debe tener al menos 8 caracteres");
         }
         if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
-            throw new IllegalArgumentException("Ya existe una cuenta con ese correo");
+            throw new BusinessRuleException("Ya existe una cuenta con ese correo");
         }
 
         User user = new User();
@@ -46,9 +48,9 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         String email = normalizedEmail(request.email());
         User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new IllegalArgumentException("Correo o contrasena incorrectos"));
+                .orElseThrow(() -> new UnauthorizedException("Correo o contrasena incorrectos"));
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Correo o contrasena incorrectos");
+            throw new UnauthorizedException("Correo o contrasena incorrectos");
         }
         return createSession(user);
     }
@@ -56,9 +58,9 @@ public class AuthService {
     public User requireUser(String authorization) {
         String token = extractToken(authorization);
         UserSession session = sessionRepository.findById(token)
-                .orElseThrow(() -> new SecurityException("Sesion no valida"));
+                .orElseThrow(() -> new UnauthorizedException("Sesion no valida"));
         return userRepository.findById(session.getUserId())
-                .orElseThrow(() -> new SecurityException("Sesion no valida"));
+                .orElseThrow(() -> new UnauthorizedException("Sesion no valida"));
     }
 
     public void logout(String authorization) {
@@ -74,19 +76,19 @@ public class AuthService {
     }
 
     private String required(String value, String message) {
-        if (value == null || value.isBlank()) throw new IllegalArgumentException(message);
+        if (value == null || value.isBlank()) throw new BusinessRuleException(message);
         return value.trim();
     }
 
     private String normalizedEmail(String value) {
         String email = required(value, "El correo es obligatorio").toLowerCase(Locale.ROOT);
-        if (!email.contains("@")) throw new IllegalArgumentException("Ingresa un correo valido");
+        if (!email.contains("@")) throw new BusinessRuleException("Ingresa un correo valido");
         return email;
     }
 
     private String extractToken(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
-            throw new SecurityException("Debes iniciar sesion");
+            throw new UnauthorizedException("Debes iniciar sesion");
         }
         return authorization.substring(7);
     }

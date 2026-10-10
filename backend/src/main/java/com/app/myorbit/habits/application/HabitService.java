@@ -1,5 +1,6 @@
 package com.app.myorbit.habits.application;
 
+import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.habits.api.CreateHabitRequest;
 import com.app.myorbit.habits.api.UpdateHabitCompletionRequest;
 import com.app.myorbit.habits.domain.Habit;
@@ -28,7 +29,7 @@ public class HabitService {
     }
 
     public Habit create(String userId, CreateHabitRequest request) {
-        if (request.title() == null || request.title().isBlank()) throw new IllegalArgumentException("El nombre del habito es obligatorio");
+        if (request.title() == null || request.title().isBlank()) throw new BusinessRuleException("El nombre del habito es obligatorio");
         Habit habit = new Habit();
         habit.setId(UUID.randomUUID().toString());
         habit.setUserId(userId);
