@@ -8,7 +8,7 @@ import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -16,9 +16,11 @@ import java.util.UUID;
 @Service
 public class HabitService {
     private final HabitRepository habitRepository;
+    private final Clock clock;
 
-    public HabitService(HabitRepository habitRepository) {
+    public HabitService(HabitRepository habitRepository, Clock clock) {
         this.habitRepository = habitRepository;
+        this.clock = clock;
     }
 
     public List<Habit> listByUser(String userId) {
@@ -46,7 +48,7 @@ public class HabitService {
 
     public Habit updateCompletion(String userId, String id, UpdateHabitCompletionRequest request) {
         Habit habit = getOwned(userId, id);
-        String date = request.date() == null || request.date().isBlank() ? LocalDate.now().toString() : request.date();
+        String date = request.date() == null || request.date().isBlank() ? LocalDate.now(clock).toString() : request.date();
         if (request.completed() && !habit.getCompletedDates().contains(date)) habit.getCompletedDates().add(date);
         if (!request.completed()) habit.getCompletedDates().remove(date);
         return habitRepository.save(habit);

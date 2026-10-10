@@ -9,7 +9,7 @@ import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.domain.UserSession;
 import com.app.myorbit.users.infrastructure.UserRepository;
 import com.app.myorbit.users.infrastructure.UserSessionRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
@@ -19,11 +19,13 @@ import java.util.UUID;
 public class AuthService implements CurrentUserProvider {
     private final UserRepository userRepository;
     private final UserSessionRepository sessionRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, UserSessionRepository sessionRepository) {
+    public AuthService(UserRepository userRepository, UserSessionRepository sessionRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public AuthResponse register(RegisterRequest request) {
