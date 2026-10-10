@@ -5,7 +5,6 @@ import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,33 +58,28 @@ public class TaskController {
     }
 
     @PostMapping("/{id}/subtasks")
-    public ResponseEntity<Task> addSubtask(@PathVariable String id, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
-        Task task = taskService.addSubtask(user.getId(), id, request);
-        return task == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(task);
+    public Task addSubtask(@PathVariable String id, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
+        return taskService.addSubtask(user.getId(), id, request);
     }
 
     @PostMapping("/{id}/subtasks/{parentSubtaskId}")
-    public ResponseEntity<Task> addNestedSubtask(@PathVariable String id, @PathVariable String parentSubtaskId, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
-        Task task = taskService.addNestedSubtask(user.getId(), id, parentSubtaskId, request);
-        return task == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(task);
+    public Task addNestedSubtask(@PathVariable String id, @PathVariable String parentSubtaskId, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
+        return taskService.addNestedSubtask(user.getId(), id, parentSubtaskId, request);
     }
 
     @PutMapping("/{id}/subtasks/{subtaskId}")
-    public ResponseEntity<Task> updateSubtask(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskRequest request, @CurrentUser User user) {
-        Task task = taskService.updateSubtask(user.getId(), id, subtaskId, request);
-        return task == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(task);
+    public Task updateSubtask(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskRequest request, @CurrentUser User user) {
+        return taskService.updateSubtask(user.getId(), id, subtaskId, request);
     }
 
     @PatchMapping("/{id}/subtasks/{subtaskId}/status")
-    public ResponseEntity<Task> updateSubtaskStatus(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskStatusRequest request, @CurrentUser User user) {
-        Task task = taskService.updateSubtaskStatus(user.getId(), id, subtaskId, request);
-        return task == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(task);
+    public Task updateSubtaskStatus(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskStatusRequest request, @CurrentUser User user) {
+        return taskService.updateSubtaskStatus(user.getId(), id, subtaskId, request);
     }
 
     @DeleteMapping("/{id}/subtasks/{subtaskId}")
-    public ResponseEntity<Task> deleteSubtask(@PathVariable String id, @PathVariable String subtaskId, @CurrentUser User user) {
-        Task task = taskService.deleteSubtask(user.getId(), id, subtaskId);
-        return task == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(task);
+    public Task deleteSubtask(@PathVariable String id, @PathVariable String subtaskId, @CurrentUser User user) {
+        return taskService.deleteSubtask(user.getId(), id, subtaskId);
     }
 
     @DeleteMapping("/{id}")

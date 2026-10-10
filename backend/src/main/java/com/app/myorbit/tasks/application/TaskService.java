@@ -1,5 +1,6 @@
 package com.app.myorbit.tasks.application;
 
+import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
 import com.app.myorbit.tasks.api.CreateTaskRequest;
@@ -58,9 +59,7 @@ public class TaskService {
 
     public Task addSubtask(String userId, String taskId, CreateSubtaskRequest request) {
         Task task = getOwned(userId, taskId);
-        if (request.title() == null || request.title().isBlank()) {
-            return null;
-        }
+        requireSubtaskTitle(request);
         Subtask subtask = new Subtask();
         subtask.setId(UUID.randomUUID().toString());
         subtask.setTitle(request.title().trim());
@@ -73,9 +72,9 @@ public class TaskService {
 
     public Task addNestedSubtask(String userId, String taskId, String parentSubtaskId, CreateSubtaskRequest request) {
         Task task = getOwned(userId, taskId);
-        if (request.title() == null || request.title().isBlank()) return null;
+        requireSubtaskTitle(request);
         Subtask parent = findSubtask(task.getSubtasks(), parentSubtaskId);
-        if (parent == null) return null;
+        if (parent == null) throw new BusinessRuleException("La subtarea padre no existe");
         Subtask subtask = new Subtask();
         subtask.setId(UUID.randomUUID().toString());
         subtask.setTitle(request.title().trim());
@@ -88,8 +87,7 @@ public class TaskService {
 
     public Task updateSubtask(String userId, String taskId, String subtaskId, UpdateSubtaskRequest request) {
         Task task = getOwned(userId, taskId);
-        Subtask subtask = findSubtask(task.getSubtasks(), subtaskId);
-        if (subtask == null) return null;
+        Subtask subtask = requireSubtask(task, subtaskId);
         if (request.title() != null && !request.title().isBlank()) {
             subtask.setTitle(request.title().trim());
         }
@@ -99,8 +97,7 @@ public class TaskService {
 
     public Task updateSubtaskStatus(String userId, String taskId, String subtaskId, UpdateSubtaskStatusRequest request) {
         Task task = getOwned(userId, taskId);
-        Subtask subtask = findSubtask(task.getSubtasks(), subtaskId);
-        if (subtask == null) return null;
+        Subtask subtask = requireSubtask(task, subtaskId);
         markSubtaskTree(subtask, request.done());
         synchronizeTaskCompletion(task);
         return taskRepository.save(task);
@@ -109,7 +106,7 @@ public class TaskService {
     public Task deleteSubtask(String userId, String taskId, String subtaskId) {
         Task task = getOwned(userId, taskId);
         if (!removeSubtask(task.getSubtasks(), subtaskId)) {
-            return null;
+            throw new NotFoundException("Subtarea no encontrada");
         }
         synchronizeTaskCompletion(task);
         return taskRepository.save(task);
@@ -162,6 +159,18 @@ public class TaskService {
             return "demo-user";
         }
         return userId;
+    }
+
+    private void requireSubtaskTitle(CreateSubtaskRequest request) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new BusinessRuleException("El titulo de la subtarea es obligatorio");
+        }
+    }
+
+    private Subtask requireSubtask(Task task, String subtaskId) {
+        Subtask subtask = findSubtask(task.getSubtasks(), subtaskId);
+        if (subtask == null) throw new NotFoundException("Subtarea no encontrada");
+        return subtask;
     }
 
     private Subtask findSubtask(List<Subtask> subtasks, String id) {

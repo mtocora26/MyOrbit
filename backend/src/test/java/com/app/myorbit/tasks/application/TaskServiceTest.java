@@ -1,6 +1,9 @@
 package com.app.myorbit.tasks.application;
 
+import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
+import com.app.myorbit.tasks.api.CreateSubtaskRequest;
+import com.app.myorbit.tasks.api.UpdateSubtaskStatusRequest;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,5 +65,28 @@ class TaskServiceTest {
 
         assertThrows(NotFoundException.class, () -> service.delete("u1", "t1"));
         verify(repository, never()).deleteById(anyString());
+    }
+
+    @Test
+    void addSubtaskRejectsBlankTitle() {
+        when(repository.findById("t1")).thenReturn(Optional.of(taskOf("u1")));
+
+        assertThrows(BusinessRuleException.class,
+                () -> service.addSubtask("u1", "t1", new CreateSubtaskRequest(" ", null)));
+    }
+
+    @Test
+    void updateSubtaskStatusFailsWhenSubtaskDoesNotExist() {
+        when(repository.findById("t1")).thenReturn(Optional.of(taskOf("u1")));
+
+        assertThrows(NotFoundException.class,
+                () -> service.updateSubtaskStatus("u1", "t1", "missing", new UpdateSubtaskStatusRequest(true)));
+    }
+
+    @Test
+    void deleteSubtaskFailsWhenSubtaskDoesNotExist() {
+        when(repository.findById("t1")).thenReturn(Optional.of(taskOf("u1")));
+
+        assertThrows(NotFoundException.class, () -> service.deleteSubtask("u1", "t1", "missing"));
     }
 }
