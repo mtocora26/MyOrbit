@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Card, CategoryBadge, Checkbox, ProgressBar, ProgressRing, SectionTitle, OrbitDecor } from "../components/shared";
+import { Badge, Card, CategoryBadge, Checkbox, ProgressBar, ProgressRing, SectionTitle, OrbitDecor } from "../components/shared";
 import {
   IconPencil, IconCalendar, IconBell, IconTarget,
   IconGraduation,
