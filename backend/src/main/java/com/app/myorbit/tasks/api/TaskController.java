@@ -1,7 +1,6 @@
 package com.app.myorbit.tasks.api;
 
 import com.app.myorbit.tasks.application.TaskService;
-import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
@@ -31,55 +30,54 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> list(@CurrentUser User user) {
-        return taskService.listByUser(user.getId());
+    public List<TaskResponse> list(@CurrentUser User user) {
+        return taskService.listByUser(user.getId()).stream().map(TaskResponse::from).toList();
     }
 
     @GetMapping("/{id}")
-    public Task getById(@PathVariable String id, @CurrentUser User user) {
-        return taskService.getOwned(user.getId(), id);
+    public TaskResponse getById(@PathVariable String id, @CurrentUser User user) {
+        return TaskResponse.from(taskService.getOwned(user.getId(), id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Task create(@RequestBody CreateTaskRequest request, @CurrentUser User user) {
-        request.setUserId(user.getId());
-        return taskService.create(request);
+    public TaskResponse create(@RequestBody CreateTaskRequest request, @CurrentUser User user) {
+        return TaskResponse.from(taskService.create(user.getId(), request));
     }
 
     @PatchMapping("/{id}/status")
-    public Task updateStatus(@PathVariable String id, @RequestBody UpdateTaskStatusRequest request, @CurrentUser User user) {
-        return taskService.updateStatus(user.getId(), id, request);
+    public TaskResponse updateStatus(@PathVariable String id, @RequestBody UpdateTaskStatusRequest request, @CurrentUser User user) {
+        return TaskResponse.from(taskService.updateStatus(user.getId(), id, request));
     }
 
     @PutMapping("/{id}")
-    public Task update(@PathVariable String id, @RequestBody UpdateTaskRequest request, @CurrentUser User user) {
-        return taskService.update(user.getId(), id, request);
+    public TaskResponse update(@PathVariable String id, @RequestBody UpdateTaskRequest request, @CurrentUser User user) {
+        return TaskResponse.from(taskService.update(user.getId(), id, request));
     }
 
     @PostMapping("/{id}/subtasks")
-    public Task addSubtask(@PathVariable String id, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
-        return taskService.addSubtask(user.getId(), id, request);
+    public TaskResponse addSubtask(@PathVariable String id, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
+        return TaskResponse.from(taskService.addSubtask(user.getId(), id, request));
     }
 
     @PostMapping("/{id}/subtasks/{parentSubtaskId}")
-    public Task addNestedSubtask(@PathVariable String id, @PathVariable String parentSubtaskId, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
-        return taskService.addNestedSubtask(user.getId(), id, parentSubtaskId, request);
+    public TaskResponse addNestedSubtask(@PathVariable String id, @PathVariable String parentSubtaskId, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
+        return TaskResponse.from(taskService.addNestedSubtask(user.getId(), id, parentSubtaskId, request));
     }
 
     @PutMapping("/{id}/subtasks/{subtaskId}")
-    public Task updateSubtask(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskRequest request, @CurrentUser User user) {
-        return taskService.updateSubtask(user.getId(), id, subtaskId, request);
+    public TaskResponse updateSubtask(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskRequest request, @CurrentUser User user) {
+        return TaskResponse.from(taskService.updateSubtask(user.getId(), id, subtaskId, request));
     }
 
     @PatchMapping("/{id}/subtasks/{subtaskId}/status")
-    public Task updateSubtaskStatus(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskStatusRequest request, @CurrentUser User user) {
-        return taskService.updateSubtaskStatus(user.getId(), id, subtaskId, request);
+    public TaskResponse updateSubtaskStatus(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskStatusRequest request, @CurrentUser User user) {
+        return TaskResponse.from(taskService.updateSubtaskStatus(user.getId(), id, subtaskId, request));
     }
 
     @DeleteMapping("/{id}/subtasks/{subtaskId}")
-    public Task deleteSubtask(@PathVariable String id, @PathVariable String subtaskId, @CurrentUser User user) {
-        return taskService.deleteSubtask(user.getId(), id, subtaskId);
+    public TaskResponse deleteSubtask(@PathVariable String id, @PathVariable String subtaskId, @CurrentUser User user) {
+        return TaskResponse.from(taskService.deleteSubtask(user.getId(), id, subtaskId));
     }
 
     @DeleteMapping("/{id}")

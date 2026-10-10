@@ -1,7 +1,6 @@
 package com.app.myorbit.categories.api;
 
 import com.app.myorbit.categories.application.CategoryService;
-import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
@@ -26,13 +25,13 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> list(@CurrentUser User user) {
-        return categoryService.listByUser(user.getId());
+    public List<CategoryResponse> list(@CurrentUser User user) {
+        return categoryService.listByUser(user.getId()).stream().map(CategoryResponse::from).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Category create(@RequestBody CreateCategoryRequest request, @CurrentUser User user) {
-        return categoryService.create(user.getId(), request);
+    public CategoryResponse create(@RequestBody CreateCategoryRequest request, @CurrentUser User user) {
+        return CategoryResponse.from(categoryService.create(user.getId(), request));
     }
 }

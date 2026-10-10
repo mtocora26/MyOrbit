@@ -1,7 +1,6 @@
 package com.app.myorbit.habits.api;
 
 import com.app.myorbit.habits.application.HabitService;
-import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
@@ -29,19 +28,19 @@ public class HabitController {
     }
 
     @GetMapping
-    public List<Habit> list(@CurrentUser User user) {
-        return habitService.listByUser(user.getId());
+    public List<HabitResponse> list(@CurrentUser User user) {
+        return habitService.listByUser(user.getId()).stream().map(HabitResponse::from).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Habit create(@RequestBody CreateHabitRequest request, @CurrentUser User user) {
-        return habitService.create(user.getId(), request);
+    public HabitResponse create(@RequestBody CreateHabitRequest request, @CurrentUser User user) {
+        return HabitResponse.from(habitService.create(user.getId(), request));
     }
 
     @PatchMapping("/{id}/completion")
-    public Habit updateCompletion(@PathVariable String id, @RequestBody UpdateHabitCompletionRequest request, @CurrentUser User user) {
-        return habitService.updateCompletion(user.getId(), id, request);
+    public HabitResponse updateCompletion(@PathVariable String id, @RequestBody UpdateHabitCompletionRequest request, @CurrentUser User user) {
+        return HabitResponse.from(habitService.updateCompletion(user.getId(), id, request));
     }
 
     @DeleteMapping("/{id}")

@@ -22,21 +22,21 @@ public class UserProfileController {
     }
 
     @GetMapping
-    public ResponseEntity<UserProfile> get(@CurrentUser User user) {
+    public ResponseEntity<UserProfileResponse> get(@CurrentUser User user) {
         return profileRepository.findById(user.getId())
-                .map(ResponseEntity::ok)
+                .map(profile -> ResponseEntity.ok(UserProfileResponse.from(profile)))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PutMapping
-    public UserProfile update(@CurrentUser User user, @RequestBody UpdateUserProfileRequest request) {
+    public UserProfileResponse update(@CurrentUser User user, @RequestBody UpdateUserProfileRequest request) {
         UserProfile profile = profileRepository.findById(user.getId()).orElseGet(UserProfile::new);
         profile.setUserId(user.getId());
         profile.setProgram(textOrEmpty(request.program()));
         profile.setSemester(textOrEmpty(request.semester()));
         profile.setStudentCode(textOrEmpty(request.studentCode()));
         profile.setGradeTarget(textOrEmpty(request.gradeTarget()));
-        return profileRepository.save(profile);
+        return UserProfileResponse.from(profileRepository.save(profile));
     }
 
     private String textOrEmpty(String value) {

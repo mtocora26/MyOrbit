@@ -36,14 +36,14 @@ public class TaskService {
                 .orElseThrow(() -> new NotFoundException("Tarea no encontrada"));
     }
 
-    public Task create(CreateTaskRequest request) {
+    public Task create(String userId, CreateTaskRequest request) {
         Task task = new Task();
         task.setId(UUID.randomUUID().toString());
-        task.setUserId(defaultUser(request.getUserId()));
-        task.setTitle(request.getTitle());
-        task.setDue(defaultText(request.getDue(), "Sin fecha"));
-        task.setPriority(defaultText(request.getPriority(), "media"));
-        task.setTag(defaultText(request.getTag(), "Personal"));
+        task.setUserId(userId);
+        task.setTitle(request.title());
+        task.setDue(defaultText(request.due(), "Sin fecha"));
+        task.setPriority(defaultText(request.priority(), "media"));
+        task.setTag(defaultText(request.tag(), "Personal"));
         task.setDone(false);
         return taskRepository.save(task);
     }
@@ -115,10 +115,10 @@ public class TaskService {
     public Task update(String userId, String id, UpdateTaskRequest request) {
         Task task = getOwned(userId, id);
 
-        task.setTitle(defaultText(request.getTitle(), task.getTitle()));
-        task.setDue(defaultText(request.getDue(), task.getDue()));
-        task.setPriority(defaultPriority(request.getPriority(), task.getPriority()));
-        task.setTag(defaultTag(request.getTag(), task.getTag()));
+        task.setTitle(defaultText(request.title(), task.getTitle()));
+        task.setDue(defaultText(request.due(), task.getDue()));
+        task.setPriority(defaultPriority(request.priority(), task.getPriority()));
+        task.setTag(defaultTag(request.tag(), task.getTag()));
         return taskRepository.save(task);
     }
 
@@ -152,13 +152,6 @@ public class TaskService {
         t2.setDone(false);
 
         taskRepository.saveAll(List.of(t1, t2));
-    }
-
-    private String defaultUser(String userId) {
-        if (userId == null || userId.isBlank()) {
-            return "demo-user";
-        }
-        return userId;
     }
 
     private void requireSubtaskTitle(CreateSubtaskRequest request) {
