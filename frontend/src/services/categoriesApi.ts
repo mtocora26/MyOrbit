@@ -1,3 +1,4 @@
+import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 
 export interface Category {
@@ -21,6 +22,6 @@ export async function createCategory(name: string, color: string): Promise<Categ
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({ name, color }),
   });
-  if (!response.ok) throw new Error(await response.text() || "No fue posible crear la categoría");
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible crear la categoría"));
   return response.json();
 }

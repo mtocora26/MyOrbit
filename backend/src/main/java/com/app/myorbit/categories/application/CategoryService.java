@@ -1,5 +1,6 @@
 package com.app.myorbit.categories.application;
 
+import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.categories.api.CreateCategoryRequest;
 import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.categories.infrastructure.CategoryRepository;
@@ -28,13 +29,13 @@ public class CategoryService {
 
     public Category create(String userId, CreateCategoryRequest request) {
         if (request.name() == null || request.name().isBlank()) {
-            throw new IllegalArgumentException("El nombre de la categoria es obligatorio");
+            throw new BusinessRuleException("El nombre de la categoria es obligatorio");
         }
         String name = request.name().trim();
         boolean exists = categoryRepository.findByUserIdOrderByNameAsc(userId).stream()
                 .anyMatch(category -> category.getName().equalsIgnoreCase(name));
         if (exists) {
-            throw new IllegalArgumentException("Ya existe una categoria con ese nombre");
+            throw new BusinessRuleException("Ya existe una categoria con ese nombre");
         }
 
         Category category = new Category();
