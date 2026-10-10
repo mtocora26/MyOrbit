@@ -14,9 +14,15 @@ export default defineConfig(() => ({
     host: '0.0.0.0',
     port: parseInt(process.env.PORT || '8443'),
     strictPort: true,
+    proxy: {
+      '/api': process.env.VITE_DEV_API_TARGET || 'http://localhost:8080',
+    },
   },
   preview: {
     host: '0.0.0.0',
     port: parseInt(process.env.PORT || '8443'),
+    proxy: {
+      '/api': process.env.VITE_DEV_API_TARGET || 'http://localhost:8080',
+    },
   },
 }))

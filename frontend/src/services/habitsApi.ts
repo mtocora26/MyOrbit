@@ -1,4 +1,5 @@
 import { authHeaders } from "./authApi";
+import { API_BASE_URL } from "./apiConfig";
 
 export interface Habit {
   id: string;
@@ -19,7 +20,6 @@ export interface CreateHabitInput {
   icon: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 export function todayKey(): string {
   return toLocalKey(new Date());
