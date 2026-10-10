@@ -112,6 +112,43 @@ Define patrones de codigo para resolver problemas repetitivos dentro de servicio
   2. Adapter (Google Calendar)
   3. Observer (recordatorios)
 
+## Decision: frontend como SPA servida con nginx y PWA (#64)
+
+- **Nivel afectado:** Infraestructura y Arquitectura de aplicacion (frontend).
+- **Objetivo:** servir el front como SPA estable e instalable como PWA, con Spring Boot como API pura.
+
+### Decisiones
+| Tema | Decision | Motivo |
+|---|---|---|
+| Quien sirve el front | nginx en contenedor (`frontend/Dockerfile`, `frontend/nginx.conf`) | El backend queda como API; despliegues independientes; mismo origen para front y API (necesario para PWA y service worker). Encaja con M5-02. |
+| URL de la API | Ruta relativa `/api/...` (`API_BASE_URL` vacio en `src/services/apiConfig.ts`) | El build funciona en cualquier dominio. Con otro dominio se fija `VITE_API_BASE_URL` al compilar. |
+| Desarrollo | Proxy de `/api` en Vite hacia `localhost:8080` (`VITE_DEV_API_TARGET` lo cambia) | Mismo comportamiento que produccion, sin CORS. |
+| Fallback SPA | `try_files $uri /index.html` salvo `/api/` y `/assets/` (un asset inexistente da 404) | Refrescar en cualquier ruta no da 404. |
+| Router | No se agrega `react-router` | La navegacion es por estado en `App.tsx`; la PWA no lo exige. Issue aparte si se necesitan deep-links. |
+| Modo offline | Solo shell offline | El service worker precachea el build; `/api` nunca pasa por el service worker (sin cache de datos ni tokens). `OfflineBanner` avisa cuando no hay red. |
+| CORS | Sin cambios por ahora (`@CrossOrigin("*")`) | Ya no hace falta con un solo origen; quitarlo es una mejora de seguridad aparte. |
+
+### PWA
+- `vite-plugin-pwa` genera `manifest.webmanifest` y `sw.js` (config en `frontend/vite.config.ts`, `registerType: 'autoUpdate'`).
+- Iconos provisionales en `frontend/public/` (planeta y orbita); reemplazables sin tocar codigo.
+- HTTPS es requisito para instalar: `localhost` sirve para probar, en el celular se uso un tunel (ngrok).
+
+### Como probarlo
+```bash
+cd frontend && docker build -t myorbit-front .
+docker run -d --rm --name myorbit-front-test -p 3000:80 --add-host backend:host-gateway myorbit-front
+# backend en :8080; abrir http://localhost:3000
+```
+El flag `--add-host` solo hace falta fuera de Docker Compose (nginx resuelve el host `backend`).
+
+### Evidencia de prueba (2026-10-10)
+- Rutas via nginx: `/` 200, `/tareas/123` 200 (fallback), `/assets/no.js` 404, `/api/*` llega al backend.
+- Login y pantalla principal funcionando con front en contenedor y backend en Spring.
+- Instalacion como app y modo offline (franja "Sin conexion") verificados en el celular via ngrok.
+- Lighthouse: Rendimiento 83, Accesibilidad 72, Mejores practicas 100, SEO 91 (Lighthouse ya no incluye categoria PWA).
+
+---
+
 ## Orden de implementacion sugerido
 
 1. Gateway + Auth + Tasks.
