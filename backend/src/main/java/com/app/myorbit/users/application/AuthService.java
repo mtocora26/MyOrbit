@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 @Service
-public class AuthService {
+public class AuthService implements CurrentUserProvider {
     private final UserRepository userRepository;
     private final UserSessionRepository sessionRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -55,6 +55,7 @@ public class AuthService {
         return createSession(user);
     }
 
+    @Override
     public User requireUser(String authorization) {
         String token = extractToken(authorization);
         UserSession session = sessionRepository.findById(token)
