@@ -1,5 +1,6 @@
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
+import { API_BASE_URL } from "./apiConfig";
 
 export interface Category {
   id: string;
@@ -8,7 +9,6 @@ export interface Category {
   color: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 export async function fetchCategories(): Promise<Category[]> {
   const response = await fetch(`${API_BASE_URL}/api/categories`, { headers: authHeaders() });

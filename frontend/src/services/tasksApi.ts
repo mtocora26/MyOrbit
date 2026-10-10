@@ -1,5 +1,6 @@
 import { authHeaders } from "./authApi";
 import { formatTaskDue } from "./taskDue";
+import { API_BASE_URL } from "./apiConfig";
 
 export type TaskPriority = "alta" | "media" | "baja";
 export type TaskTag = string;
@@ -50,7 +51,6 @@ export interface UpdateTaskInput {
   tag: TaskTag;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 function requestHeaders(): HeadersInit {
   return { "Content-Type": "application/json", ...authHeaders() };
 }

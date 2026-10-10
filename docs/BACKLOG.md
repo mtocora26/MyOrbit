@@ -118,6 +118,7 @@ Reglas de código: [BUENAS_PRACTICAS.md](BUENAS_PRACTICAS.md) · Arquitectura: [
 
 ## Orden sugerido para empezar
 
+0. **PWA-01** (#64, `P0`, prioridad del día 2026-10-10): verificar que el front se sirve como SPA y habilitarlo como PWA.
 1. **M0-10** (estructura de paquetes): base para todo lo demás.
 2. **M0-46** (CI) y **M0-13** (manejo de errores).
 3. **M0-11**, **M0-12**, **M0-18** (SOLID en auth y servicios).

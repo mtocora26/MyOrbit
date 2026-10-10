@@ -5,6 +5,7 @@ import AgendaScreen from "./screens/AgendaScreen";
 import UniversityScreen from "./screens/UniversityScreen";
 import MoreScreen from "./screens/MoreScreen";
 import BottomNav from "./components/BottomNav";
+import OfflineBanner from "./components/OfflineBanner";
 import TaskDetailScreen from "./screens/TaskDetailScreen";
 import SubjectDetailScreen from "./screens/SubjectDetailScreen";
 import GradesScreen from "./screens/GradesScreen";
@@ -65,6 +66,7 @@ export default function App() {
   return (
     <div className="h-dvh bg-[#F7F8FA]">
       <div className="w-full h-dvh flex flex-col overflow-hidden lg:max-w-[1200px] lg:mx-auto lg:border-x lg:border-[#E4E7EC]">
+          <OfflineBanner />
           <div className="flex-1 overflow-hidden relative">
             {subScreen === "taskDetail"    && <TaskDetailScreen onBack={goBack} taskId={selectedTaskId} />}
             {subScreen === "subjectDetail" && <SubjectDetailScreen onBack={goBack} onGrades={() => setSubScreen("grades")} />}

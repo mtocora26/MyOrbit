@@ -1,4 +1,5 @@
 import { readErrorMessage } from "./apiError";
+import { API_BASE_URL } from "./apiConfig";
 
 export interface AuthSession {
   token: string;
@@ -7,7 +8,6 @@ export interface AuthSession {
   email: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 const SESSION_KEY = "myorbit.session";
 
 export function getSession(): AuthSession | null {

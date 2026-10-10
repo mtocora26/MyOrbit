@@ -1,4 +1,5 @@
 import { authHeaders } from "./authApi";
+import { API_BASE_URL } from "./apiConfig";
 
 export interface UserProfile {
   userId: string;
@@ -8,7 +9,6 @@ export interface UserProfile {
   gradeTarget: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 export async function fetchUserProfile(): Promise<UserProfile | null> {
   const response = await fetch(`${API_BASE_URL}/api/profile`, { headers: authHeaders() });
