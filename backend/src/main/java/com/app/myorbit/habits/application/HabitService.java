@@ -1,6 +1,7 @@
 package com.app.myorbit.habits.application;
 
 import com.app.myorbit.shared.error.BusinessRuleException;
+import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.habits.api.CreateHabitRequest;
 import com.app.myorbit.habits.api.UpdateHabitCompletionRequest;
 import com.app.myorbit.habits.domain.Habit;
@@ -24,8 +25,10 @@ public class HabitService {
         return habitRepository.findByUserIdOrderByTitleAsc(userId);
     }
 
-    public Habit findById(String id) {
-        return habitRepository.findById(id).orElse(null);
+    public Habit getOwned(String userId, String id) {
+        return habitRepository.findById(id)
+                .filter(habit -> habit.getUserId().equals(userId))
+                .orElseThrow(() -> new NotFoundException("Habito no encontrado"));
     }
 
     public Habit create(String userId, CreateHabitRequest request) {
@@ -41,17 +44,16 @@ public class HabitService {
         return habitRepository.save(habit);
     }
 
-    public Habit updateCompletion(String id, UpdateHabitCompletionRequest request) {
-        Habit habit = findById(id);
-        if (habit == null) return null;
+    public Habit updateCompletion(String userId, String id, UpdateHabitCompletionRequest request) {
+        Habit habit = getOwned(userId, id);
         String date = request.date() == null || request.date().isBlank() ? LocalDate.now().toString() : request.date();
         if (request.completed() && !habit.getCompletedDates().contains(date)) habit.getCompletedDates().add(date);
         if (!request.completed()) habit.getCompletedDates().remove(date);
         return habitRepository.save(habit);
     }
 
-    public boolean delete(String id) {
-        if (!habitRepository.existsById(id)) return false;
+    public boolean delete(String userId, String id) {
+        getOwned(userId, id);
         habitRepository.deleteById(id);
         return true;
     }

@@ -1,6 +1,5 @@
 package com.app.myorbit.users.api;
 
-import com.app.myorbit.users.application.AuthService;
 import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.domain.UserProfile;
 import com.app.myorbit.users.infrastructure.UserProfileRepository;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,25 +15,21 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin(origins = "*")
 @RequestMapping("/api/profile")
 public class UserProfileController {
-    private final AuthService authService;
     private final UserProfileRepository profileRepository;
 
-    public UserProfileController(AuthService authService, UserProfileRepository profileRepository) {
-        this.authService = authService;
+    public UserProfileController(UserProfileRepository profileRepository) {
         this.profileRepository = profileRepository;
     }
 
     @GetMapping
-    public ResponseEntity<UserProfile> get(@RequestHeader("Authorization") String authorization) {
-        User user = authService.requireUser(authorization);
+    public ResponseEntity<UserProfile> get(@CurrentUser User user) {
         return profileRepository.findById(user.getId())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PutMapping
-    public UserProfile update(@RequestHeader("Authorization") String authorization, @RequestBody UpdateUserProfileRequest request) {
-        User user = authService.requireUser(authorization);
+    public UserProfile update(@CurrentUser User user, @RequestBody UpdateUserProfileRequest request) {
         UserProfile profile = profileRepository.findById(user.getId()).orElseGet(UserProfile::new);
         profile.setUserId(user.getId());
         profile.setProgram(textOrEmpty(request.program()));

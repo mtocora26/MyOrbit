@@ -1,5 +1,6 @@
 package com.app.myorbit.tasks.application;
 
+import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
 import com.app.myorbit.tasks.api.CreateTaskRequest;
 import com.app.myorbit.tasks.api.UpdateSubtaskRequest;
@@ -28,8 +29,10 @@ public class TaskService {
         return taskRepository.findByUserIdOrderByIdAsc(userId);
     }
 
-    public Task findById(String id) {
-        return taskRepository.findById(id).orElse(null);
+    public Task getOwned(String userId, String id) {
+        return taskRepository.findById(id)
+                .filter(task -> task.getUserId().equals(userId))
+                .orElseThrow(() -> new NotFoundException("Tarea no encontrada"));
     }
 
     public Task create(CreateTaskRequest request) {
@@ -44,11 +47,8 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public Task updateStatus(String id, UpdateTaskStatusRequest request) {
-        Task task = findById(id);
-        if (task == null) {
-            return null;
-        }
+    public Task updateStatus(String userId, String id, UpdateTaskStatusRequest request) {
+        Task task = getOwned(userId, id);
         task.setDone(request.isDone());
         if (!task.getSubtasks().isEmpty()) {
             task.getSubtasks().forEach(subtask -> markSubtaskTree(subtask, request.isDone()));
@@ -56,9 +56,9 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public Task addSubtask(String taskId, CreateSubtaskRequest request) {
-        Task task = findById(taskId);
-        if (task == null || request.title() == null || request.title().isBlank()) {
+    public Task addSubtask(String userId, String taskId, CreateSubtaskRequest request) {
+        Task task = getOwned(userId, taskId);
+        if (request.title() == null || request.title().isBlank()) {
             return null;
         }
         Subtask subtask = new Subtask();
@@ -71,9 +71,9 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public Task addNestedSubtask(String taskId, String parentSubtaskId, CreateSubtaskRequest request) {
-        Task task = findById(taskId);
-        if (task == null || request.title() == null || request.title().isBlank()) return null;
+    public Task addNestedSubtask(String userId, String taskId, String parentSubtaskId, CreateSubtaskRequest request) {
+        Task task = getOwned(userId, taskId);
+        if (request.title() == null || request.title().isBlank()) return null;
         Subtask parent = findSubtask(task.getSubtasks(), parentSubtaskId);
         if (parent == null) return null;
         Subtask subtask = new Subtask();
@@ -86,9 +86,8 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public Task updateSubtask(String taskId, String subtaskId, UpdateSubtaskRequest request) {
-        Task task = findById(taskId);
-        if (task == null) return null;
+    public Task updateSubtask(String userId, String taskId, String subtaskId, UpdateSubtaskRequest request) {
+        Task task = getOwned(userId, taskId);
         Subtask subtask = findSubtask(task.getSubtasks(), subtaskId);
         if (subtask == null) return null;
         if (request.title() != null && !request.title().isBlank()) {
@@ -98,9 +97,8 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public Task updateSubtaskStatus(String taskId, String subtaskId, UpdateSubtaskStatusRequest request) {
-        Task task = findById(taskId);
-        if (task == null) return null;
+    public Task updateSubtaskStatus(String userId, String taskId, String subtaskId, UpdateSubtaskStatusRequest request) {
+        Task task = getOwned(userId, taskId);
         Subtask subtask = findSubtask(task.getSubtasks(), subtaskId);
         if (subtask == null) return null;
         markSubtaskTree(subtask, request.done());
@@ -108,20 +106,17 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public Task deleteSubtask(String taskId, String subtaskId) {
-        Task task = findById(taskId);
-        if (task == null || !removeSubtask(task.getSubtasks(), subtaskId)) {
+    public Task deleteSubtask(String userId, String taskId, String subtaskId) {
+        Task task = getOwned(userId, taskId);
+        if (!removeSubtask(task.getSubtasks(), subtaskId)) {
             return null;
         }
         synchronizeTaskCompletion(task);
         return taskRepository.save(task);
     }
 
-    public Task update(String id, UpdateTaskRequest request) {
-        Task task = findById(id);
-        if (task == null) {
-            return null;
-        }
+    public Task update(String userId, String id, UpdateTaskRequest request) {
+        Task task = getOwned(userId, id);
 
         task.setTitle(defaultText(request.getTitle(), task.getTitle()));
         task.setDue(defaultText(request.getDue(), task.getDue()));
@@ -130,10 +125,8 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public boolean delete(String id) {
-        if (!taskRepository.existsById(id)) {
-            return false;
-        }
+    public boolean delete(String userId, String id) {
+        getOwned(userId, id);
         taskRepository.deleteById(id);
         return true;
     }

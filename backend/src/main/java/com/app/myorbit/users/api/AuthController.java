@@ -34,8 +34,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public AuthResponse me(@RequestHeader("Authorization") String authorization) {
-        User user = authService.requireUser(authorization);
+    public AuthResponse me(@CurrentUser User user) {
         return new AuthResponse(null, user.getId(), user.getName(), user.getEmail());
     }
 
