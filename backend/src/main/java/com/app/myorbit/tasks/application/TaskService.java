@@ -8,6 +8,7 @@ import com.app.myorbit.tasks.api.UpdateSubtaskRequest;
 import com.app.myorbit.tasks.api.UpdateSubtaskStatusRequest;
 import com.app.myorbit.tasks.api.UpdateTaskRequest;
 import com.app.myorbit.tasks.api.UpdateTaskStatusRequest;
+import com.app.myorbit.tasks.domain.Priority;
 import com.app.myorbit.tasks.domain.Subtask;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
@@ -42,7 +43,7 @@ public class TaskService {
         task.setUserId(userId);
         task.setTitle(request.title());
         task.setDue(defaultText(request.due(), "Sin fecha"));
-        task.setPriority(defaultText(request.priority(), "media"));
+        task.setPriority(defaultText(request.priority(), Priority.MEDIUM.value()));
         task.setTag(defaultText(request.tag(), "Personal"));
         task.setDone(false);
         return taskRepository.save(task);
@@ -125,7 +126,7 @@ public class TaskService {
         t1.setUserId("demo-user");
         t1.setTitle("Entregar proyecto de Moviles");
         t1.setDue("Hoy 11:59 PM");
-        t1.setPriority("alta");
+        t1.setPriority(Priority.HIGH.value());
         t1.setTag("Universidad");
         t1.setDone(false);
 
@@ -134,7 +135,7 @@ public class TaskService {
         t2.setUserId("demo-user");
         t2.setTitle("Comprar materiales de cartelera");
         t2.setDue("Hoy 6:00 PM");
-        t2.setPriority("media");
+        t2.setPriority(Priority.MEDIUM.value());
         t2.setTag("Proyecto");
         t2.setDone(false);
 
@@ -168,14 +169,7 @@ public class TaskService {
     }
 
     private String defaultPriority(String value, String fallback) {
-        if (value == null || value.isBlank()) {
-            return fallback;
-        }
-        String normalized = value.toLowerCase();
-        if (normalized.equals("alta") || normalized.equals("media") || normalized.equals("baja")) {
-            return normalized;
-        }
-        return fallback;
+        return Priority.fromValue(value).map(Priority::value).orElse(fallback);
     }
 
     private String defaultTag(String value, String fallback) {
