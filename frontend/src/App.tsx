@@ -70,12 +70,12 @@ export default function App() {
   }
 
   return (
-    <div className="h-dvh bg-paper">
+    <div className="relative h-dvh bg-paper">
       <div className="w-full h-dvh flex flex-col overflow-hidden lg:flex-row">
           <SideNav active={activeTab} userName={session.name} onChange={(t) => navigate(t)} onFab={() => setFabOpen(true)} onProfile={() => { navigate("more"); setSubScreen("profile"); }} />
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <OfflineBanner />
-          <div className="flex-1 overflow-hidden relative">
+          <div className="relative min-h-0 flex-1 overflow-hidden">
             <div className={`h-full w-full lg:mx-auto ${subScreen === null ? "lg:max-w-[1180px]" : "lg:max-w-[820px] lg:mx-0"}`}>
             {subScreen === "taskDetail"    && <TaskDetailScreen onBack={goBack} taskId={selectedTaskId} />}
             {subScreen === "subjectDetail" && <SubjectDetailScreen onBack={goBack} onGrades={() => setSubScreen("grades")} />}
@@ -87,8 +87,8 @@ export default function App() {
 
             {subScreen === null && (
               <>
-                {activeTab === "home"       && <HomeScreen userName={session.name} onTaskTap={openTaskDetail} onHabits={() => { navigate("more"); setSubScreen("habits"); }} onFab={() => setFabOpen(true)} onViewTasks={() => navigate("tasks")} onConfigureProfile={() => { navigate("more"); setSubScreen("profile"); }} onAgenda={() => navigate("agenda")} refreshTick={tasksRefreshTick} />}
-                {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
+                {activeTab === "home"       && <HomeScreen userName={session.name} onTaskTap={openTaskDetail} onHabits={() => { navigate("more"); setSubScreen("habits"); }} onFab={() => setFabOpen(true)} onViewTasks={() => navigate("tasks")} onConfigureProfile={() => { navigate("more"); setSubScreen("profile"); }} onAgenda={() => navigate("agenda")} />}
+                {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} />}
                 {activeTab === "agenda"     && <AgendaScreen onFab={() => setFabOpen(true)} />}
                 {activeTab === "university" && <UniversityScreen onSubjectTap={() => setSubScreen("subjectDetail")} />}
                 {activeTab === "more"       && <MoreScreen onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
@@ -97,7 +97,6 @@ export default function App() {
 
             </div>
 
-            <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} />
             {showWelcome && (
               <WelcomeOnboarding
                 name={session.name}
@@ -114,6 +113,8 @@ export default function App() {
           )}
           </div>
       </div>
+      {/* Fuera del área de contenido: el sheet y su velo cubren también la barra inferior. */}
+      <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} />
     </div>
   );
 }
