@@ -1,30 +1,170 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap');
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow/600.css';
+@import '@fontsource/barlow/700.css';
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
 @import 'tailwindcss';
 
+/*
+ * MyOrbit: la carrera como una red de rutas.
+ * Cada categoría es una línea de color, cada entrega una estación.
+ * Los tokens cambian con el tema; las clases usan los nombres semánticos.
+ */
 @theme {
-  --color-night: #101828;
-  --color-coral: #FF6B4A;
-  --color-coral-light: #FF8B6E;
-  --color-surface: #FFFFFF;
-  --color-bg: #F7F8FA;
-  --color-text-primary: #172033;
-  --color-text-secondary: #667085;
-  --color-border: #E4E7EC;
-  --color-muted: #F2F4F7;
-  --color-indigo: #1D3461;
-  --color-success: #12B76A;
-  --color-warning: #F79009;
-  --color-info: #2E90FA;
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'Barlow', system-ui, sans-serif;
+  --font-display: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
+
+  /* Curvas con carácter: las integradas son demasiado débiles. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --color-paper: #eef1f6;
+  --color-card: #ffffff;
+  --color-wash: #e6eaf1;
+  --color-line: #d7dde8;
+  --color-line-strong: #b4bdce;
+  --color-ink: #121a2b;
+  --color-ink-2: #465066;
+  --color-ink-3: #5c667b;
+  --color-strong: #121a2b;
+  --color-on-strong: #ffffff;
+  --color-night: #0e1626;
+  --color-navy: #1d3461;
+
+  --color-coral: #ff6b4a;
+  --color-coral-ink: #c23a1d;
+  --color-coral-wash: #ffe9e3;
+  --color-blue: #2e90fa;
+  --color-blue-ink: #1262b3;
+  --color-blue-wash: #e1f0ff;
+  --color-green: #12b76a;
+  --color-green-ink: #067647;
+  --color-green-wash: #dcf5e8;
+  --color-amber: #f79009;
+  --color-amber-ink: #a8470a;
+  --color-amber-wash: #fff0d1;
+  --color-violet: #7a5af8;
+  --color-violet-ink: #5a3de0;
+  --color-violet-wash: #ece8ff;
+  --color-danger: #b42318;
+  --color-danger-line: #f1948a;
+  --color-danger-wash: #fde8e6;
+}
+
+/* Tema oscuro: por preferencia del sistema o forzado con data-theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-paper: #0a111f;
+    --color-card: #111a2d;
+    --color-wash: #18233a;
+    --color-line: #243250;
+    --color-line-strong: #3a4a6c;
+    --color-ink: #e9edf6;
+    --color-ink-2: #aab4c8;
+    --color-ink-3: #8c98b0;
+    --color-strong: #e9edf6;
+    --color-on-strong: #0a111f;
+    --color-night: #060b15;
+    --color-navy: #2a4a86;
+    --color-coral: #ff7a5c;
+    --color-coral-ink: #ff9f88;
+    --color-coral-wash: #3a1d19;
+    --color-blue: #4da3ff;
+    --color-blue-ink: #86bfff;
+    --color-blue-wash: #15283f;
+    --color-green: #2fd085;
+    --color-green-ink: #5ee0a3;
+    --color-green-wash: #12301f;
+    --color-amber: #ffa62b;
+    --color-amber-ink: #ffc267;
+    --color-amber-wash: #38280d;
+    --color-violet: #9a80ff;
+    --color-violet-ink: #b8a6ff;
+    --color-violet-wash: #231d44;
+    --color-danger: #ff7b6b;
+    --color-danger-line: #a8453b;
+    --color-danger-wash: #3a1b1a;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-paper: #0a111f;
+  --color-card: #111a2d;
+  --color-wash: #18233a;
+  --color-line: #243250;
+  --color-line-strong: #3a4a6c;
+  --color-ink: #e9edf6;
+  --color-ink-2: #aab4c8;
+  --color-ink-3: #8c98b0;
+  --color-strong: #e9edf6;
+  --color-on-strong: #0a111f;
+  --color-night: #060b15;
+  --color-navy: #2a4a86;
+  --color-coral: #ff7a5c;
+  --color-coral-ink: #ff9f88;
+  --color-coral-wash: #3a1d19;
+  --color-blue: #4da3ff;
+  --color-blue-ink: #86bfff;
+  --color-blue-wash: #15283f;
+  --color-green: #2fd085;
+  --color-green-ink: #5ee0a3;
+  --color-green-wash: #12301f;
+  --color-amber: #ffa62b;
+  --color-amber-ink: #ffc267;
+  --color-amber-wash: #38280d;
+  --color-violet: #9a80ff;
+  --color-violet-ink: #b8a6ff;
+  --color-violet-wash: #231d44;
+  --color-danger: #ff7b6b;
+  --color-danger-line: #a8453b;
+  --color-danger-wash: #3a1b1a;
 }
 
 html, body, #root {
   height: 100%;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--color-coral);
+  color: #fff;
+}
+
+/* Foco visible con el mismo lenguaje que la línea: anillo coral con separación. */
+:focus-visible {
+  outline: 2px solid var(--color-coral);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+input, select, textarea {
+  caret-color: var(--color-coral);
+  font-family: inherit;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-ink-3);
+  opacity: 0.8;
+}
+
+/* Cifras de horario: condensadas y tabulares, como un tablero de salidas. */
+.num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
 ::-webkit-scrollbar { display: none; }
@@ -32,3 +172,48 @@ html, body { scrollbar-width: none; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Entradas: ease-out fuerte, nada nace desde scale(0). */
+@keyframes orbit-sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes orbit-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes orbit-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes orbit-pulse { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(2.6); opacity: 0; } }
+
+.orbit-sheet { animation: orbit-sheet-in 320ms var(--ease-drawer); }
+.orbit-scrim { animation: orbit-scrim-in 200ms var(--ease-out); }
+/* Salida más rápida que la entrada: el sistema responde, no hace esperar. */
+.orbit-sheet[data-closing] { animation: orbit-sheet-out 200ms var(--ease-out) forwards; }
+.orbit-scrim[data-closing] { animation: orbit-scrim-out 200ms var(--ease-out) forwards; }
+@keyframes orbit-sheet-out { to { transform: translateY(100%); } }
+@keyframes orbit-scrim-out { to { opacity: 0; } }
+.orbit-rise { animation: orbit-rise 320ms cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+.orbit-pulse { animation: orbit-pulse 2.2s cubic-bezier(0.23, 1, 0.32, 1) infinite; }
+
+/* Respuesta táctil: todo lo pulsable cede un poco al presionar (baja especificidad, lo pisa cualquier utilidad). */
+:where(button, [role='button']) {
+  transition-property: transform, background-color, border-color, color, opacity;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
+}
+:where(button, [role='button']):active:not(:disabled) { transform: scale(0.97); }
+
+/* iOS amplía la página al enfocar campos menores de 16px. */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* En escritorio el panel es un diálogo centrado: entra con fundido y escala suave, nunca desde cero. */
+@media (min-width: 1024px) {
+  @keyframes orbit-dialog-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  @keyframes orbit-dialog-out { to { opacity: 0; transform: scale(0.97); } }
+  .orbit-sheet { animation: orbit-dialog-in 200ms var(--ease-out); }
+  .orbit-sheet[data-closing] { animation: orbit-dialog-out 150ms var(--ease-out) forwards; }
+}

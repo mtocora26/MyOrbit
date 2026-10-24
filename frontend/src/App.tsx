@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import HomeScreen from "./screens/HomeScreen";
 import TasksScreen from "./screens/TasksScreen";
 import AgendaScreen from "./screens/AgendaScreen";
 import UniversityScreen from "./screens/UniversityScreen";
 import MoreScreen from "./screens/MoreScreen";
 import BottomNav from "./components/BottomNav";
+import SideNav from "./components/SideNav";
 import OfflineBanner from "./components/OfflineBanner";
 import TaskDetailScreen from "./screens/TaskDetailScreen";
 import SubjectDetailScreen from "./screens/SubjectDetailScreen";
@@ -16,7 +17,7 @@ import AdminScreen from "./screens/AdminScreen";
 import QuickAddSheet from "./components/QuickAddSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
-import { getSession, logout, type AuthSession } from "./services/authApi";
+import { getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
 export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "radar" | "profile" | "admin";
@@ -24,6 +25,11 @@ export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habi
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getSession());
   const [showWelcome, setShowWelcome] = useState(false);
+
+  // Al abrir la app se confirma la sesión y se trae el rol actual (también invalida sesiones desactivadas).
+  useEffect(() => {
+    refreshSession().then((fresh) => setSession(fresh)).catch(() => undefined);
+  }, []);
   const [activeTab, setActiveTab] = useState<MainTab>("home");
   const [subScreen, setSubScreen] = useState<SubScreen>(null);
   const [fabOpen, setFabOpen] = useState(false);
@@ -64,10 +70,13 @@ export default function App() {
   }
 
   return (
-    <div className="h-dvh bg-[#F7F8FA]">
-      <div className="w-full h-dvh flex flex-col overflow-hidden lg:max-w-[1200px] lg:mx-auto lg:border-x lg:border-[#E4E7EC]">
+    <div className="h-dvh bg-paper">
+      <div className="w-full h-dvh flex flex-col overflow-hidden lg:flex-row">
+          <SideNav active={activeTab} userName={session.name} onChange={(t) => navigate(t)} onFab={() => setFabOpen(true)} onProfile={() => { navigate("more"); setSubScreen("profile"); }} />
+          <div className="flex min-w-0 flex-1 flex-col">
           <OfflineBanner />
           <div className="flex-1 overflow-hidden relative">
+            <div className={`h-full w-full lg:mx-auto ${subScreen === null ? "lg:max-w-[1180px]" : "lg:max-w-[820px] lg:mx-0"}`}>
             {subScreen === "taskDetail"    && <TaskDetailScreen onBack={goBack} taskId={selectedTaskId} />}
             {subScreen === "subjectDetail" && <SubjectDetailScreen onBack={goBack} onGrades={() => setSubScreen("grades")} />}
             {subScreen === "grades"        && <GradesScreen onBack={() => setSubScreen("subjectDetail")} />}
@@ -82,9 +91,11 @@ export default function App() {
                 {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "agenda"     && <AgendaScreen onFab={() => setFabOpen(true)} />}
                 {activeTab === "university" && <UniversityScreen onSubjectTap={() => setSubScreen("subjectDetail")} />}
-                {activeTab === "more"       && <MoreScreen onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onAdmin={() => setSubScreen("admin")} />}
+                {activeTab === "more"       && <MoreScreen onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
               </>
             )}
+
+            </div>
 
             <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} />
             {showWelcome && (
@@ -101,6 +112,7 @@ export default function App() {
           {subScreen === null && (
             <BottomNav active={activeTab} onChange={(t) => navigate(t)} onFab={() => setFabOpen(true)} />
           )}
+          </div>
       </div>
     </div>
   );

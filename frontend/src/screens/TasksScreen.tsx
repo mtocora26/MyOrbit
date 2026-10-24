@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, CategoryPicker, Checkbox, ProgressBar, EmptyState } from "../components/shared";
+import { CategoryBadge, CategoryPicker, Checkbox, PriorityDot, ProgressBar, EmptyState, Station } from "../components/shared";
 import { IconCalendar, IconChecklist } from "../components/icons";
 import { createTask, deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { todayInputValue, toTaskDue, isOverdue } from "../services/taskDue";
@@ -7,7 +7,7 @@ import { createCategory, fetchCategories, type Category } from "../services/cate
 
 interface Props { onTaskTap: (taskId: string) => void; onFab: () => void; refreshTick: number; }
 
-const PRIORITY_COLOR = { alta: "#FF6B4A", media: "#F79009", baja: "#12B76A" };
+const PRIORITY_COLOR = { alta: "var(--color-coral)", media: "var(--color-amber)", baja: "var(--color-green)" };
 const STATUS_COLUMNS = [
   { id: "pendientes", label: "Pendientes" },
   { id: "completadas", label: "Completadas" },
@@ -165,21 +165,22 @@ export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
   }
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-[#F7F8FA]">
-      <div className="px-5 pt-4 pb-0 bg-white flex-shrink-0" style={{ boxShadow: "0 1px 0 #F2F4F7" }}>
+    <div className="h-full min-h-0 flex flex-col bg-paper">
+      <div className="px-4 pt-5 pb-0 bg-paper flex-shrink-0 border-b border-line lg:px-8 lg:pt-8">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-[20px] font-extrabold text-[#172033]">Tareas</h1>
+          <h1 className="font-display text-[34px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Tareas</h1>
           <button
             onClick={() => setView(view === "lista" ? "tablero" : "lista")}
             title={view === "lista" ? "Ver como tablero" : "Ver como lista"}
-            className="w-9 h-9 rounded-full bg-[#F7F8FA] flex items-center justify-center"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md active:bg-wash"
+            aria-label="Cambiar vista"
           >
             {view === "lista" ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="2" strokeLinecap="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-2)" strokeWidth="2" strokeLinecap="round">
                 <path d="M4 6h16M4 12h10M4 18h6" />
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="2" strokeLinecap="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-2)" strokeWidth="2" strokeLinecap="round">
                 <rect x="4" y="4" width="4" height="16" rx="1" /><rect x="10" y="4" width="4" height="10" rx="1" /><rect x="16" y="4" width="4" height="13" rx="1" />
               </svg>
             )}
@@ -190,8 +191,9 @@ export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className="flex-shrink-0 px-4 py-1.5 rounded-full text-[12px] font-bold transition-all"
-              style={{ background: filter === f ? "#101828" : "#F2F4F7", color: filter === f ? "white" : "#667085" }}
+              aria-pressed={filter === f}
+              className="flex-shrink-0 min-h-[40px] rounded-md px-4 text-[14px] font-semibold transition-colors duration-150"
+              style={{ background: filter === f ? "var(--color-strong)" : "var(--color-wash)", color: filter === f ? "var(--color-on-strong)" : "var(--color-ink-2)" }}
             >
               {f === "todas" ? "Todas" : f === "hoy" ? "Hoy" : "Esta semana"}
             </button>
@@ -199,60 +201,53 @@ export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
           {view === "tablero" && (
             <button
               onClick={() => setGroupBy(groupBy === "estado" ? "categoria" : "estado")}
-              className="ml-auto flex-shrink-0 px-4 py-1.5 rounded-full text-[12px] font-bold bg-[#F4F3FF] text-[#7A5AF8]"
+              className="ml-auto flex-shrink-0 min-h-[40px] rounded-md bg-wash px-4 text-[14px] font-semibold text-ink-2"
             >
               Agrupar: {groupBy === "estado" ? "Estado" : "Categoría"}
             </button>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2 pb-3">
+        <div className="grid grid-cols-2 gap-2 pb-3 lg:max-w-[560px]">
           <input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleCreateTask(); }}
             placeholder="Nueva tarea"
-            className="col-span-2 rounded-xl border border-[#E4E7EC] bg-[#F7F8FA] px-3 py-2 text-[13px] outline-none"
+            aria-label="Título de la nueva tarea"
+            className="col-span-2 rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral"
           />
-          <input
-            type="date"
-            value={newDate}
-            onChange={(e) => setNewDate(e.target.value)}
-            aria-label="Fecha límite"
-            className="min-w-0 rounded-xl border border-[#E4E7EC] bg-[#F7F8FA] px-3 py-2 text-[13px] outline-none"
-          />
-          <input
-            type="time"
-            value={newTime}
-            onChange={(e) => setNewTime(e.target.value)}
-            aria-label="Hora límite"
-            className="min-w-0 rounded-xl border border-[#E4E7EC] bg-[#F7F8FA] px-3 py-2 text-[13px] outline-none"
-          />
-          <CategoryPicker categories={categories} value={newTag} onChange={setNewTag} onCreate={handleCreateCategory} className="col-span-2" />
-          <button
-            onClick={handleCreateTask}
-            disabled={saving || !newTitle.trim()}
-            className="col-span-2 rounded-xl px-3 py-2 text-[12px] font-bold text-white disabled:opacity-50"
-            style={{ background: "#FF6B4A" }}
-          >
-            {saving ? "Guardando" : "Agregar"}
-          </button>
+          {newTitle.trim() && (
+            <>
+              <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} aria-label="Fecha límite" className="min-w-0 rounded-md border border-line bg-card px-3 py-2.5 text-[15px] text-ink outline-none focus:border-coral" />
+              <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} aria-label="Hora límite" className="min-w-0 rounded-md border border-line bg-card px-3 py-2.5 text-[15px] text-ink outline-none focus:border-coral" />
+              <CategoryPicker categories={categories} value={newTag} onChange={setNewTag} onCreate={handleCreateCategory} className="col-span-2" />
+              <button
+                onClick={handleCreateTask}
+                disabled={saving}
+                className="col-span-2 min-h-[44px] rounded-md bg-coral px-3 text-[15px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
+              >
+                {saving ? "Guardando" : "Agregar"}
+              </button>
+            </>
+          )}
         </div>
         {error && (
-          <p className="pb-3 text-[12px] font-semibold text-[#B42318]">{error}</p>
+          <p role="alert" className="pb-3 text-[14px] font-semibold text-danger">{error}</p>
         )}
       </div>
 
       {loading ? (
-        <p className="px-4 pt-4 text-[13px] text-[#667085]">Cargando tareas...</p>
+        <p className="px-4 pt-4 text-[13px] text-ink-2">Cargando tareas...</p>
       ) : filteredTasks.length === 0 ? (
         <div className="px-4 pt-4">
           <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" />
         </div>
       ) : view === "lista" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-3 pb-24">
-          {filteredTasks.map((task) => (
-            <TaskCard key={task.id} task={task} categoryColor={colorByCategory.get(task.tag)} onTap={() => onTaskTap(task.id)} onToggle={() => handleToggleTask(task)} onDelete={() => handleDeleteTask(task.id)} onRename={(title) => handleRenameTask(task, title)} />
+        <ol className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 py-4 pb-24 lg:px-8 lg:max-w-[760px]">
+          {filteredTasks.map((task, index) => (
+            <TaskCard key={task.id} last={index === filteredTasks.length - 1} task={task} categoryColor={colorByCategory.get(task.tag)} onTap={() => onTaskTap(task.id)} onToggle={() => handleToggleTask(task)} onDelete={() => handleDeleteTask(task.id)} onRename={(title) => handleRenameTask(task, title)} />
           ))}
-        </div>
+        </ol>
       ) : (
         <TasksBoard tasks={filteredTasks} categories={categories} colorByCategory={colorByCategory} groupBy={groupBy} onTaskTap={onTaskTap} onToggle={handleToggleTask} />
       )}
@@ -260,9 +255,10 @@ export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
   );
 }
 
-function TaskCard({ task, categoryColor, onTap, onToggle, onDelete, onRename }: { task: UiTask; categoryColor?: string; onTap: () => void; onToggle: () => void; onDelete: () => void; onRename: (title: string) => void }) {
+function TaskCard({ task, categoryColor, last, onTap, onToggle, onDelete, onRename }: { task: UiTask; categoryColor?: string; last: boolean; onTap: () => void; onToggle: () => void; onDelete: () => void; onRename: (title: string) => void }) {
   const overdue = !task.done && isOverdue(task.rawDue);
   const subtaskInfo = task.subtasks.length ? getSubtaskProgress(task.subtasks) : null;
+  const color = categoryColor ?? "#FF6B4A";
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(task.label);
 
@@ -272,66 +268,55 @@ function TaskCard({ task, categoryColor, onTap, onToggle, onDelete, onRename }: 
   }
 
   return (
-    <div
-      className="bg-white rounded-2xl overflow-hidden"
-      style={{ boxShadow: overdue ? "0 0 0 1.5px #FDA29B, 0 1px 4px rgba(16,24,40,0.07)" : "0 1px 4px rgba(16,24,40,0.07), 0 0 0 1px rgba(16,24,40,0.04)" }}
-    >
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-start gap-3">
-          <Checkbox checked={task.done} onChange={onToggle} />
-          <div className="flex-1 min-w-0 cursor-pointer" onClick={onTap}>
-            {renaming ? (
-              <input
-                autoFocus
-                value={draftTitle}
-                onClick={(event) => event.stopPropagation()}
-                onChange={(event) => setDraftTitle(event.target.value)}
-                onBlur={commitRename}
-                onKeyDown={(event) => { if (event.key === "Enter") commitRename(); if (event.key === "Escape") { setDraftTitle(task.label); setRenaming(false); } }}
-                className="w-full rounded-lg border border-[#FF6B4A] bg-white px-2 py-1 text-[14px] font-bold text-[#172033] outline-none"
-              />
-            ) : (
-              <p
-                onClick={(event) => event.stopPropagation()}
-                onDoubleClick={() => { setDraftTitle(task.label); setRenaming(true); }}
-                title="Doble clic para renombrar"
-                className={`text-[14px] font-bold leading-snug ${task.done ? "line-through text-[#D0D5DD]" : "text-[#172033]"}`}
-              >
-                {task.label}
-              </p>
-            )}
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <div className={`flex items-center gap-1 ${overdue ? "text-[#B42318] font-bold" : "text-[#94A3B8]"}`}>
-                <IconCalendar size={11} color={overdue ? "#B42318" : "#94A3B8"} strokeWidth={2} />
-                <span className="text-[11px]">{task.due}</span>
-              </div>
-              {overdue && <span className="rounded-full bg-[#FEF3F2] px-2 py-0.5 text-[10px] font-bold text-[#B42318]">Vencida</span>}
-              <CategoryBadge name={task.tag} color={categoryColor} />
-              {subtaskInfo && (
-                <div className="flex items-center gap-1 rounded-full bg-[#F2F4F7] px-2 py-0.5 text-[#667085]">
-                  <IconChecklist size={11} color="#667085" />
-                  <span className="text-[10px] font-bold">{subtaskInfo.completed}/{subtaskInfo.total}</span>
-                </div>
-              )}
-              <div className="w-2 h-2 rounded-full" style={{ background: PRIORITY_COLOR[task.priority] }} />
-            </div>
-          </div>
-          <button
-            onClick={onDelete}
-            className="flex-shrink-0 w-7 h-7 rounded-full bg-[#F7F8FA] flex items-center justify-center"
-            title="Eliminar tarea"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M6 7h12M9 7V5h6v2M9 10v7M12 10v7M15 10v7" />
-            </svg>
-          </button>
-        </div>
-        <div className="mt-3 flex items-center gap-2">
-          <ProgressBar value={task.subtasks.length ? getSubtaskProgress(task.subtasks).percentage : task.done ? 100 : 0} color={PRIORITY_COLOR[task.priority]} height={4} />
-          <span className="text-[11px] font-bold text-[#94A3B8] flex-shrink-0 tabular-nums">{task.subtasks.length ? `${getSubtaskProgress(task.subtasks).completed}/${getSubtaskProgress(task.subtasks).total}` : task.done ? "100%" : "0%"}</span>
-        </div>
+    <li className="relative flex gap-3">
+      {/* Riel: la tarea es una estación en la línea de su categoría */}
+      <div className="relative flex w-7 flex-shrink-0 justify-center">
+        {!last && <span className="absolute left-1/2 top-[30px] bottom-0 w-[3px] -translate-x-1/2" style={{ background: color, opacity: overdue ? 0.45 : 1 }} />}
+        <Station color={color} done={task.done} overdue={overdue} onToggle={onToggle} label={task.done ? "Marcar como pendiente" : "Marcar como hecha"} />
       </div>
-    </div>
+      <div className="mb-2 flex min-w-0 flex-1 items-start gap-2 border-b border-line pb-3">
+        <div className="min-w-0 flex-1 cursor-pointer pt-2" onClick={onTap}>
+          {renaming ? (
+            <input
+              autoFocus
+              value={draftTitle}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => setDraftTitle(event.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(event) => { if (event.key === "Enter") commitRename(); if (event.key === "Escape") { setDraftTitle(task.label); setRenaming(false); } }}
+              className="w-full rounded-md border border-coral bg-card px-2 py-1 text-[16px] font-semibold text-ink outline-none"
+            />
+          ) : (
+            <p
+              onClick={(event) => event.stopPropagation()}
+              onDoubleClick={() => { setDraftTitle(task.label); setRenaming(true); }}
+              title="Doble clic para renombrar"
+              className={`text-[16px] font-semibold leading-snug ${task.done ? "line-through text-ink-3" : "text-ink"}`}
+            >
+              {task.label}
+            </p>
+          )}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className={`num text-[16px] font-semibold ${overdue ? "text-danger" : "text-ink-2"}`}>{task.due}</span>
+            {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
+            <CategoryBadge name={task.tag} color={categoryColor} />
+            {subtaskInfo && <span className="num text-[14px] font-semibold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total} pasos</span>}
+            <PriorityDot level={task.priority} />
+          </div>
+          {subtaskInfo && <div className="mt-2.5"><ProgressBar value={subtaskInfo.percentage} color={color} height={4} /></div>}
+        </div>
+        <button
+          onClick={onDelete}
+          className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-3 transition-colors hover:text-danger active:bg-wash"
+          title="Eliminar tarea"
+          aria-label="Eliminar tarea"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 7h12M9 7V5h6v2M9 10v7M12 10v7M15 10v7" />
+          </svg>
+        </button>
+      </div>
+    </li>
   );
 }
 
@@ -341,7 +326,7 @@ function TasksBoard({ tasks, categories, colorByCategory, groupBy, onTaskTap, on
       return STATUS_COLUMNS.map((column) => ({
         id: column.id,
         label: column.label,
-        color: column.id === "completadas" ? "#12B76A" : "#FF6B4A",
+        color: column.id === "completadas" ? "var(--color-green)" : "var(--color-coral)",
         tasks: tasks.filter((task) => (column.id === "completadas") === task.done),
       }));
     }
@@ -349,24 +334,24 @@ function TasksBoard({ tasks, categories, colorByCategory, groupBy, onTaskTap, on
     return names.map((name) => ({
       id: name,
       label: name,
-      color: colorByCategory.get(name) ?? "#667085",
+      color: colorByCategory.get(name) ?? "var(--color-ink-2)",
       tasks: tasks.filter((task) => task.tag === name),
     }));
   }, [tasks, categories, colorByCategory, groupBy]);
 
   return (
-    <div className="min-h-0 flex-1 overflow-x-auto no-scrollbar px-4 py-4">
+    <div className="min-h-0 flex-1 overflow-x-auto no-scrollbar px-4 py-4 lg:px-8">
       <div className="flex h-full gap-3 pb-24" style={{ minWidth: "max-content" }}>
         {columns.map((column) => (
-          <div key={column.id} className="flex w-64 flex-shrink-0 flex-col rounded-2xl bg-[#F2F4F7]/60 p-2">
+          <div key={column.id} className="flex w-64 flex-shrink-0 flex-col rounded-md bg-wash p-2">
             <div className="flex items-center gap-2 px-2 py-1.5">
               <span className="h-2 w-2 rounded-full" style={{ background: column.color }} />
-              <p className="text-[12px] font-bold text-[#344054]">{column.label}</p>
-              <span className="ml-auto text-[11px] font-bold text-[#98A2B3]">{column.tasks.length}</span>
+              <p className="text-[13px] font-bold text-ink">{column.label}</p>
+              <span className="ml-auto text-[13px] font-bold text-ink-3">{column.tasks.length}</span>
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto no-scrollbar px-1 pb-2">
               {column.tasks.length === 0 ? (
-                <p className="px-2 py-3 text-[11px] text-[#98A2B3]">Sin tareas aquí</p>
+                <p className="px-2 py-3 text-[13px] text-ink-3">Sin tareas aquí</p>
               ) : column.tasks.map((task) => {
                 const overdue = !task.done && isOverdue(task.rawDue);
                 const subtaskInfo = task.subtasks.length ? getSubtaskProgress(task.subtasks) : null;
@@ -374,17 +359,17 @@ function TasksBoard({ tasks, categories, colorByCategory, groupBy, onTaskTap, on
                   <div
                     key={task.id}
                     onClick={() => onTaskTap(task.id)}
-                    className="cursor-pointer rounded-xl bg-white p-3"
-                    style={{ boxShadow: overdue ? "0 0 0 1.5px #FDA29B" : "0 1px 3px rgba(16,24,40,0.08)" }}
+                    className="cursor-pointer rounded-md bg-card p-3"
+                    style={{ boxShadow: overdue ? "0 0 0 1.5px var(--color-danger-line)" : "0 0 0 1px var(--color-line)" }}
                   >
                     <div className="flex items-start gap-2">
                       <Checkbox checked={task.done} onChange={() => onToggle(task)} />
-                      <p className={`min-w-0 flex-1 text-[12.5px] font-semibold leading-snug ${task.done ? "text-[#D0D5DD] line-through" : "text-[#172033]"}`}>{task.label}</p>
+                      <p className={`min-w-0 flex-1 text-[14px] font-semibold leading-snug ${task.done ? "text-ink-3 line-through" : "text-ink"}`}>{task.label}</p>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <CategoryBadge name={task.tag} color={colorByCategory.get(task.tag)} />
-                      {overdue && <span className="rounded-full bg-[#FEF3F2] px-1.5 py-0.5 text-[9px] font-bold text-[#B42318]">Vencida</span>}
-                      {subtaskInfo && <span className="text-[10px] font-bold text-[#667085]">{subtaskInfo.completed}/{subtaskInfo.total}</span>}
+                      {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
+                      {subtaskInfo && <span className="text-[13px] font-bold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total}</span>}
                     </div>
                   </div>
                 );

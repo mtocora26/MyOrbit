@@ -27,14 +27,14 @@ const CHART = [
 
 export default function GradesScreen({ onBack }: Props) {
   return (
-    <div className="h-full flex flex-col bg-[#F7F8FA]">
+    <div className="h-full flex flex-col bg-paper">
       <ScreenHeader title="Notas y metas" subtitle="Análisis Numérico" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-1 pb-8 flex flex-col gap-4">
         {/* Goal hero */}
         <div
-          className="rounded-3xl p-5 relative overflow-hidden"
-          style={{ background: "linear-gradient(150deg, #101828 0%, #1D3461 100%)" }}
+          className="rounded-lg p-5 relative overflow-hidden"
+          style={{ background: "var(--color-night)" }}
         >
           <svg className="absolute top-0 right-0 opacity-10" width="120" height="100" viewBox="0 0 120 100">
             <ellipse cx="80" cy="50" rx="75" ry="40" fill="none" stroke="white" strokeWidth="1.5" />
@@ -42,124 +42,124 @@ export default function GradesScreen({ onBack }: Props) {
             <circle cx="115" cy="15" r="5" fill="white" />
           </svg>
 
-          <p className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider relative z-10">Proyección académica</p>
+          <p className="font-display text-[18px] text-ink-2 font-semibold relative z-10">Proyección académica</p>
           <div className="flex items-end gap-5 mt-3 relative z-10">
             <div>
               <div className="flex items-center gap-1.5 mb-1">
-                <IconTrendUp size={14} color="#94A3BF" />
-                <p className="text-[10px] text-[#64748B] font-medium">Actual</p>
+                <IconTrendUp size={14} color="var(--color-ink-3)" />
+                <p className="text-[13px] text-ink-3 font-medium">Actual</p>
               </div>
-              <p className="text-[32px] font-extrabold text-white leading-none">{AVG}</p>
+              <p className="text-[32px] font-bold text-white leading-none">{AVG}</p>
             </div>
             <svg width="20" height="16" viewBox="0 0 20 16" fill="none" className="mb-1">
-              <path d="M1 8h17M13 2l6 6-6 6" stroke="#4A5568" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M1 8h17M13 2l6 6-6 6" stroke="var(--color-ink-2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div>
               <div className="flex items-center gap-1.5 mb-1">
-                <IconTarget size={14} color="#FF6B4A" />
-                <p className="text-[10px] text-[#64748B] font-medium">Meta</p>
+                <IconTarget size={14} color="var(--color-coral)" />
+                <p className="text-[13px] text-ink-3 font-medium">Meta</p>
               </div>
-              <p className="text-[32px] font-extrabold text-[#FF6B4A] leading-none">{GOAL}</p>
+              <p className="text-[32px] font-bold text-coral-ink leading-none">{GOAL}</p>
             </div>
           </div>
 
-          <div className="mt-4 bg-white/[0.08] border border-white/10 rounded-2xl p-3 relative z-10">
+          <div className="mt-4 bg-white/[0.08] border border-white/10 rounded-lg p-3 relative z-10">
             <p className="text-[13px] text-white font-semibold leading-relaxed">
               Necesitas aproximadamente{" "}
-              <span className="text-[#FF6B4A] font-extrabold">{NEEDED}</span>{" "}
+              <span className="text-coral-ink font-bold">{NEEDED}</span>{" "}
               en los próximos cortes para alcanzar tu meta de {GOAL}.
             </p>
           </div>
         </div>
 
         {/* Bar chart */}
-        <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 4px rgba(16,24,40,0.07), 0 0 0 1px rgba(16,24,40,0.04)" }}>
-          <p className="text-[14px] font-bold text-[#172033] mb-4">Progreso por corte</p>
+        <div className="bg-card rounded-lg p-4">
+          <p className="text-[14px] font-bold text-ink mb-4">Progreso por corte</p>
           <div className="flex items-end gap-3" style={{ height: 110 }}>
             {CHART.map((b) => {
               const h = Math.round((b.val / 5) * 85);
               return (
                 <div key={b.label} className="flex-1 flex flex-col items-center gap-1.5">
-                  <span className="text-[12px] font-extrabold tabular-nums" style={{ color: b.done ? "#7A5AF8" : "#FF6B4A" }}>
+                  <span className="text-[13px] font-bold tabular-nums" style={{ color: b.done ? "var(--color-violet)" : "var(--color-coral)" }}>
                     {b.val.toFixed(1)}
                   </span>
-                  <div className="w-full relative rounded-t-xl overflow-hidden" style={{ height: 85, background: "#F7F8FA" }}>
+                  <div className="w-full relative rounded-t-xl overflow-hidden" style={{ height: 85, background: "var(--color-paper)" }}>
                     <div
                       className="absolute bottom-0 left-0 right-0 rounded-t-xl"
                       style={{
                         height: h,
                         background: b.done
-                          ? "linear-gradient(180deg, #7A5AF8 0%, #9E8AF5 100%)"
-                          : "repeating-linear-gradient(135deg, rgba(255,107,74,0.15), rgba(255,107,74,0.15) 4px, rgba(255,107,74,0.3) 4px, rgba(255,107,74,0.3) 8px)",
-                        border: b.done ? "none" : "1.5px dashed #FF6B4A",
+                          ? "var(--color-violet)"
+                          : "var(--color-coral-wash)",
+                        border: b.done ? "none" : "1.5px dashed var(--color-coral)",
                       }}
                     />
                   </div>
-                  <span className="text-[11px] font-semibold text-[#94A3B8]">{b.label}</span>
+                  <span className="text-[13px] font-semibold text-ink-3">{b.label}</span>
                 </div>
               );
             })}
           </div>
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#F7F8FA]">
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-paper">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-[#7A5AF8]" />
-              <span className="text-[11px] text-[#94A3B8]">Obtenida</span>
+              <div className="w-3 h-3 rounded-sm bg-violet" />
+              <span className="text-[13px] text-ink-3">Obtenida</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm border border-dashed border-[#FF6B4A]" style={{ background: "rgba(255,107,74,0.15)" }} />
-              <span className="text-[11px] text-[#94A3B8]">Necesaria (proyección)</span>
+              <div className="w-3 h-3 rounded-sm border border-dashed border-coral" style={{ background: "rgba(255,107,74,0.15)" }} />
+              <span className="text-[13px] text-ink-3">Necesaria (proyección)</span>
             </div>
           </div>
         </div>
 
         {/* Cortes */}
-        <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 4px rgba(16,24,40,0.07), 0 0 0 1px rgba(16,24,40,0.04)" }}>
-          <p className="text-[14px] font-bold text-[#172033] mb-3">Notas por corte</p>
+        <div className="bg-card rounded-lg p-4">
+          <p className="text-[14px] font-bold text-ink mb-3">Notas por corte</p>
           {CORTES.map((c) => (
             <div key={c.name} className="mb-3.5 last:mb-0">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ background: c.done ? "#7A5AF8" : "#E4E7EC" }} />
-                  <span className="text-[13px] font-semibold text-[#172033]">{c.name}</span>
-                  <span className="text-[11px] text-[#94A3B8]">{c.pct}%</span>
+                  <div className="w-2 h-2 rounded-full" style={{ background: c.done ? "var(--color-violet)" : "var(--color-line)" }} />
+                  <span className="text-[13px] font-semibold text-ink">{c.name}</span>
+                  <span className="text-[13px] text-ink-3">{c.pct}%</span>
                 </div>
                 {c.done && c.nota !== null
-                  ? <span className="text-[15px] font-extrabold text-[#172033] tabular-nums">{c.nota}</span>
-                  : <span className="text-[13px] font-bold text-[#FF6B4A] tabular-nums">{NEEDED} *</span>
+                  ? <span className="text-[15px] font-bold text-ink tabular-nums">{c.nota}</span>
+                  : <span className="text-[13px] font-bold text-coral-ink tabular-nums">{NEEDED} *</span>
                 }
               </div>
               <ProgressBar
                 value={c.done && c.nota ? (c.nota / 5) * 100 : (NEEDED / 5) * 100}
-                color={c.done ? "#7A5AF8" : "#FF6B4A"}
+                color={c.done ? "var(--color-violet)" : "var(--color-coral)"}
                 height={6}
-                bg={c.done ? "#F4F3FF" : "#FFF0EC"}
+                bg={c.done ? "var(--color-violet-wash)" : "var(--color-coral-wash)"}
               />
             </div>
           ))}
-          <p className="text-[10px] text-[#D0D5DD] mt-3">* Nota mínima estimada para alcanzar la meta</p>
+          <p className="text-[13px] text-ink-3 mt-3">* Nota mínima estimada para alcanzar la meta</p>
         </div>
 
         {/* Weighted avg */}
-        <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 4px rgba(16,24,40,0.07), 0 0 0 1px rgba(16,24,40,0.04)" }}>
-          <p className="text-[14px] font-bold text-[#172033] mb-3">Promedio semestral ponderado</p>
+        <div className="bg-card rounded-lg p-4">
+          <p className="text-[14px] font-bold text-ink mb-3">Promedio semestral ponderado</p>
           {WEIGHTED.map((r) => (
-            <div key={r.sub} className="flex items-center justify-between py-2.5 border-b border-[#F7F8FA] last:border-0">
+            <div key={r.sub} className="flex items-center justify-between py-2.5 border-b border-paper last:border-0">
               <div>
-                <p className="text-[13px] font-semibold text-[#172033]">{r.sub}</p>
-                <p className="text-[11px] text-[#94A3B8]">{r.credits} créditos</p>
+                <p className="text-[13px] font-semibold text-ink">{r.sub}</p>
+                <p className="text-[13px] text-ink-3">{r.credits} créditos</p>
               </div>
               <div className="text-right">
-                <p className="text-[14px] font-extrabold text-[#172033] tabular-nums">{r.avg}</p>
-                <p className="text-[11px] text-[#94A3B8] tabular-nums">× {r.credits} = {(r.avg * r.credits).toFixed(1)}</p>
+                <p className="text-[14px] font-bold text-ink tabular-nums">{r.avg}</p>
+                <p className="text-[13px] text-ink-3 tabular-nums">× {r.credits} = {(r.avg * r.credits).toFixed(1)}</p>
               </div>
             </div>
           ))}
-          <div className="flex items-center justify-between pt-3 mt-1 border-t-2 border-[#E4E7EC]">
+          <div className="flex items-center justify-between pt-3 mt-1 border-t-2 border-line">
             <div className="flex items-center gap-1.5">
-              <IconTrendUp size={16} color="#FF6B4A" />
-              <span className="text-[14px] font-bold text-[#172033]">Promedio ponderado</span>
+              <IconTrendUp size={16} color="var(--color-coral)" />
+              <span className="text-[14px] font-bold text-ink">Promedio ponderado</span>
             </div>
-            <span className="text-[22px] font-extrabold text-[#FF6B4A] tabular-nums">4.35</span>
+            <span className="text-[22px] font-bold text-coral-ink tabular-nums">4.35</span>
           </div>
         </div>
       </div>

@@ -1,4 +1,10 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
+
+/*
+ * Lenguaje de ruta: paneles planos separados por líneas finas, estaciones
+ * (puntos) para el estado, códigos de línea cuadrados para las categorías.
+ * Sin sombras ni degradados. El estado siempre lleva forma además de color.
+ */
 
 // ─── Screen Header ────────────────────────────────────────────────────────────
 interface ScreenHeaderProps {
@@ -8,27 +14,28 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   bg?: string;
 }
-export function ScreenHeader({ title, subtitle, onBack, right, bg = "#FFFFFF" }: ScreenHeaderProps) {
+export function ScreenHeader({ title, subtitle, onBack, right, bg = "var(--color-paper)" }: ScreenHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ background: bg }}>
-      <div className="flex items-center gap-3">
+    <header className="flex items-center justify-between gap-3 px-4 py-3 flex-shrink-0 border-b border-line lg:px-8" style={{ background: bg }}>
+      <div className="flex min-w-0 items-center gap-3">
         {onBack && (
           <button
             onClick={onBack}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-[#F2F4F7]"
+            aria-label="Volver"
+            className="flex h-11 w-11 -ml-2 flex-shrink-0 items-center justify-center rounded-md text-ink transition-colors active:bg-wash"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#172033" strokeWidth="2.2" strokeLinecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
         )}
-        <div>
-          <h1 className="text-[18px] font-bold text-[#172033] leading-tight">{title}</h1>
-          {subtitle && <p className="text-[12px] text-[#667085] mt-0.5">{subtitle}</p>}
+        <div className="min-w-0">
+          <h1 className="font-display text-[26px] font-semibold leading-none tracking-tight text-ink truncate">{title}</h1>
+          {subtitle && <p className="mt-1 text-[13px] text-ink-2 truncate">{subtitle}</p>}
         </div>
       </div>
-      {right && <div>{right}</div>}
-    </div>
+      {right && <div className="flex-shrink-0">{right}</div>}
+    </header>
   );
 }
 
@@ -37,26 +44,28 @@ type BadgeColor = "coral" | "blue" | "green" | "yellow" | "purple" | "gray" | "n
 interface BadgeProps { label: string; color?: BadgeColor; }
 export function Badge({ label, color = "gray" }: BadgeProps) {
   const map: Record<BadgeColor, string> = {
-    coral:  "bg-[#FFF0EC] text-[#FF6B4A]",
-    blue:   "bg-[#EFF8FF] text-[#2E90FA]",
-    green:  "bg-[#ECFDF3] text-[#12B76A]",
-    yellow: "bg-[#FFFAEB] text-[#F79009]",
-    purple: "bg-[#F4F3FF] text-[#7A5AF8]",
-    gray:   "bg-[#F2F4F7] text-[#667085]",
-    night:  "bg-[#101828] text-white",
+    coral:  "bg-coral-wash text-coral-ink",
+    blue:   "bg-blue-wash text-blue-ink",
+    green:  "bg-green-wash text-green-ink",
+    yellow: "bg-amber-wash text-amber-ink",
+    purple: "bg-violet-wash text-violet-ink",
+    gray:   "bg-wash text-ink-2",
+    night:  "bg-strong text-on-strong",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold leading-none ${map[color]}`}>
+    <span className={`inline-flex items-center rounded-sm px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide ${map[color]}`}>
       {label}
     </span>
   );
 }
 
 // ─── Category Badge & Picker ──────────────────────────────────────────────────
+// La categoría es una línea de la red: cuadrito del color de la línea + nombre.
 export function CategoryBadge({ name, color }: { name: string; color?: string }) {
   const hex = color || "#667085";
   return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold leading-none" style={{ background: `${hex}1A`, color: hex }}>
+    <span className="inline-flex items-center gap-1.5 text-[13px] font-medium leading-none text-ink-2">
+      <span className="h-2.5 w-2.5 flex-shrink-0 rounded-[2px]" style={{ background: hex }} aria-hidden="true" />
       {name}
     </span>
   );
@@ -94,13 +103,15 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
         <div className="flex gap-2">
-          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Nueva categoría" className="min-w-0 flex-1 rounded-xl border border-[#E4E7EC] bg-[#F7F8FA] px-3 py-2 text-[13px] outline-none" />
-          <button type="button" onClick={submit} disabled={!name.trim() || saving} className="rounded-xl bg-[#172033] px-3 text-[12px] font-bold text-white disabled:opacity-50">{saving ? "..." : "Crear"}</button>
-          <button type="button" onClick={() => setCreating(false)} className="rounded-xl bg-[#F2F4F7] px-3 text-[12px] font-bold text-[#667085]">Cancelar</button>
+          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Nueva categoría" className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral" />
+          <button type="button" onClick={submit} disabled={!name.trim() || saving} className="rounded-md bg-strong px-3 text-[13px] font-semibold text-on-strong disabled:opacity-50">{saving ? "..." : "Crear"}</button>
+          <button type="button" onClick={() => setCreating(false)} className="rounded-md bg-wash px-3 text-[13px] font-semibold text-ink-2">Cancelar</button>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1" role="radiogroup" aria-label="Color de la línea">
           {CATEGORY_PALETTE.map((option) => (
-            <button key={option} type="button" onClick={() => setColor(option)} className="h-6 w-6 rounded-full border-2" style={{ background: option, borderColor: color === option ? "#101828" : "transparent" }} />
+            <button key={option} type="button" role="radio" aria-checked={color === option} aria-label={option} onClick={() => setColor(option)} className="flex h-9 w-9 items-center justify-center">
+              <span className="h-6 w-6 rounded-[3px] border-2" style={{ background: option, borderColor: color === option ? "var(--color-ink)" : "transparent" }} />
+            </button>
           ))}
         </div>
       </div>
@@ -109,35 +120,35 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
 
   return (
     <div className={`flex gap-2 ${className}`}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 flex-1 rounded-xl border border-[#E4E7EC] bg-[#F7F8FA] px-3 py-2 text-[13px] text-[#172033] outline-none">
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral">
         {categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}
         {value && !categories.some((category) => category.name === value) && <option value={value}>{value}</option>}
       </select>
-      <button type="button" onClick={() => setCreating(true)} title="Nueva categoría" className="rounded-xl bg-[#F2F4F7] px-3 text-[13px] font-bold text-[#667085]">+</button>
+      <button type="button" onClick={() => setCreating(true)} title="Nueva categoría" aria-label="Nueva categoría" className="w-11 rounded-md bg-wash text-[16px] font-semibold text-ink-2">+</button>
     </div>
   );
 }
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
-export function ProgressBar({ value, color = "#FF6B4A", height = 6, bg = "#F2F4F7" }: { value: number; color?: string; height?: number; bg?: string; }) {
+export function ProgressBar({ value, color = "var(--color-coral)", height = 6, bg = "var(--color-wash)" }: { value: number; color?: string; height?: number; bg?: string; }) {
   return (
-    <div className="w-full rounded-full overflow-hidden" style={{ height, background: bg }}>
-      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(Math.max(value, 0), 100)}%`, background: color }} />
+    <div className="w-full overflow-hidden rounded-[2px]" style={{ height, background: bg }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
+      <div className="h-full rounded-[2px] transition-[width] duration-500 ease-out" style={{ width: `${Math.min(Math.max(value, 0), 100)}%`, background: color }} />
     </div>
   );
 }
 
 // ─── Progress Ring ────────────────────────────────────────────────────────────
-export function ProgressRing({ value, size = 60, stroke = 5, color = "#FF6B4A", trackColor = "#F2F4F7", children }: { value: number; size?: number; stroke?: number; color?: string; trackColor?: string; children?: ReactNode; }) {
+export function ProgressRing({ value, size = 60, stroke = 5, color = "var(--color-coral)", trackColor = "var(--color-wash)", children }: { value: number; size?: number; stroke?: number; color?: string; trackColor?: string; children?: ReactNode; }) {
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ - (Math.min(Math.max(value, 0), 100) / 100) * circ;
   return (
     <div className="relative flex items-center justify-center flex-shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)", position: "absolute" }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)", position: "absolute" }} aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={trackColor} strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+          strokeDasharray={circ} strokeDashoffset={offset} style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.23, 1, 0.32, 1)" }} />
       </svg>
       <div className="relative flex items-center justify-center">{children}</div>
     </div>
@@ -145,12 +156,15 @@ export function ProgressRing({ value, size = 60, stroke = 5, color = "#FF6B4A", 
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
+// Panel plano con línea fina. Si es pulsable, se comporta como botón.
 export function Card({ children, className = "", onClick, padding = "p-4" }: { children: ReactNode; className?: string; onClick?: () => void; padding?: string; }) {
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl ${padding} ${onClick ? "cursor-pointer active:scale-[0.985] transition-transform" : ""} ${className}`}
-      style={{ boxShadow: "0 1px 4px rgba(16,24,40,0.07), 0 0 0 1px rgba(16,24,40,0.04)" }}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+      className={`rounded-md border border-line bg-card ${padding} ${onClick ? "cursor-pointer transition-transform duration-150 ease-out active:scale-[0.985]" : ""} ${className}`}
     >
       {children}
     </div>
@@ -158,18 +172,26 @@ export function Card({ children, className = "", onClick, padding = "p-4" }: { c
 }
 
 // ─── Checkbox ─────────────────────────────────────────────────────────────────
+// Estación: hueca = pendiente, rellena con marca = hecha. Área táctil de 44px.
 export function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => void; }) {
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onChange(); }}
-      className="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200"
-      style={{ borderColor: checked ? "#FF6B4A" : "#D0D5DD", background: checked ? "#FF6B4A" : "transparent" }}
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={checked ? "Marcar como pendiente" : "Marcar como hecha"}
+      className="-m-3 flex h-11 w-11 flex-shrink-0 items-center justify-center"
     >
-      {checked && (
-        <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-          <path d="M1 3.5L3.5 6 8 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
+      <span
+        className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-[2.5px] transition-[background-color,border-color,transform] duration-200 ease-out active:scale-90"
+        style={{ borderColor: checked ? "var(--color-coral)" : "var(--color-line-strong)", background: checked ? "var(--color-coral)" : "var(--color-card)" }}
+      >
+        {checked && (
+          <svg width="10" height="8" viewBox="0 0 9 7" fill="none" aria-hidden="true">
+            <path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
     </button>
   );
 }
@@ -179,12 +201,14 @@ export function Toggle({ on, onChange }: { on: boolean; onChange: () => void; })
   return (
     <button
       onClick={onChange}
-      className="relative w-12 h-6 rounded-full transition-all duration-200 flex-shrink-0"
-      style={{ background: on ? "#FF6B4A" : "#D0D5DD" }}
+      role="switch"
+      aria-checked={on}
+      className="relative h-7 w-12 flex-shrink-0 rounded-[6px] transition-colors duration-200"
+      style={{ background: on ? "var(--color-coral)" : "var(--color-line-strong)" }}
     >
-      <div
-        className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-200"
-        style={{ left: on ? "calc(100% - 22px)" : "2px" }}
+      <span
+        className="absolute top-[3px] h-[22px] w-[22px] rounded-[4px] bg-white transition-[left] duration-200 ease-out"
+        style={{ left: on ? "calc(100% - 25px)" : "3px" }}
       />
     </button>
   );
@@ -195,10 +219,10 @@ export function FAB({ onClick }: { onClick?: () => void; }) {
   return (
     <button
       onClick={onClick}
-      className="absolute bottom-5 right-4 w-14 h-14 rounded-full flex items-center justify-center z-20 transition-transform active:scale-95"
-      style={{ background: "#FF6B4A", boxShadow: "0 8px 28px rgba(255,107,74,0.45), 0 2px 8px rgba(255,107,74,0.3)" }}
+      aria-label="Añadir"
+      className="absolute bottom-5 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-coral text-night transition-transform duration-150 ease-out active:scale-95"
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
         <path d="M12 5v14M5 12h14" />
       </svg>
     </button>
@@ -207,18 +231,36 @@ export function FAB({ onClick }: { onClick?: () => void; }) {
 
 // ─── Bottom Sheet ─────────────────────────────────────────────────────────────
 export function BottomSheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: ReactNode; }) {
-  if (!open) return null;
+  // Se mantiene montado 200 ms tras cerrar para poder animar la salida.
+  const [mounted, setMounted] = useState(open);
+  useEffect(() => {
+    if (open) { setMounted(true); return; }
+    const timer = setTimeout(() => setMounted(false), 200);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!mounted) return null;
   return (
-    <div className="absolute inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(16,24,40,0.5)" }} onClick={onClose}>
+    <div data-closing={open ? undefined : ""} className="orbit-scrim absolute inset-0 z-50 flex flex-col justify-end bg-night/60 lg:items-center lg:justify-center" onClick={onClose}>
       <div
-        className="bg-white rounded-t-[28px] px-5 pt-4 pb-8"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        data-closing={open ? undefined : ""}
+        className="orbit-sheet max-h-[92%] w-full overflow-y-auto rounded-t-lg border-t border-line bg-card px-5 pt-3 pb-8 lg:max-w-[480px] lg:rounded-lg lg:border lg:pb-6"
         onClick={(e) => e.stopPropagation()}
-        style={{ boxShadow: "0 -8px 40px rgba(16,24,40,0.15)" }}
       >
-        <div className="flex justify-center mb-4">
-          <div className="w-10 h-1 rounded-full bg-[#E4E7EC]" />
+        <div className="mb-4 flex justify-center">
+          <div className="h-1 w-10 rounded-full bg-line-strong" />
         </div>
-        {title && <p className="text-[17px] font-bold text-[#172033] mb-4">{title}</p>}
+        {title && <p className="mb-4 font-display text-[24px] font-semibold leading-none text-ink">{title}</p>}
         {children}
       </div>
     </div>
@@ -226,24 +268,20 @@ export function BottomSheet({ open, onClose, title, children }: { open: boolean;
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
-export function EmptyState({ icon, title, sub, action, onAction }: { icon: string; title: string; sub?: string; action?: string; onAction?: () => void; }) {
+// Una línea sin estaciones todavía: el vacío se dibuja, no se rellena con emoji.
+export function EmptyState({ title, sub, action, onAction }: { icon?: string; title: string; sub?: string; action?: string; onAction?: () => void; }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <div className="relative mb-4">
-        <div className="w-20 h-20 rounded-full bg-[#F2F4F7] flex items-center justify-center text-[36px]">{icon}</div>
-        <svg className="absolute inset-0 w-20 h-20 opacity-20" viewBox="0 0 80 80">
-          <ellipse cx="40" cy="40" rx="36" ry="20" fill="none" stroke="#101828" strokeWidth="1.5" strokeDasharray="4 3" />
-          <circle cx="76" cy="30" r="3" fill="#FF6B4A" opacity="0.6" />
-          <circle cx="10" cy="52" r="2" fill="#2E90FA" opacity="0.6" />
-        </svg>
-      </div>
-      <p className="text-[16px] font-bold text-[#172033] mb-1">{title}</p>
-      {sub && <p className="text-[13px] text-[#667085] leading-relaxed">{sub}</p>}
+      <svg width="148" height="36" viewBox="0 0 148 36" fill="none" aria-hidden="true" className="mb-5">
+        <path d="M6 18h136" stroke="var(--color-line-strong)" strokeWidth="3" strokeLinecap="round" strokeDasharray="2 9" />
+        <circle cx="74" cy="18" r="9" fill="var(--color-card)" stroke="var(--color-coral)" strokeWidth="3" />
+      </svg>
+      <p className="font-display text-[22px] font-semibold leading-none text-ink">{title}</p>
+      {sub && <p className="mt-2 max-w-[28ch] text-[14px] leading-snug text-ink-2">{sub}</p>}
       {action && onAction && (
         <button
           onClick={onAction}
-          className="mt-4 px-6 py-2.5 rounded-2xl text-[14px] font-bold text-white"
-          style={{ background: "#FF6B4A" }}
+          className="mt-5 rounded-md bg-coral px-5 py-3 text-[15px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]"
         >
           {action}
         </button>
@@ -254,54 +292,87 @@ export function EmptyState({ icon, title, sub, action, onAction }: { icon: strin
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 export function Skeleton({ className = "" }: { className?: string; }) {
-  return <div className={`bg-[#F2F4F7] rounded-xl animate-pulse ${className}`} />;
+  return <div className={`bg-wash rounded-sm animate-pulse ${className}`} />;
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
 export function SectionTitle({ label, action, onAction }: { label: string; action?: string; onAction?: () => void; }) {
   return (
-    <div className="flex items-center justify-between mb-3">
-      <p className="text-[15px] font-bold text-[#172033]">{label}</p>
+    <div className="mb-2 flex items-center justify-between">
+      <h2 className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">{label}</h2>
       {action && (
-        <button onClick={onAction} className="text-[13px] font-semibold text-[#FF6B4A]">{action}</button>
+        <button onClick={onAction} className="-mr-2 flex h-11 items-center px-2 text-[14px] font-semibold text-coral-ink">{action}</button>
       )}
     </div>
   );
 }
 
 // ─── Input Field ──────────────────────────────────────────────────────────────
-export function InputField({ label, placeholder, value, onChange, type = "text" }: { label?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; type?: string; }) {
+export function InputField({ label, placeholder, value, onChange, type = "text", autoFocus }: { label?: string; placeholder?: string; value?: string; onChange?: (v: string) => void; type?: string; autoFocus?: boolean; }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      {label && <p className="text-[13px] font-semibold text-[#172033]">{label}</p>}
-      <div className="flex items-center bg-[#F7F8FA] border border-[#E4E7EC] rounded-xl px-3 py-3 gap-2 focus-within:border-[#FF6B4A] transition-colors">
+    <label className="flex flex-col gap-1.5">
+      {label && <span className="text-[14px] font-semibold text-ink">{label}</span>}
+      <span className="flex items-center rounded-md border border-line bg-card px-3 py-3 transition-colors focus-within:border-coral">
         <input
           type={type}
+          autoFocus={autoFocus}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="flex-1 bg-transparent text-[14px] text-[#172033] placeholder-[#D0D5DD] outline-none"
+          className="flex-1 bg-transparent text-[16px] text-ink outline-none"
         />
-      </div>
-    </div>
+      </span>
+    </label>
   );
 }
 
-// ─── Priority Pill ────────────────────────────────────────────────────────────
+// ─── Priority ─────────────────────────────────────────────────────────────────
+// Tres marcas de altura creciente: la prioridad se lee por cantidad, no solo por color.
+const PRIORITY = {
+  alta:  { n: 3, color: "var(--color-coral)", label: "Prioridad alta" },
+  media: { n: 2, color: "var(--color-amber)", label: "Prioridad media" },
+  baja:  { n: 1, color: "var(--color-green)", label: "Prioridad baja" },
+} as const;
 export function PriorityDot({ level }: { level: "alta" | "media" | "baja"; }) {
-  const color = { alta: "#FF6B4A", media: "#F79009", baja: "#12B76A" }[level];
-  return <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />;
+  const p = PRIORITY[level];
+  return (
+    <span className="flex h-3.5 flex-shrink-0 items-end gap-[2px]" role="img" aria-label={p.label}>
+      {[1, 2, 3].map((i) => (
+        <span key={i} className="w-[3px] rounded-[1px]" style={{ height: 4 + i * 3, background: i <= p.n ? p.color : "var(--color-line-strong)" }} />
+      ))}
+    </span>
+  );
 }
 
 // ─── Orbit Decoration SVG ─────────────────────────────────────────────────────
-export function OrbitDecor({ className = "", opacity = 0.12 }: { className?: string; opacity?: number; }) {
+// La órbita como trazado de ruta: una elipse fina con estaciones.
+export function OrbitDecor({ className = "", opacity = 0.35 }: { className?: string; opacity?: number; }) {
   return (
-    <svg className={`pointer-events-none select-none ${className}`} width="180" height="120" viewBox="0 0 180 120" style={{ opacity }}>
-      <ellipse cx="120" cy="60" rx="100" ry="45" fill="none" stroke="white" strokeWidth="1.2" />
-      <ellipse cx="60" cy="60" rx="55" ry="25" fill="none" stroke="white" strokeWidth="0.8" />
-      <circle cx="215" cy="30" r="5" fill="white" />
-      <circle cx="25" cy="90" r="3" fill="white" />
-      <circle cx="170" cy="95" r="2" fill="white" opacity="0.5" />
+    <svg className={`pointer-events-none select-none ${className}`} width="180" height="120" viewBox="0 0 180 120" style={{ opacity }} aria-hidden="true">
+      <ellipse cx="120" cy="60" rx="100" ry="45" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <ellipse cx="60" cy="60" rx="55" ry="25" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="2 6" />
+      <circle cx="164" cy="38" r="5" fill="var(--color-coral)" />
+      <circle cx="25" cy="90" r="3.5" fill="var(--color-blue)" />
+      <circle cx="100" cy="104" r="3" fill="var(--color-amber)" />
     </svg>
+  );
+}
+
+// ─── Station ──────────────────────────────────────────────────────────────────
+// Parada de una línea: hueca = pendiente, rellena = hecha, discontinua = vencida.
+export function Station({ color, done, overdue, onToggle, label }: { color: string; done: boolean; overdue?: boolean; onToggle: () => void; label: string; }) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      role="checkbox"
+      aria-checked={done}
+      aria-label={label}
+      className="relative z-10 flex h-11 w-11 items-center justify-center self-start"
+    >
+      <span
+        className="block h-[20px] w-[20px] rounded-full border-[3px] transition-[background-color] duration-150 ease-out"
+        style={{ borderColor: color, borderStyle: overdue && !done ? "dashed" : "solid", background: done ? color : "var(--color-paper)" }}
+      />
+    </button>
   );
 }
