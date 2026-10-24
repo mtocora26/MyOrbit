@@ -1,5 +1,6 @@
 package com.app.myorbit.tasks.api;
 
+import com.app.myorbit.tasks.domain.Priority;
 import com.app.myorbit.tasks.domain.Subtask;
 import com.app.myorbit.tasks.domain.Task;
 import org.junit.jupiter.api.Test;
@@ -22,14 +23,14 @@ class TaskResponseTest {
         task.setId("t1");
         task.setUserId("u1");
         task.setTitle("Tarea");
-        task.setPriority("alta");
+        task.setPriority(Priority.HIGH);
         task.setDone(true);
         task.getSubtasks().add(parent);
 
         TaskResponse response = TaskResponse.from(task);
 
         assertEquals("t1", response.id());
-        assertEquals("alta", response.priority());
+        assertEquals(Priority.HIGH, response.priority());
         assertTrue(response.done());
         assertEquals("Padre", response.subtasks().get(0).title());
         assertEquals("2026-10-20", response.subtasks().get(0).due());

@@ -12,7 +12,7 @@ public class Habit {
     private String id;
     private String userId;
     private String title;
-    private String frequency;
+    private HabitFrequency frequency;
     private List<Integer> daysOfWeek = new ArrayList<>();
     private String color;
     private String icon;
@@ -24,8 +24,8 @@ public class Habit {
     public void setUserId(String userId) { this.userId = userId; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
-    public String getFrequency() { return frequency; }
-    public void setFrequency(String frequency) { this.frequency = frequency; }
+    public HabitFrequency getFrequency() { return frequency; }
+    public void setFrequency(HabitFrequency frequency) { this.frequency = frequency; }
     public List<Integer> getDaysOfWeek() { return daysOfWeek; }
     public void setDaysOfWeek(List<Integer> daysOfWeek) { this.daysOfWeek = daysOfWeek == null ? new ArrayList<>() : daysOfWeek; }
     public String getColor() { return color; }

@@ -14,7 +14,7 @@ public class Task {
     private String userId;
     private String title;
     private String due;
-    private String priority;
+    private Priority priority;
     private String tag;
     private boolean done;
     private List<Subtask> subtasks = new ArrayList<>();
@@ -51,11 +51,11 @@ public class Task {
         this.due = due;
     }
 
-    public String getPriority() {
+    public Priority getPriority() {
         return priority;
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(Priority priority) {
         this.priority = priority;
     }
 
