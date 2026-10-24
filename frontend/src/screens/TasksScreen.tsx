@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, CategoryPicker, Checkbox, PriorityDot, ProgressBar, EmptyState, Station } from "../components/shared";
+import { CategoryBadge, Checkbox, PriorityDot, ProgressBar, EmptyState, Station } from "../components/shared";
 import { IconCalendar, IconChecklist } from "../components/icons";
-import { createTask, deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
-import { todayInputValue, toTaskDue, isOverdue } from "../services/taskDue";
-import { createCategory, fetchCategories, type Category } from "../services/categoriesApi";
+import { deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
+import { isOverdue } from "../services/taskDue";
+import { fetchCategories, type Category } from "../services/categoriesApi";
 
 interface Props { onTaskTap: (taskId: string) => void; onFab: () => void; refreshTick: number; }
 
@@ -47,16 +47,11 @@ function isThisWeekDue(due: string): boolean {
   return parsed >= startOfWeek && parsed < endOfWeek;
 }
 
-export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
+export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   const [tasks, setTasks] = useState<UiTask[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [newTitle, setNewTitle] = useState("");
-  const [newDate, setNewDate] = useState(todayInputValue);
-  const [newTime, setNewTime] = useState("23:59");
-  const [newTag, setNewTag] = useState("Personal");
   const [filter, setFilter] = useState<"todas" | "hoy" | "semana">("todas");
   const [view, setView] = useState<"lista" | "tablero">("lista");
   const [groupBy, setGroupBy] = useState<"estado" | "categoria">("estado");
@@ -134,41 +129,11 @@ export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
     }
   }
 
-  async function handleCreateCategory(name: string, color: string) {
-    const category = await createCategory(name, color);
-    setCategories((current) => [...current, category]);
-    setNewTag(category.name);
-  }
-
-  async function handleCreateTask() {
-    const title = newTitle.trim();
-    if (!title || saving) return;
-
-    try {
-      setSaving(true);
-      setError(null);
-      await createTask({
-        title,
-        due: toTaskDue(newDate, newTime),
-        priority: "media",
-        tag: newTag,
-      });
-      setNewTitle("");
-      setNewDate(todayInputValue());
-      setNewTime("23:59");
-      await loadTasks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible crear la tarea");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <div className="h-full min-h-0 flex flex-col bg-paper">
-      <div className="px-4 pt-5 pb-0 bg-paper flex-shrink-0 border-b border-line lg:px-8 lg:pt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="font-display text-[34px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Tareas</h1>
+      <div className="px-4 pt-3 pb-0 bg-paper flex-shrink-0 border-b border-line lg:px-8 lg:pt-8">
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Tareas</h1>
           <button
             onClick={() => setView(view === "lista" ? "tablero" : "lista")}
             title={view === "lista" ? "Ver como tablero" : "Ver como lista"}
@@ -203,32 +168,8 @@ export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
               onClick={() => setGroupBy(groupBy === "estado" ? "categoria" : "estado")}
               className="ml-auto flex-shrink-0 min-h-[40px] rounded-md bg-wash px-4 text-[14px] font-semibold text-ink-2"
             >
-              Agrupar: {groupBy === "estado" ? "Estado" : "Categoría"}
+              {groupBy === "estado" ? "Por estado" : "Por línea"}
             </button>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-2 pb-3 lg:max-w-[560px]">
-          <input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleCreateTask(); }}
-            placeholder="Nueva tarea"
-            aria-label="Título de la nueva tarea"
-            className="col-span-2 rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral"
-          />
-          {newTitle.trim() && (
-            <>
-              <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} aria-label="Fecha límite" className="min-w-0 rounded-md border border-line bg-card px-3 py-2.5 text-[15px] text-ink outline-none focus:border-coral" />
-              <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} aria-label="Hora límite" className="min-w-0 rounded-md border border-line bg-card px-3 py-2.5 text-[15px] text-ink outline-none focus:border-coral" />
-              <CategoryPicker categories={categories} value={newTag} onChange={setNewTag} onCreate={handleCreateCategory} className="col-span-2" />
-              <button
-                onClick={handleCreateTask}
-                disabled={saving}
-                className="col-span-2 min-h-[44px] rounded-md bg-coral px-3 text-[15px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
-              >
-                {saving ? "Guardando" : "Agregar"}
-              </button>
-            </>
           )}
         </div>
         {error && (
@@ -240,7 +181,7 @@ export default function TasksScreen({ onTaskTap, refreshTick }: Props) {
         <p className="px-4 pt-4 text-[13px] text-ink-2">Cargando tareas...</p>
       ) : filteredTasks.length === 0 ? (
         <div className="px-4 pt-4">
-          <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" />
+          <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" onAction={onFab} />
         </div>
       ) : view === "lista" ? (
         <ol className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 py-4 pb-24 lg:px-8 lg:max-w-[760px]">
