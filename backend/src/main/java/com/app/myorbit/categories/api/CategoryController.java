@@ -1,5 +1,6 @@
 package com.app.myorbit.categories.api;
 
+import jakarta.validation.Valid;
 import com.app.myorbit.categories.application.CategoryService;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
@@ -31,7 +32,7 @@ public class CategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CategoryResponse create(@RequestBody CreateCategoryRequest request, @CurrentUser User user) {
+    public CategoryResponse create(@Valid @RequestBody CreateCategoryRequest request, @CurrentUser User user) {
         return CategoryResponse.from(categoryService.create(user.getId(), request));
     }
 }

@@ -1,5 +1,6 @@
 package com.app.myorbit.users.api;
 
+import jakarta.validation.Valid;
 import com.app.myorbit.users.application.AuthService;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
@@ -24,12 +25,12 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse register(@RequestBody RegisterRequest request) {
+    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody LoginRequest request) {
+    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
