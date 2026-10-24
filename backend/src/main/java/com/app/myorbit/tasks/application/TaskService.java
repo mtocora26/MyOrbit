@@ -38,10 +38,13 @@ public class TaskService {
     }
 
     public Task create(String userId, CreateTaskRequest request) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new BusinessRuleException("El titulo de la tarea es obligatorio");
+        }
         Task task = new Task();
         task.setId(UUID.randomUUID().toString());
         task.setUserId(userId);
-        task.setTitle(request.title());
+        task.setTitle(request.title().trim());
         task.setDue(defaultText(request.due(), "Sin fecha"));
         task.setPriority(request.priority() == null ? Priority.MEDIUM : request.priority());
         task.setTag(defaultText(request.tag(), "Personal"));
@@ -103,7 +106,7 @@ public class TaskService {
     public Task update(String userId, String id, UpdateTaskRequest request) {
         Task task = getOwned(userId, id);
 
-        task.setTitle(defaultText(request.title(), task.getTitle()));
+        task.setTitle(request.title() == null || request.title().isBlank() ? task.getTitle() : request.title().trim());
         task.setDue(defaultText(request.due(), task.getDue()));
         if (request.priority() != null) task.setPriority(request.priority());
         task.setTag(defaultTag(request.tag(), task.getTag()));

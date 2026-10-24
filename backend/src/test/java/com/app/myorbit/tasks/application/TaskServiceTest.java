@@ -3,6 +3,7 @@ package com.app.myorbit.tasks.application;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
+import com.app.myorbit.tasks.api.CreateTaskRequest;
 import com.app.myorbit.tasks.api.UpdateSubtaskStatusRequest;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -88,5 +90,22 @@ class TaskServiceTest {
         when(repository.findById("t1")).thenReturn(Optional.of(taskOf("u1")));
 
         assertThrows(NotFoundException.class, () -> service.deleteSubtask("u1", "t1", "missing"));
+    }
+
+    @Test
+    void createRejectsBlankTitle() {
+        assertThrows(BusinessRuleException.class, () -> service.create("u1", new CreateTaskRequest("   ", null, null, null)));
+        assertThrows(BusinessRuleException.class, () -> service.create("u1", new CreateTaskRequest(null, null, null, null)));
+        verify(repository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void createTrimsTitleAndAppliesDefaults() {
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+
+        Task task = service.create("u1", new CreateTaskRequest("  Estudiar  ", null, null, null));
+
+        assertEquals("Estudiar", task.getTitle());
+        assertEquals(com.app.myorbit.tasks.domain.Priority.MEDIUM, task.getPriority());
     }
 }
