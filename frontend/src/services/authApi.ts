@@ -6,6 +6,7 @@ export interface AuthSession {
   id: string;
   name: string;
   email: string;
+  role?: "USER" | "ADMIN";
 }
 
 const SESSION_KEY = "myorbit.session";
@@ -58,4 +59,20 @@ export async function logout(): Promise<void> {
   } finally {
     clearSession();
   }
+}
+
+/** Actualiza el rol de la sesión guardada (cuentas anteriores a la gestión de usuarios no lo traen). */
+export async function refreshSession(): Promise<AuthSession | null> {
+  const session = getSession();
+  if (!session) return null;
+  const response = await fetch(`${API_BASE_URL}/api/auth/me`, { headers: authHeaders() });
+  if (response.status === 401) {
+    clearSession();
+    return null;
+  }
+  if (!response.ok) return session;
+  const me = await response.json() as AuthSession;
+  const next = { ...session, name: me.name, email: me.email, role: me.role };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+  return next;
 }

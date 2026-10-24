@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Card, CategoryBadge, Checkbox, ProgressBar, ProgressRing, SectionTitle, OrbitDecor } from "../components/shared";
-import {
-  IconPencil, IconCalendar, IconBell, IconTarget,
-  IconGraduation,
-} from "../components/icons";
+import ThemeToggle from "../components/ThemeToggle";
+import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 import { fetchCategories, type Category } from "../services/categoriesApi";
-import { isOverdue } from "../services/taskDue";
+import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, type Habit } from "../services/habitsApi";
+import { fromTaskDue, isOverdue } from "../services/taskDue";
 
 interface Props {
   userName: string;
@@ -20,28 +18,10 @@ interface Props {
   refreshTick: number;
 }
 
-const QuickAction = ({ icon, label, bg, onClick }: { icon: React.ReactNode; label: string; bg: string; onClick?: () => void }) => (
-  <button
-    onClick={onClick}
-    className="flex flex-col items-center gap-2 rounded-2xl py-3.5 active:scale-95 transition-transform"
-    style={{ background: bg }}
-  >
-    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.7)" }}>
-      {icon}
-    </div>
-    <span className="text-[11px] font-semibold text-[#667085]">{label}</span>
-  </button>
-);
-
-const PRIORITY_COLOR = { alta: "#FF6B4A", media: "#F79009", baja: "#12B76A" };
+const MAX_STATIONS = 5;
 
 function currentDateLabel(): string {
-  const formatted = new Intl.DateTimeFormat("es-CO", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date());
+  const formatted = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
   return formatted.charAt(0).toUpperCase() + formatted.slice(1).replace(" de ", " · ");
 }
 
@@ -52,11 +32,20 @@ function greeting(): string {
   return "Buenas noches";
 }
 
+function dueTimestamp(task: UiTask): number {
+  const { date, time } = fromTaskDue(task.rawDue);
+  return date ? new Date(`${date}T${time || "23:59"}`).getTime() : Number.MAX_SAFE_INTEGER;
+}
+
 export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onViewTasks, onConfigureProfile, onAgenda, refreshTick }: Props) {
   const [tasks, setTasks] = useState<UiTask[]>([]);
+  const [loading, setLoading] = useState(true);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  // Estaciones recién completadas: se quedan un instante, tachadas, antes de salir de la línea.
+  const [leaving, setLeaving] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setCategories([]));
@@ -73,34 +62,42 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
           setTaskError(null);
         }
       } catch (err) {
-        if (!ignore) {
-          setTaskError(err instanceof Error ? err.message : "No fue posible cargar las tareas");
-        }
+        if (!ignore) setTaskError(err instanceof Error ? err.message : "No fue posible cargar las tareas");
+      } finally {
+        if (!ignore) setLoading(false);
       }
     }
 
     loadTasks();
     fetchUserProfile().then((data) => { if (!ignore) setProfile(data); }).catch(() => { if (!ignore) setProfile(null); });
+    fetchHabits().then((data) => { if (!ignore) setHabits(data); }).catch(() => { if (!ignore) setHabits([]); });
     return () => { ignore = true; };
   }, [refreshTick]);
 
-  const priorityTasks = useMemo(
-    () => [...tasks].filter((task) => !task.done).sort((a, b) => {
-      const weight = { alta: 0, media: 1, baja: 2 };
-      return weight[a.priority] - weight[b.priority];
-    }).slice(0, 3),
-    [tasks],
+  const stations = useMemo(
+    () => tasks.filter((task) => !task.done || leaving.has(task.id)).sort((a, b) => dueTimestamp(a) - dueTimestamp(b)).slice(0, MAX_STATIONS),
+    [tasks, leaving],
   );
+  const overdueCount = useMemo(() => tasks.filter((task) => !task.done && isOverdue(task.rawDue)).length, [tasks]);
 
   const completedTasks = tasks.filter((task) => task.done).length;
   const pendingTasks = tasks.length - completedTasks;
   const taskProgress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
-  const dateLabel = currentDateLabel();
-  const salutation = greeting();
+
+  const weekday = (new Date().getDay() + 6) % 7 + 1;
+  const todayHabits = habits.filter((habit) => habit.daysOfWeek.includes(weekday));
+  const habitsDone = todayHabits.filter((habit) => habit.completedDates.includes(todayKey())).length;
 
   async function toggleTask(task: UiTask) {
     const previousTasks = tasks;
     setTasks(tasks.map((item) => item.id === task.id ? { ...item, done: !item.done } : item));
+    if (!task.done) {
+      navigator.vibrate?.(8);
+      setLeaving((current) => new Set(current).add(task.id));
+      setTimeout(() => setLeaving((current) => { const next = new Set(current); next.delete(task.id); return next; }), 900);
+    } else {
+      setLeaving((current) => { const next = new Set(current); next.delete(task.id); return next; });
+    }
 
     try {
       await updateTaskStatus(task.id, !task.done);
@@ -110,147 +107,202 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
     }
   }
 
+  async function toggleHabit(habit: Habit) {
+    const completed = habit.completedDates.includes(todayKey());
+    const previous = habits;
+    setHabits(habits.map((item) => item.id === habit.id
+      ? { ...item, completedDates: completed ? item.completedDates.filter((d) => d !== todayKey()) : [...item.completedDates, todayKey()] }
+      : item));
+    try {
+      const updated = await updateHabitCompletion(habit.id, !completed);
+      setHabits((current) => current.map((item) => item.id === habit.id ? updated : item));
+    } catch {
+      setHabits(previous);
+    }
+  }
+
+  const colorOf = (task: UiTask) => categories.find((category) => category.name === task.tag)?.color ?? "#FF6B4A";
+
   return (
-    <div className="h-full overflow-y-auto no-scrollbar bg-[#F7F8FA]">
-      {/* Hero */}
-      <div
-        className="relative px-5 pt-2 pb-7 overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #101828 0%, #1D3461 100%)", borderRadius: "0 0 28px 28px" }}
-      >
-        <OrbitDecor className="absolute top-0 right-0" />
-        <p className="text-[12px] text-[#94A3BF] font-medium relative z-10">{dateLabel}</p>
-        <h2 className="text-[24px] font-extrabold text-white mt-0.5 relative z-10 leading-tight">{salutation}, {userName}</h2>
-
-        {/* Day summary */}
-        <div className="bg-white/[0.08] border border-white/10 rounded-2xl px-4 py-3 mt-4 relative z-10">
-          <p className="text-[11px] text-[#64748B] font-semibold uppercase tracking-wider mb-2">Tu órbita de hoy</p>
-          <div className="flex gap-4">
-            {[
-              { n: String(tasks.length), label: "tareas", color: "#FF6B4A" },
-              { n: String(pendingTasks), label: "pendientes", color: "#F79009" },
-              { n: String(completedTasks), label: "completadas", color: "#12B76A" },
-              { n: String(priorityTasks.length), label: "prioritarias", color: "#7A5AF8" },
-            ].map((item) => (
-              <div key={item.label} className="flex flex-col items-center gap-0.5">
-                <span className="text-[20px] font-extrabold text-white leading-none">{item.n}</span>
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: item.color }} />
-                  <span className="text-[10px] text-[#94A3BF] font-medium">{item.label}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+    <div className="h-full overflow-y-auto no-scrollbar bg-paper">
+      <header className="px-4 pt-5 pb-4 lg:px-8 lg:pt-8 lg:pb-6">
+        <div className="flex items-start justify-between gap-2">
+          <h1 className="font-display text-[34px] font-semibold leading-[1.02] tracking-tight text-ink lg:text-[44px]">
+            {greeting()}, {userName}
+          </h1>
+          <ThemeToggle className="-mr-2 -mt-1 flex-shrink-0 lg:hidden" />
         </div>
+        <p className="mt-1.5 text-[15px] text-ink-2">{currentDateLabel()}</p>
+        <div className="mt-4 flex items-center gap-3">
+          <div className="flex-1"><ProgressBar value={taskProgress} height={4} /></div>
+          <p className="num whitespace-nowrap text-[15px] font-medium text-ink-2">
+            {completedTasks}/{tasks.length} hechas
+          </p>
+        </div>
+        <p className="mt-2 text-[14px] text-ink-2">
+          {tasks.length === 0
+            ? "Todavía no hay tareas en tu red."
+            : overdueCount > 0
+              ? `${overdueCount} ${overdueCount === 1 ? "estación vencida" : "estaciones vencidas"}, ${pendingTasks - overdueCount} por llegar.`
+              : `${pendingTasks} ${pendingTasks === 1 ? "estación por llegar" : "estaciones por llegar"}. Vas a tiempo.`}
+        </p>
+      </header>
 
-        {/* Progress */}
-        <div className="mt-4 flex items-center gap-4 relative z-10">
-          <ProgressRing value={taskProgress} size={66} stroke={5} color="#FF6B4A" trackColor="rgba(255,255,255,0.12)">
-            <span className="text-[13px] font-bold text-white">{taskProgress}%</span>
-          </ProgressRing>
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[13px] font-semibold text-white">Progreso del día</p>
-              <span className="text-[12px] text-[#94A3BF]">{completedTasks}/{tasks.length}</span>
+      <div className="flex flex-col gap-7 px-4 pb-8 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10 lg:px-8 lg:pb-12">
+        {/* Línea del día */}
+        <section aria-label="Próximas entregas">
+          <SectionTitle label="Próximas estaciones" action="Ver todas" onAction={onViewTasks} />
+
+          {taskError && <p role="alert" className="rounded-md border border-danger-line bg-danger-wash px-3 py-2 text-[14px] font-medium text-danger">{taskError}</p>}
+
+          {loading && !taskError ? (
+            <div className="flex flex-col gap-2" aria-busy="true">
+              {[0, 1, 2].map((i) => <div key={i} className="h-[68px] animate-pulse rounded-md bg-wash" />)}
             </div>
-            <ProgressBar value={taskProgress} color="#FF6B4A" height={5} bg="rgba(255,255,255,0.12)" />
-            <p className="text-[11px] text-[#64748B] mt-1">{completedTasks} de {tasks.length} tareas completadas</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 pt-4 pb-24 flex flex-col gap-5">
-        {/* Quick actions */}
-        <div className="grid grid-cols-4 gap-2">
-          <QuickAction icon={<IconPencil size={18} color="#FF6B4A" />} label="Tarea" bg="#FFF0EC" onClick={onFab} />
-          <QuickAction icon={<IconCalendar size={18} color="#2E90FA" />} label="Evento" bg="#EFF8FF" onClick={onAgenda} />
-          <QuickAction icon={<IconBell size={18} color="#F79009" />} label="Recordatorio" bg="#FFFAEB" />
-          <QuickAction icon={<IconTarget size={18} color="#7A5AF8" />} label="Hábito" bg="#F4F3FF" />
-        </div>
-
-        {/* Empty setup states until their modules have user data */}
-        <div className="flex gap-3">
-          <Card className="flex-1" onClick={onAgenda}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#F4F3FF" }}>
-                <IconCalendar size={16} color="#2E90FA" />
+          ) : !taskError && stations.length === 0 ? (
+            <div className="rounded-md border border-dashed border-line-strong px-4 py-6 text-center">
+              <p className="font-display text-[22px] font-semibold leading-none text-ink">Línea despejada</p>
+              <p className="mt-2 text-[14px] text-ink-2">No hay entregas pendientes. Planea tu semana o agrega algo nuevo.</p>
+              <div className="mt-4 flex justify-center gap-2">
+                <button onClick={onFab} className="rounded-md bg-coral px-4 py-2.5 text-[14px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]">Nueva tarea</button>
+                <button onClick={onAgenda} className="rounded-md border border-line-strong px-4 py-2.5 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Abrir agenda</button>
               </div>
-            </div>
-            <p className="text-[13px] font-bold text-[#172033] leading-snug">Planea tu semana</p>
-            <p className="text-[11px] text-[#667085] mt-0.5">Agrega tu primer evento.</p>
-          </Card>
-
-          <Card className="flex-1" onClick={onHabits}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#EFF8FF" }}>
-                <IconTarget size={16} color="#7A5AF8" />
-              </div>
-            </div>
-            <p className="text-[13px] font-bold text-[#172033] leading-snug">Crea una rutina</p>
-            <p className="text-[11px] text-[#667085] mt-0.5">Configura tu primer hábito.</p>
-          </Card>
-        </div>
-
-        {/* Priority tasks */}
-        <div>
-          <SectionTitle label="Tareas prioritarias" action="Ver todas" onAction={onViewTasks} />
-          <div className="flex flex-col gap-2">
-            {taskError ? <p className="text-[12px] font-semibold text-[#B42318]">{taskError}</p> : priorityTasks.length === 0 ? (
-              <p className="text-[13px] text-[#667085]">No hay tareas pendientes.</p>
-            ) : priorityTasks.map((task) => {
-              const overdue = isOverdue(task.rawDue);
-              return (
-                <div
-                  key={task.id}
-                  onClick={() => onTaskTap(task.id)}
-                  className="bg-white rounded-2xl px-4 py-3 flex items-start gap-3 cursor-pointer active:scale-[0.985] transition-transform"
-                  style={{ boxShadow: overdue ? "0 0 0 1.5px #FDA29B, 0 1px 4px rgba(16,24,40,0.07)" : "0 1px 4px rgba(16,24,40,0.07), 0 0 0 1px rgba(16,24,40,0.04)" }}
-                >
-                  <Checkbox checked={task.done} onChange={() => toggleTask(task)} />
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-[14px] font-semibold leading-snug ${task.done ? "line-through text-[#D0D5DD]" : "text-[#172033]"}`}>
-                      {task.label}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <div className={`flex items-center gap-1 ${overdue ? "text-[#B42318] font-bold" : "text-[#94A3B8]"}`}>
-                        <IconCalendar size={11} color={overdue ? "#B42318" : "#94A3B8"} strokeWidth={2} />
-                        <span className="text-[11px]">{task.due}</span>
-                      </div>
-                      <CategoryBadge name={task.tag} color={categories.find((category) => category.name === task.tag)?.color} />
-                    </div>
-                  </div>
-                  <div className="w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0" style={{ background: PRIORITY_COLOR[task.priority] }} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Habits */}
-        <div>
-          <SectionTitle label="Hábitos de hoy" action="Ver todos" onAction={onHabits} />
-          <Card onClick={onHabits} className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#F4F3FF] flex items-center justify-center"><IconTarget size={19} color="#7A5AF8" /></div>
-            <div className="flex-1"><p className="text-[14px] font-bold text-[#172033]">Todavía no hay hábitos</p><p className="mt-0.5 text-[12px] text-[#667085]">Crea uno pequeño para empezar a medir tu constancia.</p></div>
-            <span className="text-[12px] font-bold text-[#7A5AF8]">Crear</span>
-          </Card>
-        </div>
-
-        <Card>
-          {profile?.program ? (
-            <div>
-              <div className="flex items-center justify-between mb-3"><p className="text-[14px] font-bold text-[#172033]">Resumen académico</p><Badge label={profile.semester || "Configurado"} color="night" /></div>
-              <p className="text-[14px] font-semibold text-[#344054]">{profile.program}</p>
-              <div className="mt-3 flex gap-4"><Metric label="Meta" value={profile.gradeTarget || "-"} color="#12B76A" /><Metric label="Código" value={profile.studentCode || "-"} color="#2E90FA" /></div>
             </div>
           ) : (
-            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-[#EFF8FF] flex items-center justify-center"><IconGraduation size={19} color="#2E90FA" /></div><div className="flex-1"><p className="text-[14px] font-bold text-[#172033]">Crea tu resumen académico</p><p className="mt-0.5 text-[12px] text-[#667085]">Añade programa, semestre y una meta cuando quieras.</p></div><button onClick={onConfigureProfile} className="text-[12px] font-bold text-[#2E90FA]">Configurar</button></div>
+            <ol className="relative">
+              <NowMarker />
+              {stations.map((task, index) => {
+                const overdue = isOverdue(task.rawDue);
+                const color = colorOf(task);
+                const last = index === stations.length - 1;
+                return (
+                  <li key={task.id} className={`orbit-rise relative flex gap-3 transition-opacity duration-300 ease-out ${task.done ? "opacity-50" : ""}`} style={{ ["--i" as string]: index + 1 }}>
+                    {/* Riel: segmento de la línea de esta categoría; discontinuo si está vencida */}
+                    <div className="relative flex w-7 flex-shrink-0 justify-center">
+                      {!last && <span className="absolute left-1/2 top-[30px] bottom-0 w-0 -translate-x-1/2" style={{ borderLeft: `3px ${overdue ? "dashed" : "solid"} ${color}` }} />}
+                      <Station color={color} done={task.done} overdue={overdue} onToggle={() => toggleTask(task)} label={`Marcar “${task.label}” como hecha`} />
+                    </div>
+
+                    <button
+                      onClick={() => onTaskTap(task.id)}
+                      className="mb-1 flex min-w-0 flex-1 items-start gap-3 rounded-md px-1 py-2 text-left transition-colors duration-150 active:bg-wash"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-[16px] font-semibold leading-snug ${task.done ? "text-ink-3 line-through" : "text-ink"}`}>{task.label}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <CategoryBadge name={task.tag} color={color} />
+                          {overdue && <Badge label="Vencida" color="coral" />}
+                        </div>
+                      </div>
+                      <div className="flex flex-shrink-0 flex-col items-end gap-2 pt-0.5">
+                        <span className={`num text-[17px] font-semibold leading-none ${overdue ? "text-danger" : "text-ink"}`}>{task.due}</span>
+                        <PriorityDot level={task.priority} />
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
           )}
-        </Card>
+        </section>
+
+        <div className="flex flex-col gap-7">
+        {/* Línea paralela de hábitos */}
+        <section aria-label="Hábitos de hoy">
+          <SectionTitle label="Hábitos de hoy" action={habits.length ? "Ver todos" : "Crear"} onAction={onHabits} />
+          {todayHabits.length === 0 ? (
+            <button onClick={onHabits} className="w-full rounded-md border border-dashed border-line-strong px-4 py-4 text-left transition-colors duration-150 active:bg-wash">
+              <p className="text-[16px] font-semibold text-ink">{habits.length ? "Hoy no toca ningún hábito" : "Todavía no hay hábitos"}</p>
+              <p className="mt-0.5 text-[14px] text-ink-2">{habits.length ? "Descansa o revisa tu plan semanal." : "Crea uno pequeño y corre junto a tus entregas."}</p>
+            </button>
+          ) : (
+            <div className="rounded-md border border-line bg-card px-3 pt-3 pb-3">
+              <div className="relative">
+                <span className="absolute left-4 right-4 top-[22px] h-[3px] -translate-y-1/2 bg-line-strong" />
+                <ul className="relative flex gap-1 overflow-x-auto no-scrollbar">
+                  {todayHabits.map((habit) => {
+                    const done = habit.completedDates.includes(todayKey());
+                    return (
+                      <li key={habit.id} className="flex w-[76px] flex-shrink-0 flex-col items-center">
+                        <button
+                          onClick={() => toggleHabit(habit)}
+                          role="checkbox"
+                          aria-checked={done}
+                          aria-label={`${habit.title}: ${done ? "desmarcar" : "completar"} hoy`}
+                          className="flex h-11 w-11 items-center justify-center"
+                        >
+                          <span
+                            className="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[3px] transition-[background-color,transform] duration-150 ease-out active:scale-75"
+                            style={{ borderColor: habit.color, background: done ? habit.color : "var(--color-card)" }}
+                          >
+                            {done && <svg width="11" height="9" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                          </span>
+                        </button>
+                        <span className="mt-1 line-clamp-2 text-center text-[13px] font-medium leading-tight text-ink">{habit.title}</span>
+                        <span className="num mt-0.5 text-[13px] text-ink-3">{currentStreak(habit.completedDates)} d</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+              <p className="num mt-2 border-t border-line pt-2 text-[14px] text-ink-2">{habitsDone} de {todayHabits.length} hoy</p>
+            </div>
+          )}
+        </section>
+
+        {/* Resumen académico */}
+        <section aria-label="Resumen académico" className="border-t border-line pt-5">
+          {profile?.program ? (
+            <>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="font-display text-[20px] font-semibold leading-none text-ink">Resumen académico</h2>
+                  <p className="mt-2 text-[15px] text-ink-2">{profile.program}</p>
+                </div>
+                <span className="num text-[15px] font-semibold text-ink-2">{profile.semester || "Configurado"}</span>
+              </div>
+              <dl className="mt-4 flex gap-8">
+                <Metric label="Meta" value={profile.gradeTarget || "-"} />
+                <Metric label="Código" value={profile.studentCode || "-"} />
+              </dl>
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[16px] font-semibold text-ink">Crea tu resumen académico</h2>
+                <p className="mt-0.5 text-[14px] text-ink-2">Añade programa, semestre y una meta cuando quieras.</p>
+              </div>
+              <button onClick={onConfigureProfile} className="flex h-11 items-center rounded-md border border-line-strong px-4 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Configurar</button>
+            </div>
+          )}
+        </section>
+        </div>
       </div>
     </div>
   );
 }
 
-function Metric({ label, value, color }: { label: string; value: string; color: string }) {
-  return <div><p className="text-[11px] font-semibold text-[#98A2B3]">{label}</p><p className="mt-0.5 text-[18px] font-extrabold" style={{ color }}>{value}</p></div>;
+/** Marcador "ahora": la cabecera de la línea, con pulso discreto. */
+function NowMarker() {
+  const time = new Date().toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" });
+  return (
+    <div className="flex items-center gap-3" aria-label={`Ahora, ${time}`}>
+      <div className="relative flex h-8 w-7 flex-shrink-0 items-center justify-center">
+        <span className="absolute left-1/2 top-1/2 bottom-0 w-0 -translate-x-1/2 border-l-[3px] border-coral" />
+        <span className="orbit-pulse absolute h-3 w-3 rounded-full bg-coral" />
+        <span className="relative h-3 w-3 rounded-full bg-coral" />
+      </div>
+      <p className="font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-coral-ink">Ahora</p>
+      <span className="num text-[15px] text-ink-2">{time}</span>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[13px] font-medium text-ink-2">{label}</dt>
+      <dd className="num mt-0.5 text-[24px] font-semibold leading-none text-ink">{value}</dd>
+    </div>
+  );
 }

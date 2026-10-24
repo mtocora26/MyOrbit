@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-17T00:00:00Z",
+  "title": "Design System: MyOrbit",
+  "extensions": {
+    "colorMeta": {
+      "coral": { "role": "primary", "displayName": "Coral Line", "canonical": "#ff6b4a", "tonalRamp": ["#5a1a0d", "#8a2814", "#c23a1d", "#e5532f", "#ff6b4a", "#ff9f88", "#ffc9bb", "#ffe9e3"] },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#eef1f6", "tonalRamp": ["#0a111f", "#111a2d", "#18233a", "#243250", "#b4bdce", "#d7dde8", "#e6eaf1", "#eef1f6"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#121a2b", "tonalRamp": ["#121a2b", "#2a3550", "#465066", "#5c667b", "#8c98b0", "#aab4c8", "#d7dde8", "#e9edf6"] },
+      "blue": { "role": "secondary", "displayName": "Blue Route", "canonical": "#2e90fa", "tonalRamp": ["#0b2f57", "#1262b3", "#2e90fa", "#4da3ff", "#86bfff", "#b6d8ff", "#e1f0ff", "#f2f8ff"] },
+      "green": { "role": "secondary", "displayName": "Green Route", "canonical": "#12b76a", "tonalRamp": ["#053d24", "#067647", "#12b76a", "#2fd085", "#5ee0a3", "#9aeac5", "#dcf5e8", "#f0fbf5"] },
+      "violet": { "role": "secondary", "displayName": "Violet Route", "canonical": "#7a5af8", "tonalRamp": ["#231d44", "#3e2a9e", "#5a3de0", "#7a5af8", "#9a80ff", "#b8a6ff", "#ece8ff", "#f6f4ff"] },
+      "amber": { "role": "secondary", "displayName": "Amber Route", "canonical": "#f79009", "tonalRamp": ["#38280d", "#7a3508", "#a8470a", "#f79009", "#ffa62b", "#ffc267", "#fff0d1", "#fff9ec"] },
+      "danger": { "role": "status", "displayName": "Danger", "canonical": "#b42318", "tonalRamp": ["#3a1b1a", "#7a1810", "#b42318", "#d9534a", "#ff7b6b", "#f1948a", "#fde8e6", "#fff5f4"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Screen titles and big condensed numerals." },
+      "headline": { "displayName": "Headline", "purpose": "Section, sheet and empty-state titles." },
+      "title": { "displayName": "Title", "purpose": "Row titles and button text." },
+      "body": { "displayName": "Body", "purpose": "Descriptions; inputs at 16px." },
+      "label": { "displayName": "Label", "purpose": "Meta and nav labels, 13px floor." },
+      "route-code": { "displayName": "Route Code", "purpose": "Uppercase condensed text in route badges." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Default response curve; entrances, presses, list rise." },
+      { "name": "ease-in-out", "value": "cubic-bezier(0.77, 0, 0.175, 1)", "purpose": "On-screen movement." },
+      { "name": "ease-drawer", "value": "cubic-bezier(0.32, 0.72, 0, 1)", "purpose": "Bottom sheet entrance." },
+      { "name": "sheet-in", "value": "320ms", "purpose": "Sheet entrance duration." },
+      { "name": "sheet-out", "value": "200ms", "purpose": "Sheet and scrim exit; faster than entrance." },
+      { "name": "press", "value": "scale(0.97) over 160ms", "purpose": "Active state for every button and role=button." },
+      { "name": "rise", "value": "320ms, 45ms stagger", "purpose": "List item entrance, 6px translate plus fade." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "All animation and transition durations collapse." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "640px", "purpose": "Inputs forced to 16px at or below." },
+      { "name": "md", "value": "768px", "purpose": "Nav items stop stretching." },
+      { "name": "content-max", "value": "760px", "purpose": "Bottom nav content width." }
+    ],
+    "themes": {
+      "mechanism": "prefers-color-scheme: dark unless data-theme=light; data-theme=dark forces dark. useTheme persists to localStorage key myorbit.theme and sets meta theme-color (#0a111f dark, #eef1f6 light)."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Coral action with night text; the only action colour.",
+      "html": "<button class=\"ds-btn-primary\">Crear tarea</button>",
+      "css": ".ds-btn-primary{background:#ff6b4a;color:#0e1626;border:0;border-radius:6px;padding:12px 20px;font:600 15px Barlow,system-ui,sans-serif;cursor:pointer;transition:transform 160ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-primary:active{transform:scale(0.97)}.ds-btn-primary:focus-visible{outline:2px solid #ff6b4a;outline-offset:2px}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Wash-filled secondary action.",
+      "html": "<button class=\"ds-btn-quiet\">Cancelar</button>",
+      "css": ".ds-btn-quiet{background:#e6eaf1;color:#465066;border:0;border-radius:6px;padding:10px 12px;font:600 13px Barlow,system-ui,sans-serif;cursor:pointer;transition:transform 160ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-quiet:active{transform:scale(0.97)}.ds-btn-quiet:focus-visible{outline:2px solid #ff6b4a;outline-offset:2px}"
+    },
+    {
+      "name": "Panel Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat hairline panel; no shadow.",
+      "html": "<div class=\"ds-card\">Cálculo II, entrega 14:00</div>",
+      "css": ".ds-card{background:#fff;color:#121a2b;border:1px solid #d7dde8;border-radius:6px;padding:16px;font:400 14px Barlow,system-ui,sans-serif}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Hairline field; border turns coral on focus.",
+      "html": "<label class=\"ds-field\"><input placeholder=\"Título\" /></label>",
+      "css": ".ds-field{display:flex;align-items:center;background:#fff;border:1px solid #d7dde8;border-radius:6px;padding:12px;transition:border-color 160ms}.ds-field:focus-within{border-color:#ff6b4a}.ds-field input{flex:1;border:0;outline:0;background:transparent;color:#121a2b;font:400 16px Barlow,system-ui,sans-serif}"
+    },
+    {
+      "name": "Route Badge",
+      "kind": "chip",
+      "refersTo": "route-badge",
+      "description": "Square-cornered condensed code, wash fill with same-hue ink.",
+      "html": "<span class=\"ds-badge\">Alta</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;background:#ffe9e3;color:#c23a1d;border-radius:4px;padding:4px 6px;font:600 13px 'Barlow Condensed',Barlow,sans-serif;text-transform:uppercase;letter-spacing:0.025em;line-height:1}"
+    },
+    {
+      "name": "Station Checkbox",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Hollow station = pending; filled coral with check = done.",
+      "html": "<button class=\"ds-station\" aria-label=\"Marcar como hecha\"></button>",
+      "css": ".ds-station{width:22px;height:22px;border-radius:50%;border:2.5px solid #b4bdce;background:#fff;cursor:pointer;transition:background-color 200ms cubic-bezier(0.23,1,0.32,1),border-color 200ms}.ds-station:hover{border-color:#ff6b4a}.ds-station:focus-visible{outline:2px solid #ff6b4a;outline-offset:2px}.ds-station:active{transform:scale(0.9)}"
+    },
+    {
+      "name": "Bottom Nav Item",
+      "kind": "nav",
+      "refersTo": "bottom-nav",
+      "description": "Label with a 3px coral bar over the active tab.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav-item ds-active\"><span class=\"ds-bar\"></span>Hoy</button><button class=\"ds-nav-item\"><span class=\"ds-bar\"></span>Tareas</button></nav>",
+      "css": ".ds-nav{display:flex;background:#fff;border-top:1px solid #d7dde8}.ds-nav-item{position:relative;flex:1;min-height:56px;background:none;border:0;color:#5c667b;font:600 13px Barlow,system-ui,sans-serif;cursor:pointer}.ds-nav-item:hover{color:#121a2b}.ds-nav-item:focus-visible{outline:2px solid #ff6b4a;outline-offset:-2px}.ds-bar{position:absolute;left:12px;right:12px;top:0;height:3px;background:#ff6b4a;border-radius:0 0 2px 2px;transform:scaleX(0);transition:transform 300ms cubic-bezier(0.23,1,0.32,1)}.ds-active{color:#121a2b}.ds-active .ds-bar{transform:scaleX(1)}"
+    },
+    {
+      "name": "Add FAB",
+      "kind": "button",
+      "refersTo": "fab",
+      "description": "Central coral circle raised from the nav with a card-coloured ring.",
+      "html": "<button class=\"ds-fab\" aria-label=\"Añadir\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button>",
+      "css": ".ds-fab{width:56px;height:56px;border-radius:50%;border:4px solid #fff;background:#ff6b4a;color:#0e1626;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 150ms cubic-bezier(0.23,1,0.32,1)}.ds-fab:active{transform:scale(0.95)}.ds-fab:focus-visible{outline:2px solid #ff6b4a;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "La red de rutas",
+    "overview": "The student's term is a transit network. Each subject or category is a coloured line, each deadline a station, and \"ahora\" a marker moving along the line. The system is a signage voice on a cool navy-tinged ground: flat panels split by hairlines, condensed tabular numerals for times, square route badges, dots on a 3px line. Density is phone-first and one-handed. Light and dark grounds both ship. State is carried by shape as well as colour. Recorded deviations: dark ground is #0a111f not the contract's #0E1626; Home uses a vertical station rail instead of the horizontal Day Line; Agenda, Grades and Radar render pre-existing mock data.",
+    "keyCharacteristics": [
+      "Flat panels with 1px hairlines; no shadows, no gradients, no icon tiles.",
+      "Coral is the principal line and the only action colour; blue, green, violet, amber are route colours.",
+      "Barlow Condensed for headings, times and route codes; Barlow for everything else.",
+      "Light and dark themes via semantic tokens; dark follows the system or data-theme.",
+      "Shape redundancy for every status."
+    ],
+    "rules": [
+      { "name": "The One Line Rule", "body": "Coral is the only action colour. Route colours mark category and status, never buttons.", "section": "colors" },
+      { "name": "The Ink Tier Rule", "body": "Coloured text uses the -ink tier, coloured fills use the solid or -wash tier; never solid route hues for small text.", "section": "colors" },
+      { "name": "The Departure Board Rule", "body": "Times, dates and counts use condensed tabular numerals (.num).", "section": "typography" },
+      { "name": "The Thirteen Floor Rule", "body": "No text under 13px.", "section": "typography" },
+      { "name": "The Hairline Rule", "body": "Separate with a 1px line border, never a shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use semantic tokens (bg-card, text-ink-2, border-line) so both themes work.",
+      "Do carry status by shape (hollow, filled, dashed; bar count) as well as colour.",
+      "Do keep touch targets at 44px and text at 13px or above.",
+      "Do separate with hairlines and tonal steps; keep exits faster than entrances.",
+      "Do use condensed tabular numerals for times, dates and counts."
+    ],
+    "donts": [
+      "Don't add box shadows or gradients.",
+      "Don't use coloured icon tiles or stacks of identical rounded white cards.",
+      "Don't use emoji or decorative glyphs for state or empty views.",
+      "Don't use solid route hues for small text; use the -ink tier.",
+      "Don't hardcode hex in components except the user-chosen category colours."
+    ]
+  }
+}
