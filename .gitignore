@@ -1,0 +1,20 @@
+# Logs
+*.log
+
+# Archivos de entorno/shell que el sandbox deja en la raíz (vacíos y de solo lectura)
+/.bash_profile
+/.bashrc
+/.zprofile
+/.zshrc
+/.profile
+/.gitconfig
+/.gitmodules
+/.ripgreprc
+/.mcp.json
+
+# IDE
+/.idea
+.idea/
+
+# Capturas de revisión generadas por Impeccable (design.json sí se versiona)
+/.impeccable/review/
