@@ -125,30 +125,30 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar bg-paper">
-      <header className="px-4 pt-5 pb-4 lg:px-8 lg:pt-8 lg:pb-6">
-        <div className="flex items-start justify-between gap-2">
-          <h1 className="font-display text-[34px] font-semibold leading-[1.02] tracking-tight text-ink lg:text-[44px]">
-            {greeting()}, {userName}
-          </h1>
-          <ThemeToggle className="-mr-2 -mt-1 flex-shrink-0 lg:hidden" />
+      <header className="px-4 pt-3 pb-3 lg:px-8 lg:pt-8 lg:pb-6">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-[30px] font-semibold leading-[1.05] tracking-tight text-ink lg:text-[44px]">
+              {greeting()}, {userName.split(" ")[0]}
+            </h1>
+            <p className="mt-0.5 text-[14px] text-ink-2">{currentDateLabel()}</p>
+          </div>
+          <ThemeToggle className="-mr-2 flex-shrink-0 lg:hidden" />
         </div>
-        <p className="mt-1.5 text-[15px] text-ink-2">{currentDateLabel()}</p>
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-3 flex items-center gap-3">
           <div className="flex-1"><ProgressBar value={taskProgress} height={4} /></div>
-          <p className="num whitespace-nowrap text-[15px] font-medium text-ink-2">
-            {completedTasks}/{tasks.length} hechas
-          </p>
+          <p className="num whitespace-nowrap text-[15px] font-medium text-ink-2">{completedTasks}/{tasks.length}</p>
         </div>
-        <p className="mt-2 text-[14px] text-ink-2">
+        <p className="mt-1.5 text-[14px] text-ink-2">
           {tasks.length === 0
-            ? "Todavía no hay tareas en tu red."
+            ? "Sin tareas todavía."
             : overdueCount > 0
-              ? `${overdueCount} ${overdueCount === 1 ? "estación vencida" : "estaciones vencidas"}, ${pendingTasks - overdueCount} por llegar.`
-              : `${pendingTasks} ${pendingTasks === 1 ? "estación por llegar" : "estaciones por llegar"}. Vas a tiempo.`}
+              ? `${overdueCount} ${overdueCount === 1 ? "vencida" : "vencidas"} · ${pendingTasks - overdueCount} por llegar`
+              : `${pendingTasks} por llegar · vas a tiempo`}
         </p>
       </header>
 
-      <div className="flex flex-col gap-7 px-4 pb-8 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10 lg:px-8 lg:pb-12">
+      <div className="flex flex-col gap-5 px-4 pb-6 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10 lg:px-8 lg:pb-12">
         {/* Línea del día */}
         <section aria-label="Próximas entregas">
           <SectionTitle label="Próximas estaciones" action="Ver todas" onAction={onViewTasks} />
@@ -206,7 +206,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
           )}
         </section>
 
-        <div className="flex flex-col gap-7">
+        <div className="flex flex-col gap-5">
         {/* Línea paralela de hábitos */}
         <section aria-label="Hábitos de hoy">
           <SectionTitle label="Hábitos de hoy" action={habits.length ? "Ver todos" : "Crear"} onAction={onHabits} />
@@ -251,7 +251,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
         </section>
 
         {/* Resumen académico */}
-        <section aria-label="Resumen académico" className="border-t border-line pt-5">
+        <section aria-label="Resumen académico" className="border-t border-line pt-4">
           {profile?.program ? (
             <>
               <div className="flex items-start justify-between gap-3">

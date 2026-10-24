@@ -9,6 +9,13 @@ export function todayInputValue(): string {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
+export function tomorrowInputValue(): string {
+  const next = new Date();
+  next.setDate(next.getDate() + 1);
+  const offset = next.getTimezoneOffset() * 60_000;
+  return new Date(next.getTime() - offset).toISOString().slice(0, 10);
+}
+
 export function fromTaskDue(value: string): TaskDueInput {
   const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
   return match ? { date: match[1], time: match[2] } : { date: "", time: "" };
@@ -32,7 +39,8 @@ export function formatTaskDue(value: string): string {
 
   if (sameDay(due, today)) return `Hoy · ${timeLabel}`;
   if (sameDay(due, tomorrow)) return `Mañana · ${timeLabel}`;
-  return due.toLocaleString("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  // Formato corto para que la fecha no robe ancho al título en móvil: "23 oct · 11:59 p. m.".
+  return `${due.toLocaleDateString("es-CO", { day: "numeric", month: "short" }).replace(" de ", " ").replace(".", "")} · ${timeLabel}`;
 }
 
 export function isOverdue(value: string): boolean {

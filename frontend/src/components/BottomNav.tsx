@@ -61,7 +61,7 @@ export const TABS: { id: MainTab; label: string; icon: React.ReactElement }[] = 
 
 export default function BottomNav({ active, onChange, onFab }: Props) {
   return (
-    <nav aria-label="Principal" className="lg:hidden flex-shrink-0 border-t border-line bg-card pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="Principal" className="relative z-10 flex-shrink-0 border-t border-line bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
       <div className="mx-auto flex max-w-[760px] items-stretch justify-around px-1">
         {TABS.slice(0, 2).map((tab) => <NavItem key={tab.id} tab={tab} active={active} onChange={onChange} />)}
 
@@ -69,7 +69,7 @@ export default function BottomNav({ active, onChange, onFab }: Props) {
           <button
             onClick={onFab}
             aria-label="Añadir tarea, evento o hábito"
-            className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full border-[4px] border-card bg-coral text-night transition-transform duration-150 ease-out active:scale-95"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-coral text-night transition-transform duration-150 ease-out active:scale-95"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />

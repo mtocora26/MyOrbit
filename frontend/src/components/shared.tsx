@@ -80,8 +80,10 @@ interface CategoryPickerProps {
   onChange: (name: string) => void;
   onCreate: (name: string, color: string) => Promise<void>;
   className?: string;
+  /** "chips": una fila deslizable de un toque por categoría, sin abrir el selector nativo. */
+  variant?: "select" | "chips";
 }
-export function CategoryPicker({ categories, value, onChange, onCreate, className = "" }: CategoryPickerProps) {
+export function CategoryPicker({ categories, value, onChange, onCreate, className = "", variant = "select" }: CategoryPickerProps) {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(CATEGORY_PALETTE[0]);
@@ -114,6 +116,33 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
             </button>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (variant === "chips") {
+    const options = value && !categories.some((category) => category.name === value) ? [...categories, { id: "__current", name: value, color: "#667085" }] : categories;
+    return (
+      <div role="radiogroup" aria-label="Categoría" className={`no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 ${className}`}>
+        {options.map((category) => {
+          const selected = category.name === value;
+          return (
+            <button
+              key={category.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(category.name)}
+              className={`flex h-10 flex-shrink-0 items-center gap-2 rounded-md border px-3 text-[14px] font-semibold ${selected ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}
+            >
+              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-[2px]" style={{ background: category.color }} aria-hidden="true" />
+              {category.name}
+            </button>
+          );
+        })}
+        <button type="button" onClick={() => setCreating(true)} aria-label="Nueva categoría" className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-line-strong text-ink-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </button>
       </div>
     );
   }
@@ -254,10 +283,10 @@ export function BottomSheet({ open, onClose, title, children }: { open: boolean;
         aria-modal="true"
         aria-label={title}
         data-closing={open ? undefined : ""}
-        className="orbit-sheet max-h-[92%] w-full overflow-y-auto rounded-t-lg border-t border-line bg-card px-5 pt-3 pb-8 lg:max-w-[480px] lg:rounded-lg lg:border lg:pb-6"
+        className="orbit-sheet max-h-[92%] w-full overflow-y-auto rounded-t-lg border-t border-line bg-card px-5 pt-2.5 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:max-w-[480px] lg:rounded-lg lg:border lg:pb-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex justify-center">
+        <div className="mb-3 flex justify-center">
           <div className="h-1 w-10 rounded-full bg-line-strong" />
         </div>
         {title && <p className="mb-4 font-display text-[24px] font-semibold leading-none text-ink">{title}</p>}
