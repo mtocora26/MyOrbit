@@ -23,6 +23,11 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ProblemDetail forbidden(ForbiddenException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ProblemDetail missingHeader(MissingRequestHeaderException exception) {
         if ("Authorization".equalsIgnoreCase(exception.getHeaderName())) {

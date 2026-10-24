@@ -1,4 +1,6 @@
 package com.app.myorbit.users.api;
 
-public record AuthResponse(String token, String id, String name, String email) {
+import com.app.myorbit.users.domain.Role;
+
+public record AuthResponse(String token, String id, String name, String email, Role role) {
 }
