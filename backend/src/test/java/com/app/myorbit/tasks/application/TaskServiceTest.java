@@ -4,6 +4,8 @@ import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
 import com.app.myorbit.tasks.api.CreateTaskRequest;
+import com.app.myorbit.tasks.api.UpdateSubtaskRequest;
+import com.app.myorbit.tasks.domain.Subtask;
 import com.app.myorbit.tasks.api.UpdateSubtaskStatusRequest;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -107,5 +110,45 @@ class TaskServiceTest {
 
         assertEquals("Estudiar", task.getTitle());
         assertEquals(com.app.myorbit.tasks.domain.Priority.MEDIUM, task.getPriority());
+    }
+
+    private Task taskWithSubtask(String due) {
+        Task task = taskOf("u1");
+        Subtask subtask = new Subtask();
+        subtask.setId("s1");
+        subtask.setTitle("Paso");
+        subtask.setDue(due);
+        task.getSubtasks().add(subtask);
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        return task;
+    }
+
+    @Test
+    void updateSubtaskWithoutDueKeepsExistingDate() {
+        Task task = taskWithSubtask("2026-11-01");
+
+        service.updateSubtask("u1", "t1", "s1", new UpdateSubtaskRequest("Nuevo", null));
+
+        assertEquals("2026-11-01", task.findSubtask("s1").orElseThrow().getDue());
+        assertEquals("Nuevo", task.findSubtask("s1").orElseThrow().getTitle());
+    }
+
+    @Test
+    void updateSubtaskWithBlankDueClearsDate() {
+        Task task = taskWithSubtask("2026-11-01");
+
+        service.updateSubtask("u1", "t1", "s1", new UpdateSubtaskRequest("", "  "));
+
+        assertNull(task.findSubtask("s1").orElseThrow().getDue());
+    }
+
+    @Test
+    void updateSubtaskWithDueReplacesDate() {
+        Task task = taskWithSubtask("2026-11-01");
+
+        service.updateSubtask("u1", "t1", "s1", new UpdateSubtaskRequest(null, "2026-12-05"));
+
+        assertEquals("2026-12-05", task.findSubtask("s1").orElseThrow().getDue());
     }
 }

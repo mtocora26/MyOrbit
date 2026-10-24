@@ -186,7 +186,8 @@ export async function updateSubtaskDue(taskId: string, subtaskId: string, title:
   const response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}/subtasks/${encodeURIComponent(subtaskId)}`, {
     method: "PUT",
     headers: requestHeaders(),
-    body: JSON.stringify({ title, due }),
+    // El backend interpreta due omitido como "no cambiar" y "" como "quitar la fecha".
+    body: JSON.stringify({ title, due: due ?? "" }),
   });
   if (!response.ok) throw new Error("No fue posible actualizar la fecha de la subtarea");
   return response.json();
