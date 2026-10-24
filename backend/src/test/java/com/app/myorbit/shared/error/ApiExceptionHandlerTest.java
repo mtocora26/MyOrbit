@@ -1,7 +1,9 @@
 package com.app.myorbit.shared.error;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.MissingRequestHeaderException;
 
@@ -41,5 +43,19 @@ class ApiExceptionHandlerTest {
         MethodParameter parameter = new MethodParameter(Object.class.getMethod("toString"), -1);
         ProblemDetail problem = handler.missingHeader(new MissingRequestHeaderException("Authorization", parameter));
         assertEquals(401, problem.getStatus());
+    }
+
+    @Test
+    void illegalArgumentMapsTo400() {
+        ProblemDetail problem = handler.illegalArgument(new IllegalArgumentException("Prioridad no valida: x"));
+        assertEquals(400, problem.getStatus());
+        assertEquals("Prioridad no valida: x", problem.getDetail());
+    }
+
+    @Test
+    void unreadableBodyMapsTo400() {
+        ProblemDetail problem = handler.unreadableBody(
+                new HttpMessageNotReadableException("JSON malformado", (HttpInputMessage) null));
+        assertEquals(400, problem.getStatus());
     }
 }
