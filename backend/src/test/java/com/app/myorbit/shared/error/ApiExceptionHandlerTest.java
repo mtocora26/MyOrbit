@@ -31,6 +31,12 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
+    void forbiddenMapsTo403() {
+        ProblemDetail problem = handler.forbidden(new ForbiddenException("Sin permisos"));
+        assertEquals(403, problem.getStatus());
+    }
+
+    @Test
     void missingAuthorizationHeaderMapsTo401() throws Exception {
         MethodParameter parameter = new MethodParameter(Object.class.getMethod("toString"), -1);
         ProblemDetail problem = handler.missingHeader(new MissingRequestHeaderException("Authorization", parameter));

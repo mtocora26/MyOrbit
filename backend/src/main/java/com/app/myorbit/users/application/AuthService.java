@@ -5,13 +5,18 @@ import com.app.myorbit.users.api.LoginRequest;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.UnauthorizedException;
 import com.app.myorbit.users.api.RegisterRequest;
+import com.app.myorbit.users.domain.Role;
 import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.domain.UserSession;
 import com.app.myorbit.users.infrastructure.UserRepository;
 import com.app.myorbit.users.infrastructure.UserSessionRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -20,12 +25,17 @@ public class AuthService implements CurrentUserProvider {
     private final UserRepository userRepository;
     private final UserSessionRepository sessionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
+    private final List<String> adminEmails;
 
     public AuthService(UserRepository userRepository, UserSessionRepository sessionRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder, Clock clock,
+                       @Value("${myorbit.admin-emails:}") List<String> adminEmails) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
+        this.adminEmails = adminEmails.stream().map(email -> email.trim().toLowerCase(Locale.ROOT)).toList();
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -44,6 +54,10 @@ public class AuthService implements CurrentUserProvider {
         user.setName(name);
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(password));
+        // Las cuentas admin se arrancan por configuracion (myorbit.admin-emails); nadie se auto-promueve.
+        user.setRole(adminEmails.contains(email) ? Role.ADMIN : Role.USER);
+        user.setActive(true);
+        user.setCreatedAt(Instant.now(clock));
         return createSession(userRepository.save(user));
     }
 
@@ -54,6 +68,7 @@ public class AuthService implements CurrentUserProvider {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new UnauthorizedException("Correo o contrasena incorrectos");
         }
+        requireActive(user);
         return createSession(user);
     }
 
@@ -62,8 +77,14 @@ public class AuthService implements CurrentUserProvider {
         String token = extractToken(authorization);
         UserSession session = sessionRepository.findById(token)
                 .orElseThrow(() -> new UnauthorizedException("Sesion no valida"));
-        return userRepository.findById(session.getUserId())
+        User user = userRepository.findById(session.getUserId())
                 .orElseThrow(() -> new UnauthorizedException("Sesion no valida"));
+        requireActive(user);
+        return user;
+    }
+
+    private void requireActive(User user) {
+        if (!user.isActive()) throw new UnauthorizedException("Tu cuenta esta desactivada");
     }
 
     public void logout(String authorization) {
@@ -75,7 +96,7 @@ public class AuthService implements CurrentUserProvider {
         session.setToken(UUID.randomUUID().toString());
         session.setUserId(user.getId());
         sessionRepository.save(session);
-        return new AuthResponse(session.getToken(), user.getId(), user.getName(), user.getEmail());
+        return new AuthResponse(session.getToken(), user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     private String required(String value, String message) {
