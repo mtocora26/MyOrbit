@@ -82,7 +82,10 @@ public class TaskService {
         if (request.title() != null && !request.title().isBlank()) {
             subtask.setTitle(request.title().trim());
         }
-        subtask.setDue(blankToNull(request.due()));
+        // due: null = no cambiar; cadena vacia = quitar la fecha.
+        if (request.due() != null) {
+            subtask.setDue(blankToNull(request.due()));
+        }
         return taskRepository.save(task);
     }
 
