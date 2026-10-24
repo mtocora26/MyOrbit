@@ -1,5 +1,6 @@
 package com.app.myorbit.habits.api;
 
+import jakarta.validation.Valid;
 import com.app.myorbit.habits.application.HabitService;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
@@ -34,12 +35,12 @@ public class HabitController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public HabitResponse create(@RequestBody CreateHabitRequest request, @CurrentUser User user) {
+    public HabitResponse create(@Valid @RequestBody CreateHabitRequest request, @CurrentUser User user) {
         return HabitResponse.from(habitService.create(user.getId(), request));
     }
 
     @PatchMapping("/{id}/completion")
-    public HabitResponse updateCompletion(@PathVariable String id, @RequestBody UpdateHabitCompletionRequest request, @CurrentUser User user) {
+    public HabitResponse updateCompletion(@PathVariable String id, @Valid @RequestBody UpdateHabitCompletionRequest request, @CurrentUser User user) {
         return HabitResponse.from(habitService.updateCompletion(user.getId(), id, request));
     }
 

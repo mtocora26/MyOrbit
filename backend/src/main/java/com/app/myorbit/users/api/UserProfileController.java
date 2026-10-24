@@ -1,5 +1,6 @@
 package com.app.myorbit.users.api;
 
+import jakarta.validation.Valid;
 import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.domain.UserProfile;
 import com.app.myorbit.users.infrastructure.UserProfileRepository;
@@ -29,7 +30,7 @@ public class UserProfileController {
     }
 
     @PutMapping
-    public UserProfileResponse update(@CurrentUser User user, @RequestBody UpdateUserProfileRequest request) {
+    public UserProfileResponse update(@CurrentUser User user, @Valid @RequestBody UpdateUserProfileRequest request) {
         UserProfile profile = profileRepository.findById(user.getId()).orElseGet(UserProfile::new);
         profile.setUserId(user.getId());
         profile.setProgram(textOrEmpty(request.program()));

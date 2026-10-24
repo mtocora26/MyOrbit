@@ -1,5 +1,6 @@
 package com.app.myorbit.users.api;
 
+import jakarta.validation.Valid;
 import com.app.myorbit.users.application.UserAdminService;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
@@ -33,12 +34,12 @@ public class AdminUserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AdminUserResponse create(@CurrentUser User actor, @RequestBody CreateUserRequest request) {
+    public AdminUserResponse create(@CurrentUser User actor, @Valid @RequestBody CreateUserRequest request) {
         return userAdminService.create(actor, request);
     }
 
     @PatchMapping("/{id}")
-    public AdminUserResponse update(@CurrentUser User actor, @PathVariable String id, @RequestBody UpdateUserRequest request) {
+    public AdminUserResponse update(@CurrentUser User actor, @PathVariable String id, @Valid @RequestBody UpdateUserRequest request) {
         return userAdminService.update(actor, id, request);
     }
 

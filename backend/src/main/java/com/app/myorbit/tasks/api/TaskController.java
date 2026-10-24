@@ -1,5 +1,6 @@
 package com.app.myorbit.tasks.api;
 
+import jakarta.validation.Valid;
 import com.app.myorbit.tasks.application.TaskService;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
@@ -41,37 +42,37 @@ public class TaskController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TaskResponse create(@RequestBody CreateTaskRequest request, @CurrentUser User user) {
+    public TaskResponse create(@Valid @RequestBody CreateTaskRequest request, @CurrentUser User user) {
         return TaskResponse.from(taskService.create(user.getId(), request));
     }
 
     @PatchMapping("/{id}/status")
-    public TaskResponse updateStatus(@PathVariable String id, @RequestBody UpdateTaskStatusRequest request, @CurrentUser User user) {
+    public TaskResponse updateStatus(@PathVariable String id, @Valid @RequestBody UpdateTaskStatusRequest request, @CurrentUser User user) {
         return TaskResponse.from(taskService.updateStatus(user.getId(), id, request));
     }
 
     @PutMapping("/{id}")
-    public TaskResponse update(@PathVariable String id, @RequestBody UpdateTaskRequest request, @CurrentUser User user) {
+    public TaskResponse update(@PathVariable String id, @Valid @RequestBody UpdateTaskRequest request, @CurrentUser User user) {
         return TaskResponse.from(taskService.update(user.getId(), id, request));
     }
 
     @PostMapping("/{id}/subtasks")
-    public TaskResponse addSubtask(@PathVariable String id, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
+    public TaskResponse addSubtask(@PathVariable String id, @Valid @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
         return TaskResponse.from(taskService.addSubtask(user.getId(), id, request));
     }
 
     @PostMapping("/{id}/subtasks/{parentSubtaskId}")
-    public TaskResponse addNestedSubtask(@PathVariable String id, @PathVariable String parentSubtaskId, @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
+    public TaskResponse addNestedSubtask(@PathVariable String id, @PathVariable String parentSubtaskId, @Valid @RequestBody CreateSubtaskRequest request, @CurrentUser User user) {
         return TaskResponse.from(taskService.addNestedSubtask(user.getId(), id, parentSubtaskId, request));
     }
 
     @PutMapping("/{id}/subtasks/{subtaskId}")
-    public TaskResponse updateSubtask(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskRequest request, @CurrentUser User user) {
+    public TaskResponse updateSubtask(@PathVariable String id, @PathVariable String subtaskId, @Valid @RequestBody UpdateSubtaskRequest request, @CurrentUser User user) {
         return TaskResponse.from(taskService.updateSubtask(user.getId(), id, subtaskId, request));
     }
 
     @PatchMapping("/{id}/subtasks/{subtaskId}/status")
-    public TaskResponse updateSubtaskStatus(@PathVariable String id, @PathVariable String subtaskId, @RequestBody UpdateSubtaskStatusRequest request, @CurrentUser User user) {
+    public TaskResponse updateSubtaskStatus(@PathVariable String id, @PathVariable String subtaskId, @Valid @RequestBody UpdateSubtaskStatusRequest request, @CurrentUser User user) {
         return TaskResponse.from(taskService.updateSubtaskStatus(user.getId(), id, subtaskId, request));
     }
 
