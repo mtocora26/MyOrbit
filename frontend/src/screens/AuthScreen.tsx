@@ -54,7 +54,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
 
           <div className="mt-7 flex rounded-md bg-line p-1">
             {(["login", "register"] as const).map((item) => (
-              <button key={item} type="button" onClick={() => { setMode(item); setError(null); }} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: mode === item ? "white" : "transparent", color: mode === item ? "var(--color-ink)" : "var(--color-ink-2)" }}>
+              <button key={item} type="button" onClick={() => { setMode(item); setError(null); }} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: mode === item ? "var(--color-card)" : "transparent", color: mode === item ? "var(--color-ink)" : "var(--color-ink-2)" }}>
                 {item === "login" ? "Iniciar sesión" : "Crear cuenta"}
               </button>
             ))}
