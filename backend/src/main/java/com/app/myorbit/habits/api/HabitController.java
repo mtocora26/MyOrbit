@@ -5,7 +5,6 @@ import com.app.myorbit.habits.application.HabitService;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/habits")
 public class HabitController {
     private final HabitService habitService;

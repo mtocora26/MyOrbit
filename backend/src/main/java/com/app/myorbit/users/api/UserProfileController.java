@@ -5,7 +5,6 @@ import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.domain.UserProfile;
 import com.app.myorbit.users.infrastructure.UserProfileRepository;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/profile")
 public class UserProfileController {
     private final UserProfileRepository profileRepository;
