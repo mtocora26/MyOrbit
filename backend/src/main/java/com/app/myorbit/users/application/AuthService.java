@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -27,14 +28,17 @@ public class AuthService implements CurrentUserProvider {
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
     private final List<String> adminEmails;
+    private final Duration sessionTtl;
 
     public AuthService(UserRepository userRepository, UserSessionRepository sessionRepository,
                        PasswordEncoder passwordEncoder, Clock clock,
-                       @Value("${myorbit.admin-emails:}") List<String> adminEmails) {
+                       @Value("${myorbit.admin-emails:}") List<String> adminEmails,
+                       @Value("${myorbit.session-ttl:30d}") Duration sessionTtl) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
+        this.sessionTtl = sessionTtl;
         this.adminEmails = adminEmails.stream().map(email -> email.trim().toLowerCase(Locale.ROOT)).toList();
     }
 
@@ -77,10 +81,20 @@ public class AuthService implements CurrentUserProvider {
         String token = extractToken(authorization);
         UserSession session = sessionRepository.findById(token)
                 .orElseThrow(() -> new UnauthorizedException("Sesion no valida"));
+        if (isExpired(session)) {
+            // Mongo purga con retraso (~1 min), asi que la vigencia tambien se comprueba aqui.
+            sessionRepository.delete(session);
+            throw new UnauthorizedException("Tu sesion expiro, inicia sesion de nuevo");
+        }
         User user = userRepository.findById(session.getUserId())
                 .orElseThrow(() -> new UnauthorizedException("Sesion no valida"));
         requireActive(user);
         return user;
+    }
+
+    private boolean isExpired(UserSession session) {
+        // Sesiones creadas antes del TTL no tienen fecha: se tratan como vencidas.
+        return session.getExpiresAt() == null || !session.getExpiresAt().isAfter(Instant.now(clock));
     }
 
     private void requireActive(User user) {
@@ -95,6 +109,7 @@ public class AuthService implements CurrentUserProvider {
         UserSession session = new UserSession();
         session.setToken(UUID.randomUUID().toString());
         session.setUserId(user.getId());
+        session.setExpiresAt(Instant.now(clock).plus(sessionTtl));
         sessionRepository.save(session);
         return new AuthResponse(session.getToken(), user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
