@@ -31,7 +31,6 @@ class TaskServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(TaskRepository.class);
-        when(repository.count()).thenReturn(1L);
         service = new TaskService(repository);
     }
 

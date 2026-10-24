@@ -24,7 +24,6 @@ public class TaskService {
 
     public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
-        seed();
     }
 
     public List<Task> listByUser(String userId) {
@@ -120,32 +119,6 @@ public class TaskService {
         getOwned(userId, id);
         taskRepository.deleteById(id);
         return true;
-    }
-
-    private void seed() {
-        if (taskRepository.count() > 0) {
-            return;
-        }
-
-        Task t1 = new Task();
-        t1.setId("seed-1");
-        t1.setUserId("demo-user");
-        t1.setTitle("Entregar proyecto de Moviles");
-        t1.setDue("Hoy 11:59 PM");
-        t1.setPriority(Priority.HIGH);
-        t1.setTag("Universidad");
-        t1.setDone(false);
-
-        Task t2 = new Task();
-        t2.setId("seed-2");
-        t2.setUserId("demo-user");
-        t2.setTitle("Comprar materiales de cartelera");
-        t2.setDue("Hoy 6:00 PM");
-        t2.setPriority(Priority.MEDIUM);
-        t2.setTag("Proyecto");
-        t2.setDone(false);
-
-        taskRepository.saveAll(List.of(t1, t2));
     }
 
     private void requireSubtaskTitle(CreateSubtaskRequest request) {
