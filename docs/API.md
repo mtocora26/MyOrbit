@@ -3,7 +3,7 @@
 Todas las rutas requieren la cabecera `Authorization: Bearer <token>` de la sesión (`/api/auth/login`).
 Los errores responden `ProblemDetail` (RFC 9457) con el mensaje en `detail`.
 
-La referencia completa del resto de módulos queda en #23 (README) y #31 (OpenAPI).
+La lista de rutas de todos los módulos está en el [README](../README.md); la referencia completa llegará con OpenAPI (#31).
 
 ## Materias (`/api/subjects`)
 

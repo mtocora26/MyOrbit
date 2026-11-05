@@ -1,56 +1,51 @@
-# MongoDB local para MyOrbit
+# MongoDB para MyOrbit
 
-El backend usa MongoDB y lee la conexion desde `MONGODB_URI`. Sin una variable definida, usa:
-
-```text
-mongodb://localhost:27017/myorbit
-```
-
-La base de datos se llama `myorbit` y las tareas quedan en la coleccion `tasks`.
-
-## Opcion 1: MongoDB Community local
-
-1. Completa la instalacion de MongoDB Community Server para Windows. El instalador abierto por Winget puede requerir confirmacion administrativa.
-2. Mantiene habilitada la opcion de instalar MongoDB como servicio de Windows.
-3. Comprueba que el servicio exista y este iniciado:
-
-```powershell
-Get-Service MongoDB
-Start-Service MongoDB
-```
-
-4. Inicia el backend:
+El backend lee la conexión de las propiedades `spring.mongodb.uri` y `spring.mongodb.database`.
+Se definen en `backend/application-local.properties`, que Git ignora, para no subir credenciales.
 
 ```bash
 cd backend
-./mvnw spring-boot:run
+cp application-local.properties.example application-local.properties
 ```
 
-## Opcion 2: MongoDB Atlas personal
+Si el archivo no existe, Spring usa `mongodb://localhost:27017/myorbit`. La base se llama `myorbit`
+y las colecciones principales son `users`, `user_sessions`, `tasks`, `habits`, `categories`, `subjects` y `user_profiles`.
+
+## Opción 1: MongoDB local
+
+Con Docker:
+
+```bash
+docker run -d --name myorbit-mongo -p 27017:27017 mongo:7
+```
+
+O instala MongoDB Community Server y deja el servicio iniciado (en Windows: `Start-Service MongoDB`).
+Con la URI por defecto no necesitas editar nada.
+
+## Opción 2: MongoDB Atlas personal
 
 1. Crea un cluster gratuito en MongoDB Atlas.
-2. Crea un usuario de base de datos y permite temporalmente tu IP actual en Network Access.
-3. Copia la cadena de conexion `mongodb+srv://...` y define la variable solo en tu terminal:
+2. Crea un usuario de base de datos y permite tu IP en Network Access.
+3. Copia la cadena `mongodb+srv://...` en `spring.mongodb.uri` dentro de `application-local.properties`.
+
+No guardes la URI de Atlas ni contraseñas en `application.properties` ni en Git.
+
+## Arrancar y verificar
 
 ```bash
-export MONGODB_URI='mongodb+srv://USUARIO:CONTRASENA@CLUSTER/myorbit?retryWrites=true&w=majority'
 ./mvnw spring-boot:run
 ```
 
-No guardes la URI de Atlas ni contrasenas dentro de `application.properties` o en Git.
-
-## Verificacion
-
-Con el backend iniciado, crea una tarea en la interfaz o ejecuta:
+Los endpoints exigen sesión. Registra un usuario, inicia sesión y consulta con el token recibido:
 
 ```bash
-curl --request POST http://localhost:8080/api/tasks \
-  --header "Content-Type: application/json" \
-  --data '{"title":"Prueba MongoDB","due":"Hoy","priority":"media","tag":"Personal"}'
+curl -X POST http://localhost:8080/api/auth/register -H "Content-Type: application/json" \
+  -d '{"name":"Prueba","email":"prueba@uni.edu","password":"Clave1234"}'
+curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" \
+  -d '{"email":"prueba@uni.edu","password":"Clave1234"}'
+curl http://localhost:8080/api/tasks -H "Authorization: Bearer <token>"
 ```
 
-Luego valida que quedo persistida:
+## Tests
 
-```bash
-curl "http://localhost:8080/api/tasks?userId=demo-user"
-```
+Los tests de integración usan Testcontainers y levantan su propio MongoDB: necesitas Docker, pero no Atlas.

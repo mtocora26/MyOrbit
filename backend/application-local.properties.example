@@ -1,0 +1,18 @@
+# Copia este archivo a application-local.properties (ignorado por Git) y ajusta los valores.
+# Se carga desde el directorio backend/ al arrancar con ./mvnw spring-boot:run.
+
+# MongoDB local
+spring.mongodb.uri=mongodb://localhost:27017/myorbit
+spring.mongodb.database=myorbit
+
+# MongoDB Atlas (reemplaza usuario, contraseña y cluster; no lo subas a Git)
+# spring.mongodb.uri=mongodb+srv://USUARIO:CONTRASENA@CLUSTER.mongodb.net/myorbit?retryWrites=true&w=majority
+
+# Correos que reciben el rol ADMIN al registrarse (separados por coma)
+# myorbit.admin-emails=tu.correo@uni.edu
+
+# Duración de la sesión desde el login (30d, 7d, 12h...)
+# myorbit.session-ttl=30d
+
+# Orígenes que pueden llamar a /api desde otro origen (separados por coma)
+# myorbit.cors.allowed-origins=http://localhost:8443,http://localhost:5173
