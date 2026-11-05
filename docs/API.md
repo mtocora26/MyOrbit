@@ -84,3 +84,26 @@ Cada evaluación pertenece a una materia del usuario de la sesión. Si la materi
 | Sin sesión | 401 | |
 | Materia inexistente o de otro usuario | 404 | `Materia no encontrada` |
 | Evaluación inexistente | 404 | `Evaluacion no encontrada` |
+
+## Resumen de notas (`GET /api/subjects/{subjectId}/evaluations/summary`)
+
+Calcula la nota actual y la nota que se necesita en lo que falta para alcanzar la meta (estrategia `WeightedGradeStrategy`, escala 0–5).
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `target` | número, opcional | Meta de la materia (0–5). Si falta se usa `gradeTarget` del perfil; si tampoco es válido, 3.0. |
+
+```json
+{ "currentGrade": 3.6, "accumulatedPoints": 1.8, "gradedPercentage": 50.0, "remainingPercentage": 50.0,
+  "targetGrade": 3.5, "requiredGrade": 3.4, "achievable": true }
+```
+
+| Campo | Significado |
+|---|---|
+| `currentGrade` | Promedio ponderado de lo ya calificado; `null` si no hay notas. |
+| `accumulatedPoints` | Puntos ganados sobre la nota final (nota × porcentaje / 100). |
+| `gradedPercentage` / `remainingPercentage` | Porcentaje calificado y por calificar (lo no planeado cuenta como pendiente). |
+| `requiredGrade` | Promedio necesario en el porcentaje pendiente para llegar a la meta (0 si ya se alcanzó); `null` si no queda nada por calificar. |
+| `achievable` | `false` si la nota necesaria supera 5 o, con todo calificado, no se llegó a la meta. |
+
+Errores: `400` si `target` está fuera de 0–5, `401` sin sesión, `404` si la materia no existe o es de otro usuario.
