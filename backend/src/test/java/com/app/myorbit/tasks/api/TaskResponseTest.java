@@ -17,7 +17,7 @@ class TaskResponseTest {
         Subtask parent = new Subtask();
         parent.setId("s1");
         parent.setTitle("Padre");
-        parent.setDue("2026-10-20");
+        parent.setDue(java.time.LocalDateTime.parse("2026-10-20T08:30"));
         parent.getSubtasks().add(child);
         Task task = new Task();
         task.setId("t1");
@@ -33,7 +33,7 @@ class TaskResponseTest {
         assertEquals(Priority.HIGH, response.priority());
         assertTrue(response.done());
         assertEquals("Padre", response.subtasks().get(0).title());
-        assertEquals("2026-10-20", response.subtasks().get(0).due());
+        assertEquals(java.time.LocalDateTime.parse("2026-10-20T08:30"), response.subtasks().get(0).due());
         assertEquals("s2", response.subtasks().get(0).subtasks().get(0).id());
     }
 }

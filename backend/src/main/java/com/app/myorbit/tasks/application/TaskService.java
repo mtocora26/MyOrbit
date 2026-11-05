@@ -14,6 +14,7 @@ import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +28,9 @@ public class TaskService {
     }
 
     public List<Task> listByUser(String userId) {
-        return taskRepository.findByUserIdOrderByIdAsc(userId);
+        return taskRepository.findByUserIdOrderByIdAsc(userId).stream()
+                .sorted(Comparator.comparing(Task::getDue, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
 
     public Task getOwned(String userId, String id) {
@@ -44,7 +47,7 @@ public class TaskService {
         task.setId(UUID.randomUUID().toString());
         task.setUserId(userId);
         task.setTitle(request.title().trim());
-        task.setDue(defaultText(request.due(), "Sin fecha"));
+        task.setDue(DueDate.parse(request.due()));
         task.setPriority(request.priority() == null ? Priority.MEDIUM : request.priority());
         task.setTag(defaultText(request.tag(), "Personal"));
         task.setDone(false);
@@ -83,7 +86,7 @@ public class TaskService {
         }
         // due: null = no cambiar; cadena vacia = quitar la fecha.
         if (request.due() != null) {
-            subtask.setDue(blankToNull(request.due()));
+            subtask.setDue(DueDate.parse(request.due()));
         }
         return taskRepository.save(task);
     }
@@ -109,7 +112,8 @@ public class TaskService {
         Task task = getOwned(userId, id);
 
         task.setTitle(request.title() == null || request.title().isBlank() ? task.getTitle() : request.title().trim());
-        task.setDue(defaultText(request.due(), task.getDue()));
+        // due: null = no cambiar; cadena vacia = quitar la fecha.
+        if (request.due() != null) task.setDue(DueDate.parse(request.due()));
         if (request.priority() != null) task.setPriority(request.priority());
         task.setTag(defaultTag(request.tag(), task.getTag()));
         return taskRepository.save(task);
@@ -132,7 +136,7 @@ public class TaskService {
         subtask.setId(UUID.randomUUID().toString());
         subtask.setTitle(request.title().trim());
         subtask.setDone(false);
-        subtask.setDue(blankToNull(request.due()));
+        subtask.setDue(DueDate.parse(request.due()));
         return subtask;
     }
 
@@ -152,9 +156,5 @@ public class TaskService {
             return fallback;
         }
         return value.trim();
-    }
-
-    private String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
     }
 }

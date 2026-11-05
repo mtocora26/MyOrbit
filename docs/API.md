@@ -44,3 +44,11 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 | Nombre repetido en el semestre | 400 | `Ya tienes una materia con ese nombre en el semestre 2026-1` |
 | Sin sesión | 401 | |
 | Materia inexistente o de otro usuario | 404 | `Materia no encontrada` |
+
+## Fechas de tareas y subtareas (`due`)
+
+`due` es una fecha real ISO-8601 sin zona horaria (`2026-10-10T23:59`). Sin fecha, la respuesta trae `null`.
+
+- En peticiones: `null`/ausente no cambia la fecha al editar, texto vacío la quita y cualquier otro formato responde `400` (`La fecha debe tener el formato AAAA-MM-DDTHH:mm`).
+- `GET /api/tasks` ordena por `due` ascendente; las tareas sin fecha van al final.
+- Al arrancar, una migración única convierte las fechas guardadas como texto (`"Sin fecha"`, `"Hoy"`) a `null` y las ISO a fechas reales.
