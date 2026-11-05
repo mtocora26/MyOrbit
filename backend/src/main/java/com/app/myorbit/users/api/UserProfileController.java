@@ -1,9 +1,8 @@
 package com.app.myorbit.users.api;
 
 import jakarta.validation.Valid;
+import com.app.myorbit.users.application.UserProfileService;
 import com.app.myorbit.users.domain.User;
-import com.app.myorbit.users.domain.UserProfile;
-import com.app.myorbit.users.infrastructure.UserProfileRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -14,31 +13,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/profile")
 public class UserProfileController {
-    private final UserProfileRepository profileRepository;
+    private final UserProfileService profileService;
 
-    public UserProfileController(UserProfileRepository profileRepository) {
-        this.profileRepository = profileRepository;
+    public UserProfileController(UserProfileService profileService) {
+        this.profileService = profileService;
     }
 
     @GetMapping
     public ResponseEntity<UserProfileResponse> get(@CurrentUser User user) {
-        return profileRepository.findById(user.getId())
+        return profileService.find(user.getId())
                 .map(profile -> ResponseEntity.ok(UserProfileResponse.from(profile)))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PutMapping
     public UserProfileResponse update(@CurrentUser User user, @Valid @RequestBody UpdateUserProfileRequest request) {
-        UserProfile profile = profileRepository.findById(user.getId()).orElseGet(UserProfile::new);
-        profile.setUserId(user.getId());
-        profile.setProgram(textOrEmpty(request.program()));
-        profile.setSemester(textOrEmpty(request.semester()));
-        profile.setStudentCode(textOrEmpty(request.studentCode()));
-        profile.setGradeTarget(textOrEmpty(request.gradeTarget()));
-        return UserProfileResponse.from(profileRepository.save(profile));
-    }
-
-    private String textOrEmpty(String value) {
-        return value == null ? "" : value.trim();
+        return UserProfileResponse.from(profileService.update(user.getId(), request.program(), request.semester(),
+                request.studentCode(), request.gradeTarget()));
     }
 }
