@@ -231,7 +231,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   async function handleSaveTask() {
     if (!task || saving) return;
     const title = draftTitle.trim();
-    const due = draftDate ? toTaskDue(draftDate, draftTime) : task.rawDue || "Sin fecha";
+    const due = draftDate ? toTaskDue(draftDate, draftTime) : task.rawDue;
 
     if (!title) {
       setError("El titulo de la tarea no puede estar vacio");
