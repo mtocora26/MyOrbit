@@ -22,13 +22,14 @@ export function fromTaskDue(value: string): TaskDueInput {
 }
 
 export function toTaskDue(date: string, time: string): string {
-  if (!date) return "Sin fecha";
+  if (!date) return "";
   return `${date}T${time || "23:59"}`;
 }
 
-export function formatTaskDue(value: string): string {
+export function formatTaskDue(value: string | null | undefined): string {
+  if (!value) return "Sin fecha";
   const input = fromTaskDue(value);
-  if (!input.date) return value || "Sin fecha";
+  if (!input.date) return "Sin fecha";
 
   const due = new Date(`${input.date}T${input.time || "00:00"}`);
   const today = new Date();

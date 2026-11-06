@@ -29,7 +29,7 @@ export interface ApiTask {
   id: string;
   userId: string;
   title: string;
-  due: string;
+  due: string | null;
   priority: string;
   tag: string;
   done: boolean;
@@ -72,7 +72,7 @@ export function toUiTask(task: ApiTask): UiTask {
     userId: task.userId,
     label: task.title,
     due: formatTaskDue(task.due),
-    rawDue: task.due,
+    rawDue: task.due ?? "",
     priority: normalizePriority(task.priority),
     tag: normalizeTag(task.tag),
     done: task.done,
@@ -109,7 +109,7 @@ export async function createTask(input: CreateTaskInput): Promise<ApiTask> {
     body: JSON.stringify({
       userId: input.userId,
       title: input.title,
-      due: input.due ?? "Sin fecha",
+      due: input.due ?? "",
       priority: input.priority ?? "media",
       tag: input.tag ?? "Personal",
     }),

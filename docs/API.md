@@ -128,3 +128,11 @@ Reúne las materias del usuario con su estado de notas, el promedio ponderado po
 - Una materia está en riesgo (`atRisk`) si su meta no es alcanzable o necesita más de 4.0 de promedio en lo que falta.
 
 Errores: `400` si `target` está fuera de 0–5, `401` sin sesión.
+
+## Fechas de tareas y subtareas (`due`)
+
+`due` es una fecha real ISO-8601 sin zona horaria (`2026-10-10T23:59`). Sin fecha, la respuesta trae `null`.
+
+- En peticiones: `null`/ausente no cambia la fecha al editar, texto vacío la quita y cualquier otro formato responde `400` (`La fecha debe tener el formato AAAA-MM-DDTHH:mm`).
+- `GET /api/tasks` ordena por `due` ascendente; las tareas sin fecha van al final.
+- Al arrancar, una migración única convierte las fechas guardadas como texto (`"Sin fecha"`, `"Hoy"`) a `null` y las ISO a fechas reales.
