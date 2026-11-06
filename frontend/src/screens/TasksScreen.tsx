@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CategoryBadge, Checkbox, PriorityDot, ProgressBar, EmptyState, Station } from "../components/shared";
 import { IconCalendar, IconChecklist } from "../components/icons";
-import { deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
+import { deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
 import { isOverdue } from "../services/taskDue";
 import { fetchCategories, type Category } from "../services/categoriesApi";
 
@@ -13,38 +13,30 @@ const STATUS_COLUMNS = [
   { id: "completadas", label: "Completadas" },
 ] as const;
 
-const WEEKDAY_HINTS = ["lun", "mar", "mie", "jue", "vie", "sab", "dom"];
+type DatePreset = "todas" | "hoy" | "semana";
+type DoneFilter = "todas" | "pendientes" | "completadas";
+type PriorityFilter = "todas" | "alta" | "media" | "baja";
 
-function isTodayDue(due: string): boolean {
-  return due.toLowerCase().includes("hoy");
+function toIsoLocal(date: Date, hours: string): string {
+  const normalized = date.toISOString().slice(0, 10);
+  return `${normalized}T${hours}`;
 }
 
-function isThisWeekDue(due: string): boolean {
-  const normalized = due.trim().toLowerCase();
-  if (!normalized) return false;
-  if (normalized.includes("hoy") || normalized.includes("mañana") || normalized.includes("manana")) {
-    return true;
-  }
-  if (WEEKDAY_HINTS.some((day) => normalized.includes(day))) {
-    return true;
-  }
-
-  const parsed = new Date(due);
-  if (Number.isNaN(parsed.getTime())) {
-    return false;
-  }
-
+function todayRange(): { dueFrom: string; dueTo: string } {
   const now = new Date();
-  const startOfWeek = new Date(now);
+  const day = now.toISOString().slice(0, 10);
+  return { dueFrom: `${day}T00:00`, dueTo: `${day}T23:59` };
+}
+
+function weekRange(): { dueFrom: string; dueTo: string } {
+  const now = new Date();
   const day = now.getDay();
   const offsetToMonday = day === 0 ? -6 : 1 - day;
-  startOfWeek.setDate(now.getDate() + offsetToMonday);
-  startOfWeek.setHours(0, 0, 0, 0);
-
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 7);
-
-  return parsed >= startOfWeek && parsed < endOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + offsetToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return { dueFrom: toIsoLocal(monday, "00:00"), dueTo: toIsoLocal(sunday, "23:59") };
 }
 
 export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
@@ -52,7 +44,10 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"todas" | "hoy" | "semana">("todas");
+  const [datePreset, setDatePreset] = useState<DatePreset>("todas");
+  const [doneFilter, setDoneFilter] = useState<DoneFilter>("todas");
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("todas");
+  const [categoryFilter, setCategoryFilter] = useState<string>("todas");
   const [view, setView] = useState<"lista" | "tablero">("lista");
   const [groupBy, setGroupBy] = useState<"estado" | "categoria">("estado");
 
@@ -75,7 +70,15 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
     try {
       setLoading(true);
       setError(null);
-      const apiTasks = await fetchTasks();
+      const range = datePreset === "hoy" ? todayRange() : datePreset === "semana" ? weekRange() : {};
+      const filters: TaskFilters = {
+        ...range,
+        done: doneFilter === "pendientes" ? false : doneFilter === "completadas" ? true : undefined,
+        priority: priorityFilter === "todas" ? undefined : priorityFilter,
+        categoryId: categoryFilter === "todas" || categoryFilter === "none" ? undefined : categoryFilter,
+        uncategorized: categoryFilter === "none",
+      };
+      const apiTasks = await fetchTasks(filters);
       setTasks(apiTasks.map(toUiTask));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado al cargar tareas");
@@ -87,17 +90,10 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   useEffect(() => {
     loadTasks();
     fetchCategories().then(setCategories).catch(() => setCategories([]));
-  }, [refreshTick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTick, datePreset, doneFilter, priorityFilter, categoryFilter]);
 
-  const filteredTasks = useMemo(() => {
-    if (filter === "hoy") {
-      return tasks.filter((task) => isTodayDue(task.due));
-    }
-    if (filter === "semana") {
-      return tasks.filter((task) => isThisWeekDue(task.due));
-    }
-    return tasks;
-  }, [tasks, filter]);
+  const filteredTasks = tasks;
 
   async function handleToggleTask(task: UiTask) {
     const previousTasks = tasks;
@@ -160,18 +156,34 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
             )}
           </button>
         </div>
-        <div className="flex gap-2 pb-3">
+        <div className="flex gap-2 pb-3 overflow-x-auto no-scrollbar">
           {(["todas", "hoy", "semana"] as const).map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
-              aria-pressed={filter === f}
+              onClick={() => setDatePreset(f)}
+              aria-pressed={datePreset === f}
               className="flex-shrink-0 min-h-[40px] rounded-md px-4 text-[14px] font-semibold transition-colors duration-150"
-              style={{ background: filter === f ? "var(--color-strong)" : "var(--color-wash)", color: filter === f ? "var(--color-on-strong)" : "var(--color-ink-2)" }}
+              style={{ background: datePreset === f ? "var(--color-strong)" : "var(--color-wash)", color: datePreset === f ? "var(--color-on-strong)" : "var(--color-ink-2)" }}
             >
               {f === "todas" ? "Todas" : f === "hoy" ? "Hoy" : "Esta semana"}
             </button>
           ))}
+          <select value={doneFilter} onChange={(e) => setDoneFilter(e.target.value as DoneFilter)} aria-label="Filtrar por estado" className="flex-shrink-0 min-h-[40px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
+            <option value="todas">Estado: todas</option>
+            <option value="pendientes">Pendientes</option>
+            <option value="completadas">Completadas</option>
+          </select>
+          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)} aria-label="Filtrar por prioridad" className="flex-shrink-0 min-h-[40px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
+            <option value="todas">Prioridad: todas</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+          </select>
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filtrar por categoría" className="flex-shrink-0 min-h-[40px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
+            <option value="todas">Categoría: todas</option>
+            <option value="none">Sin categoría</option>
+            {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </select>
           {view === "tablero" && (
             <button
               onClick={() => setGroupBy(groupBy === "estado" ? "categoria" : "estado")}

@@ -1,10 +1,13 @@
 package com.app.myorbit.tasks.api;
 
 import jakarta.validation.Valid;
+import com.app.myorbit.tasks.application.TaskFilter;
 import com.app.myorbit.tasks.application.TaskService;
+import com.app.myorbit.tasks.domain.Priority;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -13,9 +16,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -29,8 +34,15 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskResponse> list(@CurrentUser User user) {
-        return taskService.listByUser(user.getId()).stream().map(TaskResponse::from).toList();
+    public List<TaskResponse> list(@CurrentUser User user,
+                                   @RequestParam(required = false) Boolean done,
+                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueFrom,
+                                   @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueTo,
+                                   @RequestParam(required = false) String priority,
+                                   @RequestParam(required = false) String categoryId,
+                                   @RequestParam(required = false, defaultValue = "false") boolean uncategorized) {
+        Priority parsedPriority = priority == null ? null : Priority.parse(priority);
+        return taskService.listByUser(user.getId(), new TaskFilter(done, dueFrom, dueTo, parsedPriority, categoryId, uncategorized)).stream().map(TaskResponse::from).toList();
     }
 
     @GetMapping("/{id}")

@@ -137,6 +137,20 @@ Errores: `400` si `target` está fuera de 0–5, `401` sin sesión.
 - `GET /api/tasks` ordena por `due` ascendente; las tareas sin fecha van al final.
 - Al arrancar, una migración única convierte las fechas guardadas como texto (`"Sin fecha"`, `"Hoy"`) a `null` y las ISO a fechas reales.
 
+## Filtros de tareas (`GET /api/tasks`)
+
+`GET /api/tasks` acepta los filtros combinables (todos opcionales, se aplican en conjunto):
+
+| Parámetro | Tipo | Regla |
+|---|---|---|
+| `done` | boolean | `true` solo completadas, `false` solo pendientes |
+| `dueFrom` / `dueTo` | ISO-8601 `AAAA-MM-DDTHH:mm` | Rango inclusivo sobre `due`; las tareas sin fecha se excluyen si hay algún límite. `dueFrom` posterior a `dueTo` → `400` |
+| `priority` | `alta` \| `media` \| `baja` | Otro valor → `400` |
+| `categoryId` | id de categoría | Filtra por esa categoría (las tareas sin categoría no coinciden) |
+| `uncategorized` | boolean (`true`) | Solo tareas sin categoría; se ignora si se pasa `categoryId` |
+
+Ejemplo: `GET /api/tasks?done=false&priority=alta&categoryId=abc&dueFrom=2026-10-01T00:00&dueTo=2026-10-31T23:59`
+
 ## Categoría de tareas (`categoryId`)
 
 La tarea referencia su categoría; ya no existe el campo libre `tag`.

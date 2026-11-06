@@ -31,7 +31,15 @@ public class TaskService {
     }
 
     public List<Task> listByUser(String userId) {
+        return listByUser(userId, TaskFilter.empty());
+    }
+
+    public List<Task> listByUser(String userId, TaskFilter filter) {
+        if (filter.dueFrom() != null && filter.dueTo() != null && filter.dueFrom().isAfter(filter.dueTo())) {
+            throw new BusinessRuleException("El rango de fechas no es valido: dueFrom no puede ser posterior a dueTo");
+        }
         return taskRepository.findByUserIdOrderByIdAsc(userId).stream()
+                .filter(filter::matches)
                 .sorted(Comparator.comparing(Task::getDue, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
     }
