@@ -9,6 +9,8 @@ import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -21,7 +23,8 @@ public class MongoConversionConfig {
     public MongoCustomConversions mongoCustomConversions() {
         return new MongoCustomConversions(List.of(
                 new PriorityWriter(), new PriorityReader(),
-                new HabitFrequencyWriter(), new HabitFrequencyReader()));
+                new HabitFrequencyWriter(), new HabitFrequencyReader(),
+                new LegacyDueReader()));
     }
 
     @WritingConverter
@@ -54,6 +57,19 @@ public class MongoConversionConfig {
         @Override
         public HabitFrequency convert(String source) {
             return HabitFrequency.fromValue(source).orElse(HabitFrequency.DAILY);
+        }
+    }
+
+    /** Las fechas guardadas como texto ("Sin fecha", "Hoy") se leen como sin fecha; las ISO se conservan. */
+    @ReadingConverter
+    static class LegacyDueReader implements Converter<String, LocalDateTime> {
+        @Override
+        public LocalDateTime convert(String source) {
+            try {
+                return LocalDateTime.parse(source.trim());
+            } catch (DateTimeParseException legacy) {
+                return null;
+            }
         }
     }
 }

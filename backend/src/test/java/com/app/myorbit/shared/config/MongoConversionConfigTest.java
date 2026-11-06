@@ -82,4 +82,25 @@ class MongoConversionConfigTest {
                 () -> mapper.readValue("{\"title\":\"x\",\"priority\":\"urgente\"}", CreateTaskRequest.class));
         assertEquals("\"alta\"", mapper.writeValueAsString(Priority.HIGH));
     }
+
+    @Test
+    void legacyTextDatesReadAsNoDateAndIsoTextIsKept() {
+        Task legacy = converter.read(Task.class, new Document("_id", "t1").append("due", "Sin fecha"));
+        Task iso = converter.read(Task.class, new Document("_id", "t2").append("due", "2026-10-10T23:59"));
+
+        assertEquals(null, legacy.getDue());
+        assertEquals(java.time.LocalDateTime.parse("2026-10-10T23:59"), iso.getDue());
+    }
+
+    @Test
+    void storesDueAsARealDate() {
+        Task task = new Task();
+        task.setId("t1");
+        task.setDue(java.time.LocalDateTime.parse("2026-10-10T23:59"));
+
+        Document document = new Document();
+        converter.write(task, document);
+
+        assertEquals(java.util.Date.class, document.get("due").getClass());
+    }
 }
