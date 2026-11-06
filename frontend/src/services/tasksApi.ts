@@ -93,8 +93,25 @@ function getLeaves(subtasks: Subtask[]): Subtask[] {
   return subtasks.flatMap((subtask) => subtask.subtasks?.length ? getLeaves(subtask.subtasks) : [subtask]);
 }
 
-export async function fetchTasks(): Promise<ApiTask[]> {
-  const response = await fetch(`${API_BASE_URL}/api/tasks`, { headers: authHeaders() });
+export interface TaskFilters {
+  done?: boolean;
+  dueFrom?: string;
+  dueTo?: string;
+  priority?: TaskPriority;
+  categoryId?: string;
+  uncategorized?: boolean;
+}
+
+export async function fetchTasks(filters: TaskFilters = {}): Promise<ApiTask[]> {
+  const params = new URLSearchParams();
+  if (filters.done !== undefined) params.set("done", String(filters.done));
+  if (filters.dueFrom) params.set("dueFrom", filters.dueFrom);
+  if (filters.dueTo) params.set("dueTo", filters.dueTo);
+  if (filters.priority) params.set("priority", filters.priority);
+  if (filters.categoryId) params.set("categoryId", filters.categoryId);
+  if (filters.uncategorized) params.set("uncategorized", "true");
+  const query = params.size ? `?${params}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/tasks${query}`, { headers: authHeaders() });
   if (!response.ok) {
     throw new Error(`No fue posible cargar tareas (${response.status})`);
   }

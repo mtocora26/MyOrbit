@@ -204,6 +204,49 @@ class TaskServiceTest {
         assertEquals(java.util.List.of("c", "a", "b"), service.listByUser("u1").stream().map(Task::getId).toList());
     }
 
+    private Task taskWith(String id, boolean done, String due, com.app.myorbit.tasks.domain.Priority priority, String categoryId) {
+        Task task = taskOf("u1");
+        task.setId(id);
+        task.setDone(done);
+        task.setDue(due == null ? null : java.time.LocalDateTime.parse(due));
+        task.setPriority(priority);
+        task.setCategoryId(categoryId);
+        return task;
+    }
+
+    @Test
+    void listFiltersByDonePriorityCategoryAndDateRange() {
+        Task pendingHigh = taskWith("a", false, "2026-10-10T10:00", com.app.myorbit.tasks.domain.Priority.HIGH, "c1");
+        Task doneHigh = taskWith("b", true, "2026-10-10T11:00", com.app.myorbit.tasks.domain.Priority.HIGH, "c1");
+        Task pendingLow = taskWith("c", false, "2026-12-01T10:00", com.app.myorbit.tasks.domain.Priority.LOW, "c2");
+        Task undated = taskWith("d", false, null, com.app.myorbit.tasks.domain.Priority.HIGH, null);
+        when(repository.findByUserIdOrderByIdAsc("u1")).thenReturn(java.util.List.of(doneHigh, undated, pendingLow, pendingHigh));
+
+        assertEquals(java.util.List.of("b"),
+                service.listByUser("u1", new TaskFilter(true, null, null, null, null, false)).stream().map(Task::getId).toList());
+        assertEquals(java.util.List.of("a", "b", "d"),
+                service.listByUser("u1", new TaskFilter(null, null, null, com.app.myorbit.tasks.domain.Priority.HIGH, null, false)).stream().map(Task::getId).toList());
+        assertEquals(java.util.List.of("a", "b"),
+                service.listByUser("u1", new TaskFilter(null, null, null, null, "c1", false)).stream().map(Task::getId).toList());
+        assertEquals(java.util.List.of("d"),
+                service.listByUser("u1", new TaskFilter(null, null, null, null, null, true)).stream().map(Task::getId).toList());
+        assertEquals(java.util.List.of("a", "b"),
+                service.listByUser("u1", new TaskFilter(null,
+                        java.time.LocalDateTime.parse("2026-10-01T00:00"),
+                        java.time.LocalDateTime.parse("2026-10-31T23:59"), null, null, false)).stream().map(Task::getId).toList());
+        assertEquals(java.util.List.of("a"),
+                service.listByUser("u1", new TaskFilter(false,
+                        java.time.LocalDateTime.parse("2026-10-01T00:00"),
+                        java.time.LocalDateTime.parse("2026-10-31T23:59"), com.app.myorbit.tasks.domain.Priority.HIGH, "c1", false)).stream().map(Task::getId).toList());
+    }
+
+    @Test
+    void listRejectsInvertedDateRange() {
+        assertThrows(BusinessRuleException.class, () -> service.listByUser("u1", new TaskFilter(null,
+                java.time.LocalDateTime.parse("2026-12-01T00:00"),
+                java.time.LocalDateTime.parse("2026-10-01T00:00"), null, null, false)));
+    }
+
     private Category categoryOf(String userId, String id) {
         Category category = new Category();
         category.setId(id);
