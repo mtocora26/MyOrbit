@@ -6,5 +6,5 @@ import com.app.myorbit.tasks.domain.Priority;
 public record UpdateTaskRequest(
         @Size(max = 200, message = "El titulo es demasiado largo") String title,
         String due, Priority priority,
-        @Size(max = 50, message = "La etiqueta es demasiado larga") String tag) {
+        String categoryId) {
 }

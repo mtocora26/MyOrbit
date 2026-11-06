@@ -23,6 +23,7 @@ class TaskResponseTest {
         task.setId("t1");
         task.setUserId("u1");
         task.setTitle("Tarea");
+        task.setCategoryId("c1");
         task.setPriority(Priority.HIGH);
         task.setDone(true);
         task.getSubtasks().add(parent);
@@ -30,6 +31,7 @@ class TaskResponseTest {
         TaskResponse response = TaskResponse.from(task);
 
         assertEquals("t1", response.id());
+        assertEquals("c1", response.categoryId());
         assertEquals(Priority.HIGH, response.priority());
         assertTrue(response.done());
         assertEquals("Padre", response.subtasks().get(0).title());

@@ -53,7 +53,8 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
   }, [tasks]);
 
   const dayTasks = byDay.get(selected) ?? [];
-  const colorOf = (task: UiTask) => categories.find((category) => category.name === task.tag)?.color ?? "#FF6B4A";
+  const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
+  const nameOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.name ?? (task.categoryId ? "Categoría" : "Sin categoría");
 
   function shiftWeek(delta: number) {
     const next = new Date(weekStart);
@@ -141,7 +142,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
                     <div className="mb-1 flex min-w-0 flex-1 items-start justify-between gap-2 py-2">
                       <div className="min-w-0">
                         <p className={`text-[16px] font-semibold leading-snug ${task.done ? "text-ink-3 line-through" : "text-ink"}`}>{task.label}</p>
-                        <div className="mt-1"><CategoryBadge name={task.tag} color={color} /></div>
+                        <div className="mt-1"><CategoryBadge name={nameOf(task)} color={color} /></div>
                       </div>
                       <PriorityDot level={task.priority} />
                     </div>

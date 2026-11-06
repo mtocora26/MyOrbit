@@ -77,7 +77,7 @@ interface CategoryOption { id: string; name: string; color: string; }
 interface CategoryPickerProps {
   categories: CategoryOption[];
   value: string;
-  onChange: (name: string) => void;
+  onChange: (id: string) => void;
   onCreate: (name: string, color: string) => Promise<void>;
   className?: string;
   /** "chips": una fila deslizable de un toque por categoría, sin abrir el selector nativo. */
@@ -121,18 +121,18 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
   }
 
   if (variant === "chips") {
-    const options = value && !categories.some((category) => category.name === value) ? [...categories, { id: "__current", name: value, color: "#667085" }] : categories;
+    const options = value && !categories.some((category) => category.id === value) ? [...categories, { id: value, name: value, color: "#667085" }] : categories;
     return (
       <div role="radiogroup" aria-label="Categoría" className={`no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 ${className}`}>
         {options.map((category) => {
-          const selected = category.name === value;
+          const selected = category.id === value;
           return (
             <button
               key={category.id}
               type="button"
               role="radio"
               aria-checked={selected}
-              onClick={() => onChange(category.name)}
+              onClick={() => onChange(category.id)}
               className={`flex h-10 flex-shrink-0 items-center gap-2 rounded-md border px-3 text-[14px] font-semibold ${selected ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}
             >
               <span className="h-2.5 w-2.5 flex-shrink-0 rounded-[2px]" style={{ background: category.color }} aria-hidden="true" />
@@ -150,8 +150,8 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
   return (
     <div className={`flex gap-2 ${className}`}>
       <select value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral">
-        {categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}
-        {value && !categories.some((category) => category.name === value) && <option value={value}>{value}</option>}
+        {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        {value && !categories.some((category) => category.id === value) && <option value={value}>{value}</option>}
       </select>
       <button type="button" onClick={() => setCreating(true)} title="Nueva categoría" aria-label="Nueva categoría" className="w-11 rounded-md bg-wash text-[16px] font-semibold text-ink-2">+</button>
     </div>

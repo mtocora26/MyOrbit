@@ -3,7 +3,6 @@ import { formatTaskDue } from "./taskDue";
 import { API_BASE_URL } from "./apiConfig";
 
 export type TaskPriority = "alta" | "media" | "baja";
-export type TaskTag = string;
 
 export interface UiTask {
   id: string;
@@ -12,7 +11,7 @@ export interface UiTask {
   due: string;
   rawDue: string;
   priority: TaskPriority;
-  tag: TaskTag;
+  categoryId: string | null;
   done: boolean;
   subtasks: Subtask[];
 }
@@ -31,7 +30,7 @@ export interface ApiTask {
   title: string;
   due: string | null;
   priority: string;
-  tag: string;
+  categoryId: string | null;
   done: boolean;
   subtasks?: Subtask[];
 }
@@ -40,7 +39,7 @@ export interface CreateTaskInput {
   title: string;
   due?: string;
   priority?: TaskPriority;
-  tag?: TaskTag;
+  categoryId?: string | null;
   userId?: string;
 }
 
@@ -48,7 +47,7 @@ export interface UpdateTaskInput {
   title: string;
   due: string;
   priority: TaskPriority;
-  tag: TaskTag;
+  categoryId: string | null;
 }
 
 function requestHeaders(): HeadersInit {
@@ -62,8 +61,8 @@ function normalizePriority(priority: string): TaskPriority {
   return "media";
 }
 
-function normalizeTag(tag: string): TaskTag {
-  return tag && tag.trim() ? tag.trim() : "Personal";
+function normalizeCategoryId(categoryId: string | null | undefined): string | null {
+  return categoryId && categoryId.trim() ? categoryId.trim() : null;
 }
 
 export function toUiTask(task: ApiTask): UiTask {
@@ -74,7 +73,7 @@ export function toUiTask(task: ApiTask): UiTask {
     due: formatTaskDue(task.due),
     rawDue: task.due ?? "",
     priority: normalizePriority(task.priority),
-    tag: normalizeTag(task.tag),
+    categoryId: normalizeCategoryId(task.categoryId),
     done: task.done,
     subtasks: normalizeSubtasks(task.subtasks),
   };
@@ -111,7 +110,7 @@ export async function createTask(input: CreateTaskInput): Promise<ApiTask> {
       title: input.title,
       due: input.due ?? "",
       priority: input.priority ?? "media",
-      tag: input.tag ?? "Personal",
+      categoryId: input.categoryId ?? null,
     }),
   });
 
@@ -150,7 +149,7 @@ export async function updateTask(taskId: string, input: UpdateTaskInput): Promis
       title: input.title,
       due: input.due,
       priority: input.priority,
-      tag: input.tag,
+      categoryId: input.categoryId,
     }),
   });
 

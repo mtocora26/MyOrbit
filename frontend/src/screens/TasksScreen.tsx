@@ -56,11 +56,20 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   const [view, setView] = useState<"lista" | "tablero">("lista");
   const [groupBy, setGroupBy] = useState<"estado" | "categoria">("estado");
 
-  const colorByCategory = useMemo(() => {
+  const colorByCategoryId = useMemo(() => {
     const map = new Map<string, string>();
-    categories.forEach((category) => map.set(category.name, category.color));
+    categories.forEach((category) => map.set(category.id, category.color));
     return map;
   }, [categories]);
+
+  const nameByCategoryId = useMemo(() => {
+    const map = new Map<string, string>();
+    categories.forEach((category) => map.set(category.id, category.name));
+    return map;
+  }, [categories]);
+
+  const nameOf = (categoryId: string | null) =>
+    (categoryId ? nameByCategoryId.get(categoryId) : undefined) ?? (categoryId ? "Categoría" : "Sin categoría");
 
   async function loadTasks() {
     try {
@@ -122,7 +131,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
     setTasks(tasks.map((item) => item.id === task.id ? { ...item, label: trimmed } : item));
 
     try {
-      await updateTask(task.id, { title: trimmed, due: task.rawDue, priority: task.priority, tag: task.tag });
+      await updateTask(task.id, { title: trimmed, due: task.rawDue, priority: task.priority, categoryId: task.categoryId });
     } catch (err) {
       setTasks(previousTasks);
       setError(err instanceof Error ? err.message : "No fue posible renombrar la tarea");
@@ -186,17 +195,17 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
       ) : view === "lista" ? (
         <ol className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 py-4 pb-24 lg:px-8 lg:max-w-[760px]">
           {filteredTasks.map((task, index) => (
-            <TaskCard key={task.id} last={index === filteredTasks.length - 1} task={task} categoryColor={colorByCategory.get(task.tag)} onTap={() => onTaskTap(task.id)} onToggle={() => handleToggleTask(task)} onDelete={() => handleDeleteTask(task.id)} onRename={(title) => handleRenameTask(task, title)} />
+            <TaskCard key={task.id} last={index === filteredTasks.length - 1} task={task} categoryColor={task.categoryId ? colorByCategoryId.get(task.categoryId) : undefined} categoryName={nameOf(task.categoryId)} onTap={() => onTaskTap(task.id)} onToggle={() => handleToggleTask(task)} onDelete={() => handleDeleteTask(task.id)} onRename={(title) => handleRenameTask(task, title)} />
           ))}
         </ol>
       ) : (
-        <TasksBoard tasks={filteredTasks} categories={categories} colorByCategory={colorByCategory} groupBy={groupBy} onTaskTap={onTaskTap} onToggle={handleToggleTask} />
+        <TasksBoard tasks={filteredTasks} categories={categories} colorByCategoryId={colorByCategoryId} nameByCategoryId={nameByCategoryId} groupBy={groupBy} onTaskTap={onTaskTap} onToggle={handleToggleTask} />
       )}
     </div>
   );
 }
 
-function TaskCard({ task, categoryColor, last, onTap, onToggle, onDelete, onRename }: { task: UiTask; categoryColor?: string; last: boolean; onTap: () => void; onToggle: () => void; onDelete: () => void; onRename: (title: string) => void }) {
+function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, onDelete, onRename }: { task: UiTask; categoryColor?: string; categoryName: string; last: boolean; onTap: () => void; onToggle: () => void; onDelete: () => void; onRename: (title: string) => void }) {
   const overdue = !task.done && isOverdue(task.rawDue);
   const subtaskInfo = task.subtasks.length ? getSubtaskProgress(task.subtasks) : null;
   const color = categoryColor ?? "#FF6B4A";
@@ -240,7 +249,7 @@ function TaskCard({ task, categoryColor, last, onTap, onToggle, onDelete, onRena
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className={`num text-[16px] font-semibold ${overdue ? "text-danger" : "text-ink-2"}`}>{task.due}</span>
             {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
-            <CategoryBadge name={task.tag} color={categoryColor} />
+            <CategoryBadge name={categoryName} color={categoryColor} />
             {subtaskInfo && <span className="num text-[14px] font-semibold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total} pasos</span>}
             <PriorityDot level={task.priority} />
           </div>
@@ -261,7 +270,7 @@ function TaskCard({ task, categoryColor, last, onTap, onToggle, onDelete, onRena
   );
 }
 
-function TasksBoard({ tasks, categories, colorByCategory, groupBy, onTaskTap, onToggle }: { tasks: UiTask[]; categories: Category[]; colorByCategory: Map<string, string>; groupBy: "estado" | "categoria"; onTaskTap: (taskId: string) => void; onToggle: (task: UiTask) => void }) {
+function TasksBoard({ tasks, categories, colorByCategoryId, nameByCategoryId, groupBy, onTaskTap, onToggle }: { tasks: UiTask[]; categories: Category[]; colorByCategoryId: Map<string, string>; nameByCategoryId: Map<string, string>; groupBy: "estado" | "categoria"; onTaskTap: (taskId: string) => void; onToggle: (task: UiTask) => void }) {
   const columns = useMemo(() => {
     if (groupBy === "estado") {
       return STATUS_COLUMNS.map((column) => ({
@@ -271,14 +280,18 @@ function TasksBoard({ tasks, categories, colorByCategory, groupBy, onTaskTap, on
         tasks: tasks.filter((task) => (column.id === "completadas") === task.done),
       }));
     }
-    const names = categories.length ? categories.map((category) => category.name) : Array.from(new Set(tasks.map((task) => task.tag)));
-    return names.map((name) => ({
-      id: name,
-      label: name,
-      color: colorByCategory.get(name) ?? "var(--color-ink-2)",
-      tasks: tasks.filter((task) => task.tag === name),
-    }));
-  }, [tasks, categories, colorByCategory, groupBy]);
+    const ids = categories.length ? categories.map((category) => category.id) : Array.from(new Set(tasks.map((task) => task.categoryId).filter((id): id is string => !!id)));
+    const uncategorized = tasks.some((task) => !task.categoryId) ? [{ id: "__none", label: "Sin categoría", color: "var(--color-ink-2)", tasks: tasks.filter((task) => !task.categoryId) }] : [];
+    return [
+      ...ids.map((id) => ({
+        label: nameByCategoryId.get(id) ?? "Categoría",
+        id,
+        color: colorByCategoryId.get(id) ?? "var(--color-ink-2)",
+        tasks: tasks.filter((task) => task.categoryId === id),
+      })),
+      ...uncategorized,
+    ];
+  }, [tasks, categories, colorByCategoryId, nameByCategoryId, groupBy]);
 
   return (
     <div className="min-h-0 flex-1 overflow-x-auto no-scrollbar px-4 py-4 lg:px-8">
@@ -308,7 +321,7 @@ function TasksBoard({ tasks, categories, colorByCategory, groupBy, onTaskTap, on
                       <p className={`min-w-0 flex-1 text-[14px] font-semibold leading-snug ${task.done ? "text-ink-3 line-through" : "text-ink"}`}>{task.label}</p>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <CategoryBadge name={task.tag} color={colorByCategory.get(task.tag)} />
+                      <CategoryBadge name={task.categoryId ? (nameByCategoryId.get(task.categoryId) ?? "Categoría") : "Sin categoría"} color={task.categoryId ? colorByCategoryId.get(task.categoryId) : undefined} />
                       {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
                       {subtaskInfo && <span className="text-[13px] font-bold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total}</span>}
                     </div>

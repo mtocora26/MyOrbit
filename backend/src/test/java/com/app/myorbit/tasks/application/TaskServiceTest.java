@@ -1,5 +1,7 @@
 package com.app.myorbit.tasks.application;
 
+import com.app.myorbit.categories.application.CategoryService;
+import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
@@ -26,12 +28,14 @@ import static org.mockito.Mockito.when;
 
 class TaskServiceTest {
     private TaskRepository repository;
+    private CategoryService categoryService;
     private TaskService service;
 
     @BeforeEach
     void setUp() {
         repository = mock(TaskRepository.class);
-        service = new TaskService(repository);
+        categoryService = mock(CategoryService.class);
+        service = new TaskService(repository, categoryService);
     }
 
     private Task taskOf(String userId) {
@@ -198,5 +202,67 @@ class TaskServiceTest {
         when(repository.findByUserIdOrderByIdAsc("u1")).thenReturn(java.util.List.of(late, undated, soon));
 
         assertEquals(java.util.List.of("c", "a", "b"), service.listByUser("u1").stream().map(Task::getId).toList());
+    }
+
+    private Category categoryOf(String userId, String id) {
+        Category category = new Category();
+        category.setId(id);
+        category.setUserId(userId);
+        category.setName("Personal");
+        return category;
+    }
+
+    @Test
+    void createWithoutCategoryLeavesNoCategory() {
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+
+        assertNull(service.create("u1", new CreateTaskRequest("A", null, null, null)).getCategoryId());
+        assertNull(service.create("u1", new CreateTaskRequest("B", null, null, "  ")).getCategoryId());
+    }
+
+    @Test
+    void createWithCategoryValidatesOwnership() {
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        when(categoryService.getOwned("u1", "c1")).thenReturn(categoryOf("u1", "c1"));
+
+        Task task = service.create("u1", new CreateTaskRequest("A", null, null, "c1"));
+
+        assertEquals("c1", task.getCategoryId());
+    }
+
+    @Test
+    void createWithUnknownCategoryIsNotFound() {
+        when(categoryService.getOwned("u1", "missing"))
+                .thenThrow(new NotFoundException("Categoría no encontrada"));
+
+        assertThrows(NotFoundException.class, () -> service.create("u1", new CreateTaskRequest("A", null, null, "missing")));
+        verify(repository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void updateKeepsClearsOrReplacesCategory() {
+        Task task = taskOf("u1");
+        task.setCategoryId("c1");
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        when(categoryService.getOwned("u1", "c2")).thenReturn(categoryOf("u1", "c2"));
+
+        service.update("u1", "t1", new com.app.myorbit.tasks.api.UpdateTaskRequest(null, null, null, null));
+        assertEquals("c1", task.getCategoryId());
+        service.update("u1", "t1", new com.app.myorbit.tasks.api.UpdateTaskRequest(null, null, null, "c2"));
+        assertEquals("c2", task.getCategoryId());
+        service.update("u1", "t1", new com.app.myorbit.tasks.api.UpdateTaskRequest(null, null, null, ""));
+        assertNull(task.getCategoryId());
+    }
+
+    @Test
+    void updateWithUnknownCategoryIsNotFound() {
+        Task task = taskOf("u1");
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(categoryService.getOwned("u1", "missing"))
+                .thenThrow(new NotFoundException("Categoría no encontrada"));
+
+        assertThrows(NotFoundException.class,
+                () -> service.update("u1", "t1", new com.app.myorbit.tasks.api.UpdateTaskRequest(null, null, null, "missing")));
     }
 }
