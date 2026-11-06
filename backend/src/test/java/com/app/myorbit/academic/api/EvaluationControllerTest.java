@@ -1,6 +1,8 @@
 package com.app.myorbit.academic.api;
 
 import com.app.myorbit.academic.application.EvaluationService;
+import com.app.myorbit.academic.application.GradeSummary;
+import com.app.myorbit.academic.application.GradeSummaryService;
 import com.app.myorbit.academic.domain.Evaluation;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
@@ -39,6 +41,9 @@ class EvaluationControllerTest {
 
     @MockitoBean
     private EvaluationService evaluationService;
+
+    @MockitoBean
+    private GradeSummaryService gradeSummaryService;
 
     @MockitoBean
     private CurrentUserProvider currentUserProvider;
@@ -122,5 +127,18 @@ class EvaluationControllerTest {
         mockMvc.perform(delete(BASE + "/e1").header("Authorization", AUTH)).andExpect(status().isNoContent());
 
         verify(evaluationService).delete("u1", "s1", "e1");
+    }
+
+    @Test
+    void summaryReturnsCurrentAndRequiredGrade() throws Exception {
+        when(gradeSummaryService.summarize("u1", "s1", 3.5))
+                .thenReturn(new GradeSummary(4.0, 1.2, 30.0, 70.0, 3.5, 3.29, true));
+
+        mockMvc.perform(get(BASE + "/summary").param("target", "3.5").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentGrade").value(4.0))
+                .andExpect(jsonPath("$.requiredGrade").value(3.29))
+                .andExpect(jsonPath("$.remainingPercentage").value(70.0))
+                .andExpect(jsonPath("$.achievable").value(true));
     }
 }

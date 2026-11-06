@@ -1,6 +1,7 @@
 package com.app.myorbit.academic.api;
 
 import com.app.myorbit.academic.application.EvaluationService;
+import com.app.myorbit.academic.application.GradeSummaryService;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,14 +23,21 @@ import java.util.List;
 @RequestMapping("/api/subjects/{subjectId}/evaluations")
 public class EvaluationController {
     private final EvaluationService evaluationService;
+    private final GradeSummaryService gradeSummaryService;
 
-    public EvaluationController(EvaluationService evaluationService) {
+    public EvaluationController(EvaluationService evaluationService, GradeSummaryService gradeSummaryService) {
         this.evaluationService = evaluationService;
+        this.gradeSummaryService = gradeSummaryService;
     }
 
     @GetMapping
     public List<EvaluationResponse> list(@PathVariable String subjectId, @CurrentUser User user) {
         return evaluationService.list(user.getId(), subjectId).stream().map(EvaluationResponse::from).toList();
+    }
+
+    @GetMapping("/summary")
+    public GradeSummaryResponse summary(@PathVariable String subjectId, @RequestParam(required = false) Double target, @CurrentUser User user) {
+        return GradeSummaryResponse.from(gradeSummaryService.summarize(user.getId(), subjectId, target));
     }
 
     @GetMapping("/{id}")
