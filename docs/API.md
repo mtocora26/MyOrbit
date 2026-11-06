@@ -45,6 +45,46 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 | Sin sesión | 401 | |
 | Materia inexistente o de otro usuario | 404 | `Materia no encontrada` |
 
+## Evaluaciones (`/api/subjects/{subjectId}/evaluations`)
+
+Cada evaluación pertenece a una materia del usuario de la sesión. Si la materia o la evaluación no son del usuario, responden 404. Al eliminar una materia se eliminan sus evaluaciones.
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/subjects/{subjectId}/evaluations` | | `200` lista · `404` |
+| `GET` | `/api/subjects/{subjectId}/evaluations/{id}` | | `200` evaluación · `404` |
+| `POST` | `/api/subjects/{subjectId}/evaluations` | `EvaluationRequest` | `201` evaluación creada · `400` · `404` |
+| `PUT` | `/api/subjects/{subjectId}/evaluations/{id}` | `EvaluationRequest` | `200` evaluación actualizada · `400` · `404` |
+| `DELETE` | `/api/subjects/{subjectId}/evaluations/{id}` | | `204` · `404` |
+
+### `EvaluationRequest`
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `name` | string | Obligatorio, máximo 100 caracteres. |
+| `percentage` | número | Obligatorio, mayor que 0 y máximo 100. La suma de la materia no puede superar 100. |
+| `grade` | número | Opcional (`null` hasta conocer la nota), entre 0 y 5. |
+
+```json
+{ "name": "Parcial 1", "percentage": 30, "grade": 4.5 }
+```
+
+### Respuesta
+
+```json
+{ "id": "a91d…", "subjectId": "6f1c…", "name": "Parcial 1", "percentage": 30.0, "grade": 4.5 }
+```
+
+### Errores
+
+| Caso | HTTP | `detail` |
+|---|---|---|
+| Campo inválido | 400 | Mensaje de validación del campo |
+| La suma supera 100% | 400 | `La suma de porcentajes no puede superar 100%. Disponible: 10%` |
+| Sin sesión | 401 | |
+| Materia inexistente o de otro usuario | 404 | `Materia no encontrada` |
+| Evaluación inexistente | 404 | `Evaluacion no encontrada` |
+
 ## Fechas de tareas y subtareas (`due`)
 
 `due` es una fecha real ISO-8601 sin zona horaria (`2026-10-10T23:59`). Sin fecha, la respuesta trae `null`.

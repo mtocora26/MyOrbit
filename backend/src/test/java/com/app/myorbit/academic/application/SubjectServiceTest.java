@@ -2,6 +2,7 @@ package com.app.myorbit.academic.application;
 
 import com.app.myorbit.academic.api.SubjectRequest;
 import com.app.myorbit.academic.domain.Subject;
+import com.app.myorbit.academic.infrastructure.EvaluationRepository;
 import com.app.myorbit.academic.infrastructure.SubjectRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
@@ -22,7 +23,8 @@ import static org.mockito.Mockito.when;
 
 class SubjectServiceTest {
     private final SubjectRepository repository = mock(SubjectRepository.class);
-    private final SubjectService service = new SubjectService(repository);
+    private final EvaluationRepository evaluations = mock(EvaluationRepository.class);
+    private final SubjectService service = new SubjectService(repository, evaluations);
 
     private Subject subjectOf(String id, String userId, String name, String semester) {
         Subject subject = new Subject();
@@ -81,5 +83,15 @@ class SubjectServiceTest {
         assertThrows(NotFoundException.class, () -> service.update("u1", "s1", new SubjectRequest("Redes", 3, "2026-1", null)));
         assertThrows(NotFoundException.class, () -> service.delete("u1", "s1"));
         verify(repository, never()).deleteById(anyString());
+    }
+
+    @Test
+    void deleteRemovesTheEvaluationsOfTheSubject() {
+        when(repository.findById("s1")).thenReturn(Optional.of(subjectOf("s1", "u1", "Redes", "2026-1")));
+
+        service.delete("u1", "s1");
+
+        verify(evaluations).deleteBySubjectId("s1");
+        verify(repository).deleteById("s1");
     }
 }

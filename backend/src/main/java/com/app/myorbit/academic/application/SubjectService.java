@@ -2,6 +2,7 @@ package com.app.myorbit.academic.application;
 
 import com.app.myorbit.academic.api.SubjectRequest;
 import com.app.myorbit.academic.domain.Subject;
+import com.app.myorbit.academic.infrastructure.EvaluationRepository;
 import com.app.myorbit.academic.infrastructure.SubjectRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
@@ -14,9 +15,11 @@ import java.util.UUID;
 public class SubjectService {
     static final String DEFAULT_COLOR = "#7A5AF8";
     private final SubjectRepository subjectRepository;
+    private final EvaluationRepository evaluationRepository;
 
-    public SubjectService(SubjectRepository subjectRepository) {
+    public SubjectService(SubjectRepository subjectRepository, EvaluationRepository evaluationRepository) {
         this.subjectRepository = subjectRepository;
+        this.evaluationRepository = evaluationRepository;
     }
 
     public List<Subject> listByUser(String userId) {
@@ -47,6 +50,7 @@ public class SubjectService {
 
     public void delete(String userId, String id) {
         getOwned(userId, id);
+        evaluationRepository.deleteBySubjectId(id);
         subjectRepository.deleteById(id);
     }
 
