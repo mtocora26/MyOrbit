@@ -6,6 +6,7 @@ import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +36,19 @@ public class AuthController {
     @GetMapping("/me")
     public AuthResponse me(@CurrentUser User user) {
         return new AuthResponse(null, user.getId(), user.getName(), user.getEmail(), user.getRole());
+    }
+
+    @PutMapping("/me/name")
+    public AuthResponse updateName(@CurrentUser User user, @Valid @RequestBody UpdateNameRequest request) {
+        com.app.myorbit.users.domain.User updated = authService.updateName(user.getId(), request.name());
+        return new AuthResponse(null, updated.getId(), updated.getName(), updated.getEmail(), updated.getRole());
+    }
+
+    @PutMapping("/me/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@CurrentUser User user, @RequestHeader("Authorization") String authorization,
+                               @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(user.getId(), authorization, request.currentPassword(), request.newPassword());
     }
 
     @PostMapping("/logout")

@@ -82,7 +82,7 @@ export default function App() {
             {subScreen === "grades"        && <GradesScreen onBack={() => setSubScreen("subjectDetail")} />}
             {subScreen === "habits"        && <HabitsScreen onBack={goBack} refreshTick={habitsRefreshTick} />}
             {subScreen === "radar"         && <RadarScreen onBack={goBack} />}
-            {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} />}
+            {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onUserUpdated={(next) => setSession(next)} />}
             {subScreen === "admin"         && <AdminScreen onBack={goBack} />}
 
             {subScreen === null && (

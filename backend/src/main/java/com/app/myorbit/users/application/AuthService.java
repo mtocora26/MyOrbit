@@ -105,6 +105,39 @@ public class AuthService implements CurrentUserProvider {
         sessionRepository.deleteById(extractToken(authorization));
     }
 
+    public User updateName(String userId, String newName) {
+        String name = required(newName, "El nombre es obligatorio");
+        if (name.length() > 100) {
+            throw new BusinessRuleException("El nombre es demasiado largo");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new com.app.myorbit.shared.error.NotFoundException("Usuario no encontrado"));
+        user.setName(name);
+        return userRepository.save(user);
+    }
+
+    public void changePassword(String userId, String authorization, String currentPassword, String newPassword) {
+        String password = required(newPassword, "La contrasena es obligatoria");
+        if (password.length() < 8) {
+            throw new BusinessRuleException("La contrasena debe tener al menos 8 caracteres");
+        }
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new BusinessRuleException("La contrasena actual es obligatoria");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new com.app.myorbit.shared.error.NotFoundException("Usuario no encontrado"));
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new UnauthorizedException("La contrasena actual es incorrecta");
+        }
+        user.setPasswordHash(passwordEncoder.encode(password));
+        userRepository.save(user);
+        // Conservar la sesión actual y cerrar las demás (defensa frente a sesiones robadas).
+        String currentToken = extractToken(authorization);
+        sessionRepository.findByUserId(userId).stream()
+                .filter(session -> !session.getToken().equals(currentToken))
+                .forEach(sessionRepository::delete);
+    }
+
     private AuthResponse createSession(User user) {
         UserSession session = new UserSession();
         session.setToken(UUID.randomUUID().toString());
