@@ -3,11 +3,12 @@ import { ScreenHeader, Toggle } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
 import { IconCalendar, IconGoogle, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
 import type { AuthSession } from "../services/authApi";
+import { updateName, changePassword } from "../services/authApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 
-interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; }
+interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
 
-export default function ProfileScreen({ onBack, user, onLogout }: Props) {
+export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }: Props) {
   const { theme, toggle: toggleTheme } = useTheme();
   const [pushNotifs, setPushNotifs] = useState(true);
   const [habitNotifs, setHabitNotifs] = useState(true);
@@ -17,6 +18,20 @@ export default function ProfileScreen({ onBack, user, onLogout }: Props) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [draft, setDraft] = useState({ program: "", semester: "", studentCode: "", gradeTarget: "" });
+  const [editingAccount, setEditingAccount] = useState(false);
+  const [savingAccount, setSavingAccount] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [accountMessage, setAccountMessage] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState(user.name);
+  const [draftName, setDraftName] = useState(user.name);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    setDisplayName(user.name);
+    setDraftName(user.name);
+  }, [user.name]);
 
   useEffect(() => {
     fetchUserProfile().then((data) => {
@@ -45,6 +60,55 @@ export default function ProfileScreen({ onBack, user, onLogout }: Props) {
     }
   }
 
+  function beginEditAccount() {
+    setDraftName(displayName);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setAccountError(null);
+    setAccountMessage(null);
+    setEditingAccount(true);
+  }
+
+  async function saveAccount() {
+    const name = draftName.trim();
+    if (!name) {
+      setAccountError("El nombre es obligatorio");
+      return;
+    }
+    if (name.length > 100) {
+      setAccountError("El nombre es demasiado largo");
+      return;
+    }
+    if (newPassword && newPassword !== confirmPassword) {
+      setAccountError("Las contraseñas nuevas no coinciden");
+      return;
+    }
+    try {
+      setSavingAccount(true);
+      setAccountError(null);
+      setAccountMessage(null);
+      if (name !== displayName) {
+        const updated = await updateName(name);
+        const next = { ...user, name: updated.name, email: updated.email, role: updated.role };
+        onUserUpdated?.(next);
+        setDisplayName(updated.name);
+      }
+      if (newPassword) {
+        await changePassword(currentPassword, newPassword);
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setEditingAccount(false);
+      setAccountMessage(newPassword ? "Nombre y contraseña actualizados." : "Nombre actualizado.");
+    } catch (error) {
+      setAccountError(error instanceof Error ? error.message : "No fue posible actualizar tu cuenta");
+    } finally {
+      setSavingAccount(false);
+    }
+  }
+
   return (
     <div className="h-full flex flex-col bg-paper">
       <ScreenHeader title="Perfil" bg="var(--color-paper)" onBack={onBack} />
@@ -69,10 +133,44 @@ export default function ProfileScreen({ onBack, user, onLogout }: Props) {
             </button>
           </div>
           <div className="text-center">
-            <p className="text-[18px] font-bold text-ink">{user.name}</p>
+            <p className="text-[18px] font-bold text-ink">{displayName}</p>
             <p className="text-[13px] text-ink-3">{user.email}</p>
           </div>
         </div>
+
+        {/* Account */}
+        <Section title="Cuenta">
+          {editingAccount ? (
+            <div className="p-4 flex flex-col gap-3">
+              <ProfileInput label="Nombre" value={draftName} onChange={setDraftName} placeholder="Tu nombre" />
+              <p className="text-[12px] text-ink-3">Correo: {user.email} (no se puede cambiar)</p>
+              <div className="border-t border-line pt-3 flex flex-col gap-3">
+                <p className="text-[13px] font-bold text-ink">Cambiar contraseña <span className="font-normal text-ink-3">(opcional)</span></p>
+                <ProfileInput label="Contraseña actual" value={currentPassword} onChange={setCurrentPassword} placeholder="La que usas ahora" />
+                <ProfileInput label="Contraseña nueva" value={newPassword} onChange={setNewPassword} placeholder="Mínimo 8 caracteres" />
+                <ProfileInput label="Confirmar contraseña nueva" value={confirmPassword} onChange={setConfirmPassword} placeholder="Repítela" />
+                <p className="text-[12px] text-ink-3">Al cambiarla se cierran tus otras sesiones; esta permanece activa.</p>
+              </div>
+              {accountError && <p role="alert" className="text-[13px] font-semibold text-danger">{accountError}</p>}
+              <div className="flex gap-2">
+                <button onClick={saveAccount} disabled={savingAccount} className="rounded-md bg-coral px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50">{savingAccount ? "Guardando..." : "Guardar cambios"}</button>
+                <button onClick={() => setEditingAccount(false)} disabled={savingAccount} className="rounded-md bg-wash px-3 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Row label="Nombre" value={displayName} />
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-[13px] text-ink-2">Contraseña</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] text-ink-3">••••••••</span>
+                  <button onClick={beginEditAccount} className="text-[13px] font-bold text-blue-ink">Editar cuenta</button>
+                </div>
+              </div>
+              {accountMessage && <p role="status" className="px-4 py-2 text-[13px] font-semibold text-green-ink">{accountMessage}</p>}
+            </>
+          )}
+        </Section>
 
         {/* Academic info */}
         <Section title="Información académica">

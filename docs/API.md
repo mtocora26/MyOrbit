@@ -137,6 +137,17 @@ Errores: `400` si `target` está fuera de 0–5, `401` sin sesión.
 - `GET /api/tasks` ordena por `due` ascendente; las tareas sin fecha van al final.
 - Al arrancar, una migración única convierte las fechas guardadas como texto (`"Sin fecha"`, `"Hoy"`) a `null` y las ISO a fechas reales.
 
+## Cuenta (`/api/auth/me`)
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/auth/me` | | `200` cuenta actual · `401` |
+| `PUT` | `/api/auth/me/name` | `{ name }` | `200` cuenta con nuevo nombre · `400` nombre en blanco o >100 caracteres · `401` |
+| `PUT` | `/api/auth/me/password` | `{ currentPassword, newPassword }` | `204` · `400` nueva contraseña <8 caracteres · `401` actual incorrecta |
+
+- `newPassword` se cifra con BCrypt. Al cambiarla se cierran todas las sesiones del usuario **excepto la actual** (sigue activa).
+- Errores en español con `ProblemDetail`.
+
 ## Filtros de tareas (`GET /api/tasks`)
 
 `GET /api/tasks` acepta los filtros combinables (todos opcionales, se aplican en conjunto):

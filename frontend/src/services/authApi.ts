@@ -76,3 +76,26 @@ export async function refreshSession(): Promise<AuthSession | null> {
   localStorage.setItem(SESSION_KEY, JSON.stringify(next));
   return next;
 }
+
+export async function updateName(name: string): Promise<{ id: string; name: string; email: string; role?: "USER" | "ADMIN" }> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me/name`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "No fue posible actualizar tu nombre"));
+  }
+  return response.json();
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me/password`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "No fue posible cambiar tu contraseña"));
+  }
+}
