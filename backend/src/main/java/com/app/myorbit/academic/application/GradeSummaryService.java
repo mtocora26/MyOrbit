@@ -21,8 +21,11 @@ public class GradeSummaryService {
 
     /** La meta es el parámetro si viene; si no, la del perfil; si no, {@value #DEFAULT_TARGET}. */
     public GradeSummary summarize(String userId, String subjectId, Double target) {
-        double goal = target != null ? validated(target) : profileTarget(userId).orElse(DEFAULT_TARGET);
-        return strategy.calculate(evaluationService.list(userId, subjectId), goal);
+        return strategy.calculate(evaluationService.list(userId, subjectId), resolveTarget(userId, target));
+    }
+
+    public double resolveTarget(String userId, Double target) {
+        return target != null ? validated(target) : profileTarget(userId).orElse(DEFAULT_TARGET);
     }
 
     private double validated(double target) {

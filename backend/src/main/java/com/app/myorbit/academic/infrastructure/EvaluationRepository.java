@@ -8,5 +8,7 @@ import java.util.List;
 public interface EvaluationRepository extends MongoRepository<Evaluation, String> {
     List<Evaluation> findByUserIdAndSubjectId(String userId, String subjectId);
 
+    List<Evaluation> findByUserId(String userId);
+
     void deleteBySubjectId(String subjectId);
 }

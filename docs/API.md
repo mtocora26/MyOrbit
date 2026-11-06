@@ -108,6 +108,27 @@ Calcula la nota actual y la nota que se necesita en lo que falta para alcanzar l
 
 Errores: `400` si `target` está fuera de 0–5, `401` sin sesión, `404` si la materia no existe o es de otro usuario.
 
+## Resumen académico (`GET /api/academic/summary`)
+
+Reúne las materias del usuario con su estado de notas, el promedio ponderado por créditos y las materias en riesgo.
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `semester` | string, opcional | Filtra por semestre (`2026-1`). Sin él incluye todas las materias. |
+| `target` | número, opcional | Meta (0–5). Misma precedencia que el resumen por materia: parámetro, perfil, 3.0. |
+
+```json
+{ "weightedAverage": 3.67, "totalCredits": 9, "gradedCredits": 6, "targetGrade": 3.0,
+  "subjects": [ { "subjectId": "6f1c…", "name": "Redes", "credits": 4, "semester": "2026-1", "atRisk": false, "grades": { "…": "…" } } ],
+  "atRisk": [] }
+```
+
+- `weightedAverage`: promedio de `currentGrade` ponderado por créditos, solo con materias que ya tienen notas; `null` si ninguna.
+- `grades`: mismo objeto que el resumen por materia.
+- Una materia está en riesgo (`atRisk`) si su meta no es alcanzable o necesita más de 4.0 de promedio en lo que falta.
+
+Errores: `400` si `target` está fuera de 0–5, `401` sin sesión.
+
 ## Fechas de tareas y subtareas (`due`)
 
 `due` es una fecha real ISO-8601 sin zona horaria (`2026-10-10T23:59`). Sin fecha, la respuesta trae `null`.
