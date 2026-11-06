@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BottomSheet, CategoryPicker, PriorityDot } from "./shared";
 import { IconPencil, IconCalendar, IconHabit, IconBell, IconClock } from "./icons";
-import { createTask, type TaskPriority, type TaskTag } from "../services/tasksApi";
+import { createTask, type TaskPriority } from "../services/tasksApi";
 import { todayInputValue, tomorrowInputValue, toTaskDue } from "../services/taskDue";
 import { createHabit } from "../services/habitsApi";
 import { createCategory, fetchCategories, type Category } from "../services/categoriesApi";
@@ -34,19 +34,22 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   const [date, setDate] = useState(todayInputValue);
   const [time, setTime] = useState("23:59");
   const [priority, setPriority] = useState<TaskPriority>("media");
-  const [tag, setTag] = useState<TaskTag>("Personal");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) fetchCategories().then(setCategories).catch(() => setCategories([]));
+    if (open) fetchCategories().then((data) => {
+      setCategories(data);
+      setCategoryId((current) => current || data.find((category) => category.name === "Personal")?.id || data[0]?.id || "");
+    }).catch(() => setCategories([]));
   }, [open]);
 
   async function handleCreateCategory(name: string, color: string) {
     const category = await createCategory(name, color);
     setCategories((current) => [...current, category]);
-    setTag(category.name);
+    setCategoryId(category.id);
   }
 
   const active = MODES.find((m) => m.id === mode)!;
@@ -65,7 +68,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       setSaving(true);
       setError(null);
       if (mode === "tarea") {
-        await createTask({ title: name.trim(), due: toTaskDue(date, time), priority, tag });
+        await createTask({ title: name.trim(), due: toTaskDue(date, time), priority, categoryId: categoryId || null });
         onTaskCreated();
       } else {
         await createHabit({ title: name.trim(), frequency: "diaria", daysOfWeek: [1, 2, 3, 4, 5, 6, 7], color: "var(--color-violet-ink)", icon: "target" });
@@ -75,7 +78,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       setDate(todayInputValue());
       setTime("23:59");
       setPriority("media");
-      setTag("Personal");
+      setCategoryId(categories.find((category) => category.name === "Personal")?.id || categories[0]?.id || "");
       closeSheet();
     } catch (err) {
       setError(err instanceof Error ? err.message : `No fue posible crear: ${active.label.toLowerCase()}`);
@@ -164,7 +167,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
               })}
             </div>
 
-            <CategoryPicker variant="chips" categories={categories} value={tag} onChange={setTag} onCreate={handleCreateCategory} />
+            <CategoryPicker variant="chips" categories={categories} value={categoryId} onChange={setCategoryId} onCreate={handleCreateCategory} />
           </>
         )}
 

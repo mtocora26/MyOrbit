@@ -136,3 +136,17 @@ Errores: `400` si `target` está fuera de 0–5, `401` sin sesión.
 - En peticiones: `null`/ausente no cambia la fecha al editar, texto vacío la quita y cualquier otro formato responde `400` (`La fecha debe tener el formato AAAA-MM-DDTHH:mm`).
 - `GET /api/tasks` ordena por `due` ascendente; las tareas sin fecha van al final.
 - Al arrancar, una migración única convierte las fechas guardadas como texto (`"Sin fecha"`, `"Hoy"`) a `null` y las ISO a fechas reales.
+
+## Categoría de tareas (`categoryId`)
+
+La tarea referencia su categoría; ya no existe el campo libre `tag`.
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `POST` | `/api/tasks` | `{ title, due?, priority?, categoryId? }` | `201` tarea con `categoryId` (`null` si viene ausente o en blanco) |
+| `PUT` | `/api/tasks/{id}` | `{ title?, due?, priority?, categoryId? }` | `200` · `404` tarea o categoría no encontrada |
+| `GET` | `/api/tasks` | | `200` lista con `categoryId` en cada tarea |
+
+- `categoryId` debe ser el `id` de una categoría del usuario de la sesión; si no existe o es de otro usuario responde `404` (`Categoría no encontrada`).
+- Al editar: `categoryId` ausente/null no cambia la categoría, cadena vacía la quita (`null`) y un valor válido la reemplaza.
+- Al arrancar, una migración única convierte cada `tag` legado en su `categoryId` (reutilizando la categoría con ese nombre para el usuario o creándola) y elimina el campo `tag`.

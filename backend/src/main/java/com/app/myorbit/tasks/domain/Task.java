@@ -16,7 +16,7 @@ public class Task {
     private String title;
     private LocalDateTime due;
     private Priority priority;
-    private String tag;
+    private String categoryId;
     private boolean done;
     private List<Subtask> subtasks = new ArrayList<>();
 
@@ -60,12 +60,12 @@ public class Task {
         this.priority = priority;
     }
 
-    public String getTag() {
-        return tag;
+    public String getCategoryId() {
+        return categoryId;
     }
 
-    public void setTag(String tag) {
-        this.tag = tag;
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
     }
 
     public boolean isDone() {

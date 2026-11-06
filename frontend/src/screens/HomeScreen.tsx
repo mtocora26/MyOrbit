@@ -121,7 +121,8 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
     }
   }
 
-  const colorOf = (task: UiTask) => categories.find((category) => category.name === task.tag)?.color ?? "#FF6B4A";
+  const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
+  const nameOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.name ?? (task.categoryId ? "Categoría" : "Sin categoría");
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar bg-paper">
@@ -190,7 +191,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                       <div className="min-w-0 flex-1">
                         <p className={`text-[16px] font-semibold leading-snug ${task.done ? "text-ink-3 line-through" : "text-ink"}`}>{task.label}</p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <CategoryBadge name={task.tag} color={color} />
+                          <CategoryBadge name={nameOf(task)} color={color} />
                           {overdue && <Badge label="Vencida" color="coral" />}
                         </div>
                       </div>

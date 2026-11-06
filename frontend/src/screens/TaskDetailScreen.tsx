@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar } from "../components/shared";
 import { IconCalendar } from "../components/icons";
-import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type TaskTag, type UiTask } from "../services/tasksApi";
+import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
 import { createCategory, fetchCategories, type Category } from "../services/categoriesApi";
 
@@ -23,7 +23,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   const [draftDate, setDraftDate] = useState("");
   const [draftTime, setDraftTime] = useState("");
   const [draftPriority, setDraftPriority] = useState<TaskPriority>("media");
-  const [draftTag, setDraftTag] = useState<TaskTag>("Personal");
+  const [draftCategoryId, setDraftCategoryId] = useState<string>("");
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [newSubtaskDate, setNewSubtaskDate] = useState("");
   const [newSubtaskTime, setNewSubtaskTime] = useState("");
@@ -38,7 +38,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   async function handleCreateCategory(name: string, color: string) {
     const category = await createCategory(name, color);
     setCategories((current) => [...current, category]);
-    setDraftTag(category.name);
+    setDraftCategoryId(category.id);
   }
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
           setDraftDate(dueInput.date);
           setDraftTime(dueInput.time);
           setDraftPriority(mapped.priority);
-          setDraftTag(mapped.tag);
+          setDraftCategoryId(mapped.categoryId ?? "");
           setEditing(false);
         }
       } catch (err) {
@@ -91,6 +91,8 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   }, [task]);
 
   const overdue = task ? !task.done && isOverdue(task.rawDue) : false;
+  const category = task?.categoryId ? categories.find((item) => item.id === task.categoryId) : undefined;
+  const categoryName = category?.name ?? (task?.categoryId ? "Categoría" : "Sin categoría");
 
   async function handleAddSubtask(title = newSubtaskTitle, parentSubtaskId?: string, due?: string) {
     if (!task || !title.trim() || saving) return;
@@ -198,7 +200,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
     setDraftDate(dueInput.date);
     setDraftTime(dueInput.time);
     setDraftPriority(task.priority);
-    setDraftTag(task.tag);
+    setDraftCategoryId(task.categoryId ?? "");
     setEditing(true);
   }
 
@@ -218,7 +220,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
     try {
       setSaving(true);
       setError(null);
-      const updated = await updateTask(task.id, { title, due: task.rawDue, priority: task.priority, tag: task.tag });
+      const updated = await updateTask(task.id, { title, due: task.rawDue, priority: task.priority, categoryId: task.categoryId });
       setTask(toUiTask(updated));
     } catch (err) {
       setTask(previous);
@@ -245,7 +247,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
       due: formatTaskDue(due),
       rawDue: due,
       priority: draftPriority,
-      tag: draftTag,
+      categoryId: draftCategoryId || null,
     };
     setTask(optimistic);
 
@@ -256,7 +258,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
         title,
         due,
         priority: draftPriority,
-        tag: draftTag,
+        categoryId: draftCategoryId || null,
       });
       setTask(toUiTask(updated));
       setEditing(false);
@@ -302,7 +304,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: task.priority === "alta" ? "var(--color-coral)" : task.priority === "media" ? "var(--color-amber)" : "var(--color-green)" }} />
                 <Badge label={PRIORITY_BADGE[task.priority].label} color={PRIORITY_BADGE[task.priority].color} />
-                <CategoryBadge name={task.tag} color={categories.find((category) => category.name === task.tag)?.color} />
+                <CategoryBadge name={categoryName} color={category?.color} />
               </div>
 
               {editing ? (
@@ -337,7 +339,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                       <option value="media">Media</option>
                       <option value="baja">Baja</option>
                     </select>
-                    <CategoryPicker categories={categories} value={draftTag} onChange={setDraftTag} onCreate={handleCreateCategory} className="col-span-2" />
+                    <CategoryPicker categories={categories} value={draftCategoryId} onChange={setDraftCategoryId} onCreate={handleCreateCategory} className="col-span-2" />
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -381,7 +383,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               <div className="grid grid-cols-2 gap-4">
                 <MetaField icon={<IconCalendar size={13} color={overdue ? "var(--color-danger)" : "var(--color-ink-3)"} />} label="Fecha limite" value={task.due} valueClassName={overdue ? "text-danger" : undefined} />
                 <MetaField icon={<StatusIcon />} label="Estado" value={task.done ? "Completada" : overdue ? "Vencida" : "En progreso"} valueClassName={overdue && !task.done ? "text-danger" : undefined} />
-                <MetaField icon={<FolderIcon />} label="Categoria" value={task.tag} />
+                <MetaField icon={<FolderIcon />} label="Categoria" value={categoryName} />
               </div>
             </div>
 

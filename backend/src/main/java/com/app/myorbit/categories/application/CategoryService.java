@@ -1,6 +1,7 @@
 package com.app.myorbit.categories.application;
 
 import com.app.myorbit.shared.error.BusinessRuleException;
+import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.categories.api.CreateCategoryRequest;
 import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.categories.infrastructure.CategoryRepository;
@@ -25,6 +26,12 @@ public class CategoryService {
             categories = seedDefaults(userId);
         }
         return categories;
+    }
+
+    public Category getOwned(String userId, String id) {
+        return categoryRepository.findById(id)
+                .filter(category -> category.getUserId().equals(userId))
+                .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
     }
 
     public Category create(String userId, CreateCategoryRequest request) {

@@ -1,5 +1,6 @@
 package com.app.myorbit.tasks.application;
 
+import com.app.myorbit.categories.application.CategoryService;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
@@ -22,9 +23,11 @@ import java.util.UUID;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final CategoryService categoryService;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, CategoryService categoryService) {
         this.taskRepository = taskRepository;
+        this.categoryService = categoryService;
     }
 
     public List<Task> listByUser(String userId) {
@@ -49,7 +52,7 @@ public class TaskService {
         task.setTitle(request.title().trim());
         task.setDue(DueDate.parse(request.due()));
         task.setPriority(request.priority() == null ? Priority.MEDIUM : request.priority());
-        task.setTag(defaultText(request.tag(), "Personal"));
+        task.setCategoryId(resolveNewCategory(userId, request.categoryId()));
         task.setDone(false);
         return taskRepository.save(task);
     }
@@ -115,7 +118,8 @@ public class TaskService {
         // due: null = no cambiar; cadena vacia = quitar la fecha.
         if (request.due() != null) task.setDue(DueDate.parse(request.due()));
         if (request.priority() != null) task.setPriority(request.priority());
-        task.setTag(defaultTag(request.tag(), task.getTag()));
+        // categoryId: null = no cambiar; cadena vacia = quitar la categoría.
+        if (request.categoryId() != null) task.setCategoryId(resolveNewCategory(userId, request.categoryId()));
         return taskRepository.save(task);
     }
 
@@ -144,17 +148,8 @@ public class TaskService {
         return task.findSubtask(subtaskId).orElseThrow(() -> new NotFoundException("Subtarea no encontrada"));
     }
 
-    private String defaultText(String value, String fallback) {
-        if (value == null || value.isBlank()) {
-            return fallback;
-        }
-        return value;
-    }
-
-    private String defaultTag(String value, String fallback) {
-        if (value == null || value.isBlank()) {
-            return fallback;
-        }
-        return value.trim();
+    private String resolveNewCategory(String userId, String categoryId) {
+        if (categoryId == null || categoryId.isBlank()) return null;
+        return categoryService.getOwned(userId, categoryId.trim()).getId();
     }
 }
