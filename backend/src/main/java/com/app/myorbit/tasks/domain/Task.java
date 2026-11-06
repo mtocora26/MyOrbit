@@ -3,6 +3,7 @@ package com.app.myorbit.tasks.domain;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +14,7 @@ public class Task {
     private String id;
     private String userId;
     private String title;
-    private String due;
+    private LocalDateTime due;
     private Priority priority;
     private String tag;
     private boolean done;
@@ -43,11 +44,11 @@ public class Task {
         this.title = title;
     }
 
-    public String getDue() {
+    public LocalDateTime getDue() {
         return due;
     }
 
-    public void setDue(String due) {
+    public void setDue(LocalDateTime due) {
         this.due = due;
     }
 

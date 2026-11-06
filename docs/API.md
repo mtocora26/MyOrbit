@@ -3,7 +3,7 @@
 Todas las rutas requieren la cabecera `Authorization: Bearer <token>` de la sesión (`/api/auth/login`).
 Los errores responden `ProblemDetail` (RFC 9457) con el mensaje en `detail`.
 
-La referencia completa del resto de módulos queda en #23 (README) y #31 (OpenAPI).
+La lista de rutas de todos los módulos está en el [README](../README.md); la referencia completa llegará con OpenAPI (#31).
 
 ## Materias (`/api/subjects`)
 
@@ -84,3 +84,11 @@ Cada evaluación pertenece a una materia del usuario de la sesión. Si la materi
 | Sin sesión | 401 | |
 | Materia inexistente o de otro usuario | 404 | `Materia no encontrada` |
 | Evaluación inexistente | 404 | `Evaluacion no encontrada` |
+
+## Fechas de tareas y subtareas (`due`)
+
+`due` es una fecha real ISO-8601 sin zona horaria (`2026-10-10T23:59`). Sin fecha, la respuesta trae `null`.
+
+- En peticiones: `null`/ausente no cambia la fecha al editar, texto vacío la quita y cualquier otro formato responde `400` (`La fecha debe tener el formato AAAA-MM-DDTHH:mm`).
+- `GET /api/tasks` ordena por `due` ascendente; las tareas sin fecha van al final.
+- Al arrancar, una migración única convierte las fechas guardadas como texto (`"Sin fecha"`, `"Hoy"`) a `null` y las ISO a fechas reales.
