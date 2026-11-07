@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BottomSheet } from "./shared";
+import { fromTaskDue } from "../services/taskDue";
 import { createEvaluation, deleteEvaluation, formatNumber, parseDecimal, updateEvaluation, type Evaluation } from "../services/evaluationsApi";
 
 interface Props {
@@ -20,6 +21,8 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
   const [name, setName] = useState("");
   const [percentage, setPercentage] = useState("");
   const [grade, setGrade] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("08:00");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +32,9 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
     setName(evaluation?.name ?? "");
     setPercentage(evaluation ? formatNumber(evaluation.percentage) : "");
     setGrade(evaluation?.grade != null ? formatNumber(evaluation.grade) : "");
+    const due = evaluation?.due ? fromTaskDue(evaluation.due) : { date: "", time: "" };
+    setDate(due.date);
+    setTime(due.time || "08:00");
     setConfirmingDelete(false);
     setError(null);
   }, [open, evaluation]);
@@ -51,7 +57,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
     try {
       setBusy(true);
       setError(null);
-      const input = { name: name.trim(), percentage: percentageValue, grade: gradeValue };
+      const input = { name: name.trim(), percentage: percentageValue, grade: gradeValue, due: date ? `${date}T${time || "08:00"}` : null };
       const saved = evaluation ? await updateEvaluation(subjectId, evaluation.id, input) : await createEvaluation(subjectId, input);
       onSaved(saved);
       onClose();
@@ -114,6 +120,15 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
               </span>
               <span className={`text-[13px] ${gradeError ? "font-semibold text-danger" : "text-ink-3"}`}>{gradeError ?? "Déjala vacía si aún no la tienes"}</span>
             </label>
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-[14px] font-semibold text-ink">Fecha (opcional)</p>
+            <div className="flex items-center gap-2">
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Fecha de la evaluación" className="num min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral" />
+              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!date} aria-label="Hora de la evaluación" className="num w-[120px] rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50" />
+              {date && <button type="button" onClick={() => setDate("")} aria-label="Quitar fecha" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>}
+            </div>
           </div>
 
           {error && <p role="alert" className="text-[14px] font-semibold text-danger">{error}</p>}

@@ -1,4 +1,4 @@
-package com.app.myorbit.tasks.application;
+package com.app.myorbit.shared.time;
 
 import com.app.myorbit.shared.error.BusinessRuleException;
 

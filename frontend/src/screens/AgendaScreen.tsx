@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { fetchCategories, type Category } from "../services/categoriesApi";
 import { fromTaskDue } from "../services/taskDue";
+import { fetchAgendaEvaluations, formatGrade, type AgendaEvaluation } from "../services/academicApi";
 import { CategoryBadge, EmptyState, PriorityDot, Station } from "../components/shared";
 
 const DAYS = ["L", "M", "X", "J", "V", "S", "D"];
@@ -23,6 +24,7 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; refreshTick?: number }) {
   const [tasks, setTasks] = useState<UiTask[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [evaluations, setEvaluations] = useState<AgendaEvaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
@@ -35,6 +37,8 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
       .catch((err) => { if (!ignore) setError(err instanceof Error ? err.message : "No fue posible cargar tu agenda"); })
       .finally(() => { if (!ignore) setLoading(false); });
     fetchCategories().then((data) => { if (!ignore) setCategories(data); }).catch(() => undefined);
+    // Las evaluaciones son informativas: si no cargan, la agenda sigue mostrando las tareas.
+    fetchAgendaEvaluations().then((data) => { if (!ignore) setEvaluations(data); }).catch(() => undefined);
     return () => { ignore = true; };
   }, [refreshTick]);
 
@@ -52,7 +56,22 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     return map;
   }, [tasks]);
 
+  const evaluationsByDay = useMemo(() => {
+    const map = new Map<string, AgendaEvaluation[]>();
+    evaluations.forEach((evaluation) => {
+      const { date } = fromTaskDue(evaluation.due);
+      if (date) map.set(date, [...(map.get(date) ?? []), evaluation]);
+    });
+    return map;
+  }, [evaluations]);
+
   const dayTasks = byDay.get(selected) ?? [];
+  // Tareas y evaluaciones del día en un solo orden por hora.
+  type DayItem = { kind: "task"; task: UiTask; time: string } | { kind: "evaluation"; evaluation: AgendaEvaluation; time: string };
+  const dayItems: DayItem[] = [
+    ...dayTasks.map((task): DayItem => ({ kind: "task", task, time: fromTaskDue(task.rawDue).time })),
+    ...(evaluationsByDay.get(selected) ?? []).map((evaluation): DayItem => ({ kind: "evaluation", evaluation, time: fromTaskDue(evaluation.due).time })),
+  ].sort((a, b) => a.time.localeCompare(b.time));
   const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
   const nameOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.name ?? (task.categoryId ? "Categoría" : "Sin categoría");
 
@@ -95,7 +114,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
             const key = dayKey(date);
             const isSelected = key === selected;
             const isToday = key === todayKey;
-            const pending = (byDay.get(key) ?? []).filter((task) => !task.done).length;
+            const pending = (byDay.get(key) ?? []).filter((task) => !task.done).length + (evaluationsByDay.get(key) ?? []).filter((evaluation) => evaluation.grade === null).length;
             return (
               <button
                 key={key}
@@ -124,13 +143,35 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
 
           {loading ? (
             <div className="flex flex-col gap-2" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-[60px] animate-pulse rounded-md bg-wash" />)}</div>
-          ) : dayTasks.length === 0 ? (
-            <EmptyState title="Día libre" sub="No hay entregas para esta fecha." />
+          ) : dayItems.length === 0 ? (
+            <EmptyState title="Día libre" sub="No hay entregas ni evaluaciones para esta fecha." />
           ) : (
             <ol>
-              {dayTasks.map((task, index) => {
+              {dayItems.map((item, index) => {
+                const last = index === dayItems.length - 1;
+                if (item.kind === "evaluation") {
+                  const { evaluation } = item;
+                  const graded = evaluation.grade !== null;
+                  return (
+                    <li key={`eval-${evaluation.id}`} className="orbit-rise flex gap-3" style={{ ["--i" as string]: index }}>
+                      <span className="num w-11 flex-shrink-0 pt-3 text-right text-[16px] font-semibold leading-none text-ink">{item.time}</span>
+                      <div className="relative flex w-7 flex-shrink-0 justify-center">
+                        {!last && <span className="absolute left-1/2 top-[30px] bottom-0 w-0 -translate-x-1/2" style={{ borderLeft: `3px solid ${evaluation.subjectColor}` }} />}
+                        {/* Evaluación: marca cuadrada (las tareas son círculos); llena = ya tiene nota */}
+                        <span className="mt-2.5 h-[20px] w-[20px] rounded-[4px] border-[3px]" style={{ borderColor: evaluation.subjectColor, background: graded ? evaluation.subjectColor : "var(--color-card)" }} aria-hidden="true" />
+                      </div>
+                      <div className="mb-1 flex min-w-0 flex-1 items-start justify-between gap-2 py-2">
+                        <div className="min-w-0">
+                          <p className="text-[16px] font-semibold leading-snug text-ink">{evaluation.name}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1"><CategoryBadge name={evaluation.subjectName} color={evaluation.subjectColor} /><span className="num text-[13px] text-ink-2">Evaluación · {formatGrade(evaluation.percentage)}%</span></div>
+                        </div>
+                        {graded && <span className="num text-[22px] font-semibold leading-none text-ink">{formatGrade(evaluation.grade as number)}</span>}
+                      </div>
+                    </li>
+                  );
+                }
+                const { task } = item;
                 const color = colorOf(task);
-                const last = index === dayTasks.length - 1;
                 const { time } = fromTaskDue(task.rawDue);
                 return (
                   <li key={task.id} className={`orbit-rise flex gap-3 ${task.done ? "opacity-50" : ""}`} style={{ ["--i" as string]: index }}>

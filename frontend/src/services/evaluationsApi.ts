@@ -10,12 +10,15 @@ export interface Evaluation {
   percentage: number;
   /** 0 a 5; null mientras no se conoce. */
   grade: number | null;
+  /** Fecha y hora ISO sin zona (2026-11-20T08:00); null si no tiene. */
+  due: string | null;
 }
 
 export interface EvaluationInput {
   name: string;
   percentage: number;
   grade: number | null;
+  due: string | null;
 }
 
 export const MAX_PERCENTAGE = 100;

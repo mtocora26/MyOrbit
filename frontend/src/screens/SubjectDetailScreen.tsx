@@ -6,6 +6,7 @@ import { IconPencil } from "../components/icons";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
 import { fetchEvaluations, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
+import { formatTaskDue } from "../services/taskDue";
 import { deleteSubject, type Subject } from "../services/subjectsApi";
 
 interface Props {
@@ -56,6 +57,8 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   }, [subject.id, evaluationsKey]);
 
   const status = summary ? gradeStatus(summary) : null;
+  // Primero las que tienen fecha (la más próxima arriba) y al final las que aún no la tienen.
+  const sortedEvaluations = [...evaluations].sort((a, b) => (a.due ?? "9999").localeCompare(b.due ?? "9999"));
   const assigned = evaluations.reduce((sum, evaluation) => sum + evaluation.percentage, 0);
   const remaining = Math.max(0, MAX_PERCENTAGE - assigned);
 
@@ -149,7 +152,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
                 {remaining > 0 && <p className="num mt-1.5 text-[13px] text-ink-2">Falta repartir {formatNumber(remaining)}%</p>}
               </div>
               <ul className="overflow-hidden rounded-md border border-line bg-card">
-                {evaluations.map((evaluation, index) => {
+                {sortedEvaluations.map((evaluation, index) => {
                   const graded = evaluation.grade !== null;
                   return (
                     <li key={evaluation.id} className={index > 0 ? "border-t border-line" : ""}>
@@ -158,7 +161,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
                         <span className="h-[18px] w-[18px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color, background: graded ? subject.color : "var(--color-card)" }} aria-hidden="true" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[16px] font-semibold text-ink">{evaluation.name}</span>
-                          <span className="num block text-[13px] text-ink-2">{formatNumber(evaluation.percentage)}% de la nota</span>
+                          <span className="num block text-[13px] text-ink-2">{formatNumber(evaluation.percentage)}% de la nota{evaluation.due ? ` · ${formatTaskDue(evaluation.due)}` : ""}</span>
                         </span>
                         {graded
                           ? <span className="num text-[26px] font-semibold leading-none text-ink">{formatNumber(evaluation.grade as number)}</span>
