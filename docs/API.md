@@ -175,3 +175,14 @@ La tarea referencia su categoría; ya no existe el campo libre `tag`.
 - `categoryId` debe ser el `id` de una categoría del usuario de la sesión; si no existe o es de otro usuario responde `404` (`Categoría no encontrada`).
 - Al editar: `categoryId` ausente/null no cambia la categoría, cadena vacía la quita (`null`) y un valor válido la reemplaza.
 - Al arrancar, una migración única convierte cada `tag` legado en su `categoryId` (reutilizando la categoría con ese nombre para el usuario o creándola) y elimina el campo `tag`.
+
+## Editar y eliminar categorías (`/api/categories/{id}`)
+
+| Método | Ruta | Body | Respuesta |
+|---|---|---|---|
+| `PUT` | `/api/categories/{id}` | `{ name, color? }` | `200` categoría actualizada · `400` nombre vacío/largo (máx. 50), nombre repetido o color no hexadecimal · `404` no existe o es de otro usuario |
+| `DELETE` | `/api/categories/{id}` | | `204` · `404` no existe o es de otro usuario |
+
+- `name` es obligatorio y no puede repetirse (sin distinguir mayúsculas) entre las categorías del usuario; conservar el nombre propio sí está permitido.
+- `color` ausente conserva el color actual; si viene debe ser `#RRGGBB`.
+- **Tareas asociadas:** al eliminar una categoría sus tareas **no se borran ni se bloquea la operación**; quedan sin categoría (`categoryId: null`) y pasan a aparecer con `GET /api/tasks?uncategorized=true`. El módulo de categorías publica un `CategoryDeletedEvent` y el de tareas lo escucha, así no hay dependencia circular entre módulos.

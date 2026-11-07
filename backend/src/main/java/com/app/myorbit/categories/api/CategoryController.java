@@ -5,8 +5,11 @@ import com.app.myorbit.categories.application.CategoryService;
 import com.app.myorbit.users.api.CurrentUser;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -32,5 +35,16 @@ public class CategoryController {
     @ResponseStatus(HttpStatus.CREATED)
     public CategoryResponse create(@Valid @RequestBody CreateCategoryRequest request, @CurrentUser User user) {
         return CategoryResponse.from(categoryService.create(user.getId(), request));
+    }
+
+    @PutMapping("/{id}")
+    public CategoryResponse update(@PathVariable String id, @Valid @RequestBody UpdateCategoryRequest request, @CurrentUser User user) {
+        return CategoryResponse.from(categoryService.update(user.getId(), id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable String id, @CurrentUser User user) {
+        categoryService.delete(user.getId(), id);
     }
 }
