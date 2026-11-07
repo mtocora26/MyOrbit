@@ -15,17 +15,20 @@ import RadarScreen from "./screens/RadarScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import AdminScreen from "./screens/AdminScreen";
 import CategoriesScreen from "./screens/CategoriesScreen";
+import NotificationsScreen from "./screens/NotificationsScreen";
+import { useUnreadNotifications } from "./hooks/useUnreadNotifications";
 import QuickAddSheet from "./components/QuickAddSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
 import { getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
-export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "radar" | "profile" | "admin" | "categories";
+export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "radar" | "profile" | "admin" | "categories" | "notifications";
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getSession());
   const [showWelcome, setShowWelcome] = useState(false);
+  const unread = useUnreadNotifications(session !== null);
 
   // Al abrir la app se confirma la sesión y se trae el rol actual (también invalida sesiones desactivadas).
   useEffect(() => {
@@ -73,7 +76,7 @@ export default function App() {
   return (
     <div className="relative h-dvh bg-paper">
       <div className="w-full h-dvh flex flex-col overflow-hidden lg:flex-row">
-          <SideNav active={activeTab} userName={session.name} onChange={(t) => navigate(t)} onFab={() => setFabOpen(true)} onProfile={() => { navigate("more"); setSubScreen("profile"); }} />
+          <SideNav active={activeTab} userName={session.name} onChange={(t) => navigate(t)} onFab={() => setFabOpen(true)} onProfile={() => { navigate("more"); setSubScreen("profile"); }} unreadCount={unread.count} onNotifications={() => setSubScreen("notifications")} />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <OfflineBanner />
           <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -86,14 +89,15 @@ export default function App() {
             {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onUserUpdated={(next) => setSession(next)} />}
             {subScreen === "admin"         && <AdminScreen onBack={goBack} />}
             {subScreen === "categories"    && <CategoriesScreen onBack={goBack} />}
+            {subScreen === "notifications" && <NotificationsScreen onBack={goBack} onUnreadChange={unread.setCount} onOpenTask={openTaskDetail} onOpenHabits={() => setSubScreen("habits")} />}
 
             {subScreen === null && (
               <>
-                {activeTab === "home"       && <HomeScreen userName={session.name} onTaskTap={openTaskDetail} onHabits={() => { navigate("more"); setSubScreen("habits"); }} onFab={() => setFabOpen(true)} onViewTasks={() => navigate("tasks")} onConfigureProfile={() => { navigate("more"); setSubScreen("profile"); }} onAgenda={() => navigate("agenda")} refreshTick={tasksRefreshTick} />}
+                {activeTab === "home"       && <HomeScreen userName={session.name} onTaskTap={openTaskDetail} onHabits={() => { navigate("more"); setSubScreen("habits"); }} onFab={() => setFabOpen(true)} onViewTasks={() => navigate("tasks")} onConfigureProfile={() => { navigate("more"); setSubScreen("profile"); }} unreadCount={unread.count} onNotifications={() => setSubScreen("notifications")} onAgenda={() => navigate("agenda")} refreshTick={tasksRefreshTick} />}
                 {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "agenda"     && <AgendaScreen onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "university" && <UniversityScreen onSubjectTap={() => setSubScreen("subjectDetail")} />}
-                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onCategories={() => setSubScreen("categories")} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
+                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onCategories={() => setSubScreen("categories")} onNotifications={() => setSubScreen("notifications")} unreadCount={unread.count} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
               </>
             )}
 
