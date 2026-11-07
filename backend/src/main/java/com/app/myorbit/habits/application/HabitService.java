@@ -4,6 +4,7 @@ import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.habits.api.CreateHabitRequest;
 import com.app.myorbit.habits.api.UpdateHabitCompletionRequest;
+import com.app.myorbit.habits.api.UpdateHabitRequest;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
@@ -44,6 +45,20 @@ public class HabitService {
         habit.setDaysOfWeek(normalizeDays(request.daysOfWeek(), habit.getFrequency()));
         habit.setColor(request.color() == null || request.color().isBlank() ? "#7A5AF8" : request.color());
         habit.setIcon(request.icon() == null || request.icon().isBlank() ? "target" : request.icon());
+        return habitRepository.save(habit);
+    }
+
+    /** Edita los datos del hábito; el historial de fechas cumplidas no se toca. */
+    public Habit update(String userId, String id, UpdateHabitRequest request) {
+        Habit habit = getOwned(userId, id);
+        if (request.title() == null || request.title().isBlank()) throw new BusinessRuleException("El nombre del habito es obligatorio");
+        habit.setTitle(request.title().trim());
+        if (request.frequency() != null) habit.setFrequency(request.frequency());
+        List<Integer> days = request.daysOfWeek() != null ? request.daysOfWeek()
+                : habit.getFrequency() == HabitFrequency.CUSTOM ? habit.getDaysOfWeek() : null;
+        habit.setDaysOfWeek(normalizeDays(days, habit.getFrequency()));
+        if (request.color() != null && !request.color().isBlank()) habit.setColor(request.color());
+        if (request.icon() != null && !request.icon().isBlank()) habit.setIcon(request.icon());
         return habitRepository.save(habit);
     }
 

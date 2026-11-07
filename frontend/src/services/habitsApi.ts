@@ -1,3 +1,4 @@
+import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
 
@@ -69,4 +70,15 @@ export function currentStreak(completedDates: string[]): number {
     date.setDate(date.getDate() - 1);
   }
   return streak;
+}
+export type UpdateHabitInput = Partial<CreateHabitInput> & { title: string };
+
+export async function updateHabit(id: string, input: UpdateHabitInput): Promise<Habit> {
+  const response = await fetch(`${API_BASE_URL}/api/habits/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible editar el habito"));
+  return response.json();
 }

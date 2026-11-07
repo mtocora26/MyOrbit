@@ -186,3 +186,17 @@ La tarea referencia su categoría; ya no existe el campo libre `tag`.
 - `name` es obligatorio y no puede repetirse (sin distinguir mayúsculas) entre las categorías del usuario; conservar el nombre propio sí está permitido.
 - `color` ausente conserva el color actual; si viene debe ser `#RRGGBB`.
 - **Tareas asociadas:** al eliminar una categoría sus tareas **no se borran ni se bloquea la operación**; quedan sin categoría (`categoryId: null`) y pasan a aparecer con `GET /api/tasks?uncategorized=true`. El módulo de categorías publica un `CategoryDeletedEvent` y el de tareas lo escucha, así no hay dependencia circular entre módulos.
+
+## Editar hábitos (`PUT /api/habits/{id}`)
+
+Body: `{ title, frequency?, daysOfWeek?, color?, icon? }`
+
+| Respuesta | Cuándo |
+|---|---|
+| `200` | hábito actualizado (misma forma que `GET /api/habits`) |
+| `400` | `title` vacío o > 100 caracteres, `frequency` distinta de `diaria`/`personalizada`, `color` no `#RRGGBB` |
+| `404` | el hábito no existe o es de otro usuario |
+
+- `title` es obligatorio. `frequency`, `color` e `icon` ausentes conservan el valor actual.
+- `daysOfWeek` (1 = lunes … 7 = domingo) solo aplica a `personalizada`: se descartan valores fuera de rango y duplicados; si queda vacío o la frecuencia es `diaria`, se usa toda la semana. Si se omite en un hábito personalizado se conservan los días actuales.
+- El historial `completedDates` **no cambia** al editar.
