@@ -8,6 +8,7 @@ import com.app.myorbit.habits.api.UpdateHabitRequest;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
+import com.app.myorbit.habits.domain.HabitStats;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,7 @@ public class HabitService {
         Habit habit = new Habit();
         habit.setId(UUID.randomUUID().toString());
         habit.setUserId(userId);
+        habit.setCreatedDate(LocalDate.now(clock).toString());
         habit.setTitle(request.title().trim());
         habit.setFrequency(request.frequency() == null ? HabitFrequency.DAILY : request.frequency());
         habit.setDaysOfWeek(normalizeDays(request.daysOfWeek(), habit.getFrequency()));
@@ -95,16 +97,21 @@ public class HabitService {
         String key = date.toString();
         int pending = 0;
         for (Habit habit : habitRepository.findAll()) {
-            if (!isScheduledOn(habit, date) || habit.getCompletedDates().contains(key)) continue;
+            if (!habit.isScheduledOn(date) || habit.getCompletedDates().contains(key)) continue;
             events.publishEvent(new HabitPendingEvent(habit.getUserId(), habit.getId(), habit.getTitle(), date));
             pending++;
         }
         return pending;
     }
 
-    private boolean isScheduledOn(Habit habit, LocalDate date) {
-        return habit.getFrequency() != HabitFrequency.CUSTOM
-                || habit.getDaysOfWeek().contains(date.getDayOfWeek().getValue());
+    public static final int MAX_STATS_DAYS = 365;
+
+    /** Racha actual, mejor racha y % de cumplimiento de los últimos {@code days} días (1-365). */
+    public HabitStats stats(String userId, String id, int days) {
+        if (days < 1 || days > MAX_STATS_DAYS) {
+            throw new BusinessRuleException("El parametro days debe estar entre 1 y " + MAX_STATS_DAYS);
+        }
+        return HabitStats.calculate(getOwned(userId, id), LocalDate.now(clock), days);
     }
 
     public boolean delete(String userId, String id) {

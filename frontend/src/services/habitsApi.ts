@@ -82,3 +82,19 @@ export async function updateHabit(id: string, input: UpdateHabitInput): Promise<
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible editar el habito"));
   return response.json();
 }
+
+export interface HabitStats {
+  currentStreak: number;
+  bestStreak: number;
+  /** Porcentaje 0-100 con un decimal. */
+  completionRate: number;
+  scheduledDays: number;
+  completedDays: number;
+  windowDays: number;
+}
+
+export async function fetchHabitStats(id: string, days = 30): Promise<HabitStats> {
+  const response = await fetch(`${API_BASE_URL}/api/habits/${id}/stats?days=${days}`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las estadísticas"));
+  return response.json();
+}

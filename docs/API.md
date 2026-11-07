@@ -217,3 +217,25 @@ Las notificaciones las genera el sistema a partir de eventos (tarea con fecha cr
 | `PATCH` | `/api/notifications/read-all` | `200` `{ "updated": 2 }` (cuántas pasaron a leídas) |
 
 Notificación: `{ id, type: "DEADLINE"|"EVENT"|"HABIT", title, message, referenceId, createdAt (ISO-8601 UTC), read }`. `referenceId` es el id de la tarea u hábito de origen.
+
+## Rachas y estadísticas (`GET /api/habits/{id}/stats?days=30`)
+
+`days` es la ventana en días terminando hoy (1–365, por defecto 30); fuera de rango responde `400`. `404` si el hábito no existe o es de otro usuario.
+
+```json
+{ "currentStreak": 3, "bestStreak": 10, "completionRate": 83.3, "scheduledDays": 30, "completedDays": 25, "windowDays": 30 }
+```
+
+| Campo | Significado |
+|---|---|
+| `currentStreak` | Días programados consecutivos cumplidos hasta hoy. Si hoy está programado y aún sin marcar, **no** rompe la racha (se cuenta desde ayer). |
+| `bestStreak` | La racha más larga de todo el historial. |
+| `completionRate` | % (0–100, un decimal) de días programados cumplidos dentro de la ventana. |
+| `scheduledDays` / `completedDays` | Base del porcentaje: días programados de la ventana y cuántos se cumplieron. |
+| `windowDays` | La ventana pedida. |
+
+Reglas:
+- Solo cuentan los **días programados**: en un hábito `personalizada`, un día no programado ni rompe ni suma a la racha, y un cumplimiento marcado en un día no programado se ignora.
+- Hoy cuenta en `scheduledDays` solo si ya está cumplido (no penaliza el día en curso).
+- La ventana no se extiende antes del día de creación del hábito (`createdDate`, que se guarda al crearlo), para no penalizar un hábito nuevo; los hábitos anteriores a este cambio no tienen ese dato y usan la ventana completa.
+- Las fechas guardadas que no sean ISO (datos previos a #38) se ignoran.

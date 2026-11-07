@@ -3,6 +3,7 @@ package com.app.myorbit.habits.domain;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,16 @@ public class Habit {
     private String color;
     private String icon;
     private List<String> completedDates = new ArrayList<>();
+    /** Día de creación (AAAA-MM-DD); null en hábitos anteriores a las estadísticas. */
+    private String createdDate;
+
+    public String getCreatedDate() { return createdDate; }
+    public void setCreatedDate(String createdDate) { this.createdDate = createdDate; }
+
+    /** Los hábitos diarios se programan todos los días; los personalizados, en sus {@code daysOfWeek} (1 = lunes … 7 = domingo). */
+    public boolean isScheduledOn(LocalDate date) {
+        return frequency != HabitFrequency.CUSTOM || daysOfWeek.contains(date.getDayOfWeek().getValue());
+    }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

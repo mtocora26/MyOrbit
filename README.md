@@ -44,7 +44,7 @@ El detalle de materias está en [docs/API.md](docs/API.md).
 | Perfil | `/api/profile` | `GET`, `PUT` |
 | Tareas | `/api/tasks` | `GET`, `POST`, `GET /{id}`, `PUT /{id}`, `PATCH /{id}/status`, `DELETE /{id}` |
 | Subtareas | `/api/tasks/{id}/subtasks` | `POST`, `POST /{parentSubtaskId}`, `PUT /{subtaskId}`, `PATCH /{subtaskId}/status`, `DELETE /{subtaskId}` |
-| Hábitos | `/api/habits` | `GET`, `POST`, `PUT /{id}`, `PATCH /{id}/completion`, `DELETE /{id}` |
+| Hábitos | `/api/habits` | `GET`, `POST`, `PUT /{id}`, `GET /{id}/stats`, `PATCH /{id}/completion`, `DELETE /{id}` |
 | Categorías | `/api/categories` | `GET`, `POST`, `PUT`, `DELETE` |
 | Notificaciones | `/api/notifications` | `GET`, `GET /unread-count`, `PATCH /{id}/read`, `PATCH /read-all` |
 | Materias | `/api/subjects` | `GET`, `POST`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}` |
