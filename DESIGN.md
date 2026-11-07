@@ -156,7 +156,6 @@ State is carried by shape as well as colour: a filled station is done, a hollow 
 **Build vs. contract (recorded deviations).**
 - The dark ground ships as `#0a111f` (paper-dark), not the contract's `#0E1626`. The contract value survives as `night` (`#0e1626` in light theme, `#060b15` in dark), used as the text colour on coral and as the scrim.
 - Home uses a vertical station rail (stations stacked down a 3px line, dashed when overdue) rather than the contract's horizontal Day Line, an adaptation for one-handed phone scrolling. The "Ahora" marker heads the rail with a pulse.
-- Agenda, Grades and Radar render pre-existing mock data; their values are not part of the system.
 - Magenta, named in the contract as a route colour, exists only in the user-pickable category palette (`#EE46BC`), not as a theme token.
 
 ## Colors
@@ -211,7 +210,7 @@ Dark-theme values for the remaining tokens are in `src/index.css`; the frontmatt
 Hybrid app: one design, two shells.
 
 - **Below 1024px (phone, small tablet):** single column inside an app shell: header, scrolling body, bottom nav (content max 760px). Horizontal padding 16px; panel padding 16px; row gaps 8-12px; section titles 8px above their content. Safe-area inset is respected under the nav.
-- **1024px and up (desktop):** the bottom nav is replaced by a 232px left sidebar (logo, "Añadir", the five destinations as a vertical list with a coral tick on the active one, theme toggle, profile). Content sits in a column up to 1180px with 32px side padding and 44px display titles. Home becomes two columns (stations 1.6fr, habits plus academic summary 1fr). Tasks, Agenda and Habits stay a single readable column (max 760px) so rails never break across columns; Universidad lays subjects in two columns. Sub-screens (detail, profile, admin, radar) cap at 820px, left-aligned with the sidebar content edge. The quick-add sheet becomes a centred 480px dialog that fades and scales from 0.96 instead of sliding up.
+- **1024px and up (desktop):** the bottom nav is replaced by a 232px left sidebar (logo, "Añadir", the five destinations as a vertical list with a coral tick on the active one, theme toggle, profile). Content sits in a column up to 1180px with 32px side padding and 44px display titles. Home becomes two columns (stations 1.6fr, habits plus academic summary 1fr). Tasks, Agenda and Habits stay a single readable column (max 760px) so rails never break across columns; Universidad lays subjects in two columns. Sub-screens (detail, profile, admin, notifications) cap at 820px, left-aligned with the sidebar content edge. The quick-add sheet becomes a centred 480px dialog that fades and scales from 0.96 instead of sliding up.
 - Touch targets are at least 44px on both shells (checkboxes and icon buttons use negative margins to enlarge the hit area without moving the visual).
 - Home reads top to bottom: greeting and theme toggle, progress, "Ahora" marker and vertical station rail, habits line, academic summary.
 

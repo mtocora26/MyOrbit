@@ -13,10 +13,10 @@ University students, using MyOrbit on their phone as a daily check: between clas
 MyOrbit gives a student one place to run their whole student life: the priority order of university work (tasks and subtasks, agenda, subjects, grades by corte) and the personal habits they must keep up alongside it. Success is the student opening one app each day and knowing what matters now, without juggling separate to-do, calendar, grades and habit apps.
 
 ## Positioning
-Academic priorities and habits in one app, because for a student they are one life. A generic to-do or calendar app treats university work and personal routines as separate worlds; MyOrbit orders the university workload (including a "radar" of what is urgent) and keeps daily habits beside it.
+Academic priorities and habits in one app, because for a student they are one life. A generic to-do or calendar app treats university work and personal routines as separate worlds; MyOrbit orders the university workload (with a notification inbox for what is urgent: due dates, completed tasks, pending habits) and keeps daily habits beside it.
 
 ## Operating Context
-Phone-first, often one-handed, in short sessions between classes. Connectivity can be flaky, so the PWA ships an offline shell and offline banner. Quick capture goes through a bottom sheet (QuickAddSheet); navigation through a bottom nav. Screens today: Home, Tasks, Task detail, Agenda, Radar, University, Subject detail, Grades, Habits, Profile, More, Admin, Auth, plus welcome onboarding.
+Phone-first, often one-handed, in short sessions between classes. Connectivity can be flaky, so the PWA ships an offline shell and offline banner. Quick capture goes through a bottom sheet (QuickAddSheet); navigation through a bottom nav. Screens today: Home, Tasks, Task detail, Agenda, University, Subject detail, Grades, Habits, Categories, Notifications, Profile, More, Admin, Auth, plus welcome onboarding.
 
 ## Capabilities and Constraints
 - Tasks with subtasks, agenda, subjects, grades per corte, habits, profile, admin.

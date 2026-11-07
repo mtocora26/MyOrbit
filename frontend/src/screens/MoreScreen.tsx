@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { IconHabit, IconRadar, IconUser, IconShield, IconTag, IconBell } from "../components/icons";
+import { IconHabit, IconUser, IconShield, IconTag, IconBell } from "../components/icons";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 
 interface Props {
   userName: string;
   onHabits: () => void;
-  onRadar: () => void;
   onProfile: () => void;
   onCategories: () => void;
   onNotifications: () => void;
@@ -16,7 +15,7 @@ interface Props {
 
 const initials = (name: string) => name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
-export default function MoreScreen({ userName, onHabits, onRadar, onProfile, onCategories, onNotifications, unreadCount, onAdmin, isAdmin }: Props) {
+export default function MoreScreen({ userName, onHabits, onProfile, onCategories, onNotifications, unreadCount, onAdmin, isAdmin }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -26,7 +25,6 @@ export default function MoreScreen({ userName, onHabits, onRadar, onProfile, onC
   const detail = [profile?.program, profile?.semester].filter(Boolean).join(" · ");
   const tiles: { icon: React.ReactNode; label: string; badge?: number; color: string; bg: string; action: () => void }[] = [
     { icon: <IconHabit size={24} />, label: "Hábitos", color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", action: onHabits },
-    { icon: <IconRadar size={24} />, label: "Radar", color: "var(--color-blue-ink)", bg: "var(--color-blue-wash)", action: onRadar },
     { icon: <IconBell size={24} />, label: "Notificaciones", badge: unreadCount, color: "var(--color-amber-ink)", bg: "var(--color-amber-wash)", action: onNotifications },
     { icon: <IconTag size={24} />, label: "Categorías", color: "var(--color-green-ink)", bg: "var(--color-green-wash)", action: onCategories },
     { icon: <IconUser size={24} />, label: "Perfil", color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", action: onProfile },
