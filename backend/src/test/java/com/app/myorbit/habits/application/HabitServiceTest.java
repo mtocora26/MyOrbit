@@ -4,6 +4,7 @@ import com.app.myorbit.habits.api.UpdateHabitCompletionRequest;
 import com.app.myorbit.habits.api.UpdateHabitRequest;
 import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
+import com.app.myorbit.habits.domain.HabitStats;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
@@ -187,5 +188,42 @@ class HabitServiceTest {
         org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u1", "a", "Ha", saturday));
         org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u2", "c", "Hc", saturday));
         org.mockito.Mockito.verifyNoMoreInteractions(events);
+    }
+
+    @Test
+    void statsUseTodayFromTheClockAndTheOwnedHabit() {
+        Habit habit = existing();
+        habit.setFrequency(HabitFrequency.DAILY);
+        habit.setDaysOfWeek(List.of(1, 2, 3, 4, 5, 6, 7));
+        habit.setCompletedDates(new java.util.ArrayList<>(List.of("2026-10-09", "2026-10-10")));
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+
+        HabitStats stats = service.stats("u1", "h1", 7);
+
+        assertEquals(2, stats.currentStreak()); // el reloj fija hoy = 2026-10-10
+        assertEquals(7, stats.windowDays());
+    }
+
+    @Test
+    void statsRejectOutOfRangeWindows() {
+        for (int days : new int[]{0, -1, 366}) {
+            assertThrows(BusinessRuleException.class, () -> service.stats("u1", "h1", days));
+        }
+    }
+
+    @Test
+    void statsHideHabitsOfOtherUsers() {
+        when(repository.findById("h1")).thenReturn(Optional.of(habitOf("u2")));
+
+        assertThrows(NotFoundException.class, () -> service.stats("u1", "h1", 30));
+    }
+
+    @Test
+    void createStoresTheCreationDayFromTheClock() {
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        Habit created = service.create("u1", new com.app.myorbit.habits.api.CreateHabitRequest("Leer", null, null, null, null));
+
+        assertEquals("2026-10-10", created.getCreatedDate());
     }
 }

@@ -3,6 +3,8 @@ package com.app.myorbit.habits.api;
 import com.app.myorbit.habits.application.HabitService;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.domain.HabitFrequency;
+import com.app.myorbit.habits.domain.HabitStats;
+import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.shared.error.UnauthorizedException;
 import com.app.myorbit.users.application.CurrentUserProvider;
@@ -22,6 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -96,5 +99,46 @@ class HabitControllerTest {
     void updateWithoutSessionIsUnauthorized() throws Exception {
         mockMvc.perform(put("/api/habits/h1").contentType(MediaType.APPLICATION_JSON).content("{\"title\":\"A\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void statsDefaultToThirtyDays() throws Exception {
+        when(habitService.stats("u1", "h1", 30)).thenReturn(new HabitStats(3, 10, 83.3, 30, 25, 30));
+
+        mockMvc.perform(get("/api/habits/h1/stats").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentStreak").value(3))
+                .andExpect(jsonPath("$.bestStreak").value(10))
+                .andExpect(jsonPath("$.completionRate").value(83.3))
+                .andExpect(jsonPath("$.scheduledDays").value(30))
+                .andExpect(jsonPath("$.completedDays").value(25))
+                .andExpect(jsonPath("$.windowDays").value(30));
+    }
+
+    @Test
+    void statsAcceptACustomWindow() throws Exception {
+        when(habitService.stats("u1", "h1", 7)).thenReturn(new HabitStats(1, 1, 100.0, 7, 7, 7));
+
+        mockMvc.perform(get("/api/habits/h1/stats?days=7").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.windowDays").value(7));
+    }
+
+    @Test
+    void statsWithInvalidWindowIsBadRequest() throws Exception {
+        when(habitService.stats("u1", "h1", 500)).thenThrow(new BusinessRuleException("El parametro days debe estar entre 1 y 365"));
+
+        mockMvc.perform(get("/api/habits/h1/stats?days=500").header("Authorization", AUTH))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/habits/h1/stats?days=abc").header("Authorization", AUTH))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void statsOfMissingHabitIsNotFound() throws Exception {
+        when(habitService.stats("u1", "x", 30)).thenThrow(new NotFoundException("Habito no encontrado"));
+
+        mockMvc.perform(get("/api/habits/x/stats").header("Authorization", AUTH))
+                .andExpect(status().isNotFound());
     }
 }
