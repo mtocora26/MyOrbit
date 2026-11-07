@@ -3,8 +3,11 @@ package com.app.myorbit.categories.application;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.categories.api.CreateCategoryRequest;
+import com.app.myorbit.categories.api.UpdateCategoryRequest;
 import com.app.myorbit.categories.domain.Category;
+import com.app.myorbit.categories.domain.CategoryDeletedEvent;
 import com.app.myorbit.categories.infrastructure.CategoryRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,9 +18,11 @@ import java.util.regex.Pattern;
 public class CategoryService {
     private static final Pattern HEX_COLOR = Pattern.compile("^#[0-9a-fA-F]{6}$");
     private final CategoryRepository categoryRepository;
+    private final ApplicationEventPublisher events;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, ApplicationEventPublisher events) {
         this.categoryRepository = categoryRepository;
+        this.events = events;
     }
 
     public List<Category> listByUser(String userId) {
@@ -51,6 +56,26 @@ public class CategoryService {
         category.setName(name);
         category.setColor(HEX_COLOR.matcher(request.color() == null ? "" : request.color()).matches() ? request.color() : "#667085");
         return categoryRepository.save(category);
+    }
+
+    public Category update(String userId, String id, UpdateCategoryRequest request) {
+        Category category = getOwned(userId, id);
+        String name = request.name().trim();
+        boolean taken = categoryRepository.findByUserIdOrderByNameAsc(userId).stream()
+                .anyMatch(other -> !other.getId().equals(id) && other.getName().equalsIgnoreCase(name));
+        if (taken) {
+            throw new BusinessRuleException("Ya existe una categoria con ese nombre");
+        }
+        category.setName(name);
+        if (request.color() != null) category.setColor(request.color());
+        return categoryRepository.save(category);
+    }
+
+    /** Elimina la categoría; las tareas que la usaban quedan sin categoría (ver {@link CategoryDeletedEvent}). */
+    public void delete(String userId, String id) {
+        Category category = getOwned(userId, id);
+        categoryRepository.deleteById(category.getId());
+        events.publishEvent(new CategoryDeletedEvent(userId, category.getId()));
     }
 
     private List<Category> seedDefaults(String userId) {

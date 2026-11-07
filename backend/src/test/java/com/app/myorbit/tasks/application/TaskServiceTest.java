@@ -2,6 +2,7 @@ package com.app.myorbit.tasks.application;
 
 import com.app.myorbit.categories.application.CategoryService;
 import com.app.myorbit.categories.domain.Category;
+import com.app.myorbit.categories.domain.CategoryDeletedEvent;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
@@ -14,6 +15,7 @@ import com.app.myorbit.tasks.infrastructure.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -307,5 +309,31 @@ class TaskServiceTest {
 
         assertThrows(NotFoundException.class,
                 () -> service.update("u1", "t1", new com.app.myorbit.tasks.api.UpdateTaskRequest(null, null, null, "missing")));
+    }
+
+    @Test
+    void deletingACategoryUnlinksItsTasksWithoutDeletingThem() {
+        Task a = taskOf("u1");
+        a.setCategoryId("c1");
+        Task b = taskOf("u1");
+        b.setId("t2");
+        b.setCategoryId("c1");
+        when(repository.findByUserIdAndCategoryId("u1", "c1")).thenReturn(List.of(a, b));
+
+        service.onCategoryDeleted(new CategoryDeletedEvent("u1", "c1"));
+
+        assertNull(a.getCategoryId());
+        assertNull(b.getCategoryId());
+        verify(repository).saveAll(List.of(a, b));
+        verify(repository, never()).deleteById(anyString());
+    }
+
+    @Test
+    void deletingACategoryWithoutTasksSavesNothing() {
+        when(repository.findByUserIdAndCategoryId("u1", "c1")).thenReturn(List.of());
+
+        service.onCategoryDeleted(new CategoryDeletedEvent("u1", "c1"));
+
+        verify(repository, never()).saveAll(org.mockito.ArgumentMatchers.anyList());
     }
 }

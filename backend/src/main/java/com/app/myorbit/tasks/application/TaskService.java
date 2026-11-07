@@ -1,6 +1,7 @@
 package com.app.myorbit.tasks.application;
 
 import com.app.myorbit.categories.application.CategoryService;
+import com.app.myorbit.categories.domain.CategoryDeletedEvent;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
@@ -13,6 +14,7 @@ import com.app.myorbit.tasks.domain.Priority;
 import com.app.myorbit.tasks.domain.Subtask;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -42,6 +44,14 @@ public class TaskService {
                 .filter(filter::matches)
                 .sorted(Comparator.comparing(Task::getDue, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
+    }
+
+    /** Al borrar una categoría, sus tareas se conservan pero quedan sin categoría. */
+    @EventListener
+    public void onCategoryDeleted(CategoryDeletedEvent event) {
+        List<Task> affected = taskRepository.findByUserIdAndCategoryId(event.userId(), event.categoryId());
+        affected.forEach(task -> task.setCategoryId(null));
+        if (!affected.isEmpty()) taskRepository.saveAll(affected);
     }
 
     public Task getOwned(String userId, String id) {

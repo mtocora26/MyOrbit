@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface TaskRepository extends MongoRepository<Task, String> {
     List<Task> findByUserIdOrderByIdAsc(String userId);
+
+    List<Task> findByUserIdAndCategoryId(String userId, String categoryId);
 }

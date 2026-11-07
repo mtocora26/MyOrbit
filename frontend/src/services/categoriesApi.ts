@@ -25,3 +25,21 @@ export async function createCategory(name: string, color: string): Promise<Categ
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible crear la categoría"));
   return response.json();
 }
+
+export async function updateCategory(id: string, name: string, color?: string): Promise<Category> {
+  const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ name, color }),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible editar la categoría"));
+  return response.json();
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible eliminar la categoría"));
+}
