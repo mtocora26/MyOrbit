@@ -18,7 +18,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const [draft, setDraft] = useState({ program: "", semester: "", studentCode: "", gradeTarget: "" });
+  const [draft, setDraft] = useState({ program: "", semester: "", gradeTarget: "" });
   const [editingAccount, setEditingAccount] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -42,7 +42,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   }, []);
 
   function beginEdit() {
-    setDraft(profile ?? { program: "", semester: "", studentCode: "", gradeTarget: "" });
+    setDraft(profile ?? { program: "", semester: "", gradeTarget: "" });
     setProfileError(null);
     setEditingProfile(true);
   }
@@ -203,10 +203,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           {editingProfile ? (
             <div className="p-4 flex flex-col gap-3">
               <ProfileInput label="Programa" value={draft.program} onChange={(value) => setDraft({ ...draft, program: value })} />
-              <div className="grid grid-cols-2 gap-2">
-                <ProfileInput label="Semestre" value={draft.semester} onChange={(value) => setDraft({ ...draft, semester: value })} />
-                <ProfileInput label="Código" value={draft.studentCode} onChange={(value) => setDraft({ ...draft, studentCode: value })} />
-              </div>
+              <ProfileInput label="Semestre" value={draft.semester} onChange={(value) => setDraft({ ...draft, semester: value })} />
               <ProfileInput label="Meta de promedio" value={draft.gradeTarget} onChange={(value) => setDraft({ ...draft, gradeTarget: value })} placeholder="Ej. 4.5" />
               {profileError && <p className="text-[13px] font-semibold text-danger">{profileError}</p>}
               <div className="flex gap-2">
@@ -218,7 +215,6 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
             <>
               <Row label="Programa" value={profile?.program || "Sin configurar"} />
               <Row label="Semestre" value={profile?.semester || "Sin configurar"} />
-              <Row label="Código" value={profile?.studentCode || "Sin configurar"} />
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-[13px] text-ink-2">Meta de promedio</span>
                 <div className="flex items-center gap-2">

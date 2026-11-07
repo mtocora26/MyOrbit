@@ -29,6 +29,6 @@ public class UserProfileController {
     @PutMapping
     public UserProfileResponse update(@CurrentUser User user, @Valid @RequestBody UpdateUserProfileRequest request) {
         return UserProfileResponse.from(profileService.update(user.getId(), request.program(), request.semester(),
-                request.studentCode(), request.gradeTarget()));
+                request.gradeTarget()));
     }
 }

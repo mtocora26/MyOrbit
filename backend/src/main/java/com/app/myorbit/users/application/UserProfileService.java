@@ -17,12 +17,11 @@ public class UserProfileService {
         return profileRepository.findById(userId);
     }
 
-    public UserProfile update(String userId, String program, String semester, String studentCode, String gradeTarget) {
+    public UserProfile update(String userId, String program, String semester, String gradeTarget) {
         UserProfile profile = profileRepository.findById(userId).orElseGet(UserProfile::new);
         profile.setUserId(userId);
         profile.setProgram(textOrEmpty(program));
         profile.setSemester(textOrEmpty(semester));
-        profile.setStudentCode(textOrEmpty(studentCode));
         profile.setGradeTarget(textOrEmpty(gradeTarget));
         return profileRepository.save(profile);
     }
