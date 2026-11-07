@@ -1,6 +1,7 @@
 package com.app.myorbit.notifications.application;
 
 import com.app.myorbit.notifications.domain.Notification;
+import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.notifications.infrastructure.NotificationRepository;
@@ -36,5 +37,39 @@ public class NotificationService {
     /** Crea la notificación con la fábrica de su tipo y la guarda. */
     public Notification notify(NotificationRequest request) {
         return repository.save(factories.get(request.type()).create(request, Instant.now(clock)));
+    }
+
+    /** Más recientes primero; con {@code unreadOnly} solo las no leídas. */
+    public List<Notification> listByUser(String userId, boolean unreadOnly) {
+        return unreadOnly
+                ? repository.findByUserIdAndReadFalseOrderByCreatedAtDesc(userId)
+                : repository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    public long countUnread(String userId) {
+        return repository.countByUserIdAndReadFalse(userId);
+    }
+
+    public Notification getOwned(String userId, String id) {
+        return repository.findById(id)
+                .filter(notification -> notification.getUserId().equals(userId))
+                .orElseThrow(() -> new NotFoundException("Notificación no encontrada"));
+    }
+
+    /** Idempotente: marcar una ya leída no falla ni vuelve a guardar. */
+    public Notification markAsRead(String userId, String id) {
+        Notification notification = getOwned(userId, id);
+        if (notification.isRead()) return notification;
+        notification.setRead(true);
+        return repository.save(notification);
+    }
+
+    /** @return cuántas notificaciones pasaron de no leídas a leídas */
+    public int markAllAsRead(String userId) {
+        List<Notification> unread = repository.findByUserIdAndReadFalseOrderByCreatedAtDesc(userId);
+        if (unread.isEmpty()) return 0;
+        unread.forEach(notification -> notification.setRead(true));
+        repository.saveAll(unread);
+        return unread.size();
     }
 }
