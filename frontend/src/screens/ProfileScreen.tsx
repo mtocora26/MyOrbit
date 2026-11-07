@@ -207,7 +207,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         {/* Notifications */}
         <Section title="Notificaciones">
           <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Notificaciones push" sub="Alertas generales" on={pushNotifs} onChange={() => setPushNotifs(!pushNotifs)} />
-          <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Recordatorios de hábitos" sub="Radar diario" on={habitNotifs} onChange={() => setHabitNotifs(!habitNotifs)} />
+          <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Recordatorios de hábitos" sub="Aviso diario" on={habitNotifs} onChange={() => setHabitNotifs(!habitNotifs)} />
         </Section>
 
         {/* Integrations */}

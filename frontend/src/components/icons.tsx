@@ -118,18 +118,6 @@ export function IconRepeat({ size = 20, color = "currentColor", strokeWidth = 1.
   );
 }
 
-export function IconRadar({ size = 20, color = "currentColor", strokeWidth = 1.8 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }}>
-      <path d="M12 2a10 10 0 1 0 10 10" />
-      <path d="M12 6a6 6 0 1 0 6 6" />
-      <path d="M12 10a2 2 0 1 0 2 2" />
-      <line x1="12" y1="2" x2="12" y2="2" strokeWidth="3" />
-      <path d="M12 12L19.5 4.5" />
-    </svg>
-  );
-}
-
 export function IconUser({ size = 20, color = "currentColor", strokeWidth = 1.8 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }}>

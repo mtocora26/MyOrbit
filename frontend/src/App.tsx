@@ -11,7 +11,6 @@ import TaskDetailScreen from "./screens/TaskDetailScreen";
 import SubjectDetailScreen from "./screens/SubjectDetailScreen";
 import GradesScreen from "./screens/GradesScreen";
 import HabitsScreen from "./screens/HabitsScreen";
-import RadarScreen from "./screens/RadarScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import AdminScreen from "./screens/AdminScreen";
 import CategoriesScreen from "./screens/CategoriesScreen";
@@ -24,7 +23,7 @@ import AuthScreen from "./screens/AuthScreen";
 import { getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
-export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "radar" | "profile" | "admin" | "categories" | "notifications";
+export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "profile" | "admin" | "categories" | "notifications";
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getSession());
@@ -87,7 +86,6 @@ export default function App() {
             {subScreen === "subjectDetail" && selectedSubject && <SubjectDetailScreen key={selectedSubject.id} subject={selectedSubject} onBack={goBack} onDeleted={goBack} onGrades={() => setSubScreen("grades")} />}
             {subScreen === "grades"        && selectedSubject && <GradesScreen subject={selectedSubject} onBack={() => setSubScreen("subjectDetail")} />}
             {subScreen === "habits"        && <HabitsScreen onBack={goBack} refreshTick={habitsRefreshTick} />}
-            {subScreen === "radar"         && <RadarScreen onBack={goBack} />}
             {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onUserUpdated={(next) => setSession(next)} />}
             {subScreen === "admin"         && <AdminScreen onBack={goBack} />}
             {subScreen === "categories"    && <CategoriesScreen onBack={goBack} />}
@@ -99,7 +97,7 @@ export default function App() {
                 {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "agenda"     && <AgendaScreen onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "university" && <UniversityScreen onSubjectTap={(subject) => { setSelectedSubject(subject); setSubScreen("subjectDetail"); }} />}
-                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onCategories={() => setSubScreen("categories")} onNotifications={() => setSubScreen("notifications")} unreadCount={unread.count} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
+                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onProfile={() => setSubScreen("profile")} onCategories={() => setSubScreen("categories")} onNotifications={() => setSubScreen("notifications")} unreadCount={unread.count} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
               </>
             )}
 
