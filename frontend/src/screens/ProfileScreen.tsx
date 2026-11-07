@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ScreenHeader, Toggle } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
-import { IconCalendar, IconGoogle, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
+import { IconCalendar, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
 import type { AuthSession } from "../services/authApi";
 import { updateName, changePassword } from "../services/authApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
@@ -12,7 +12,6 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   const { theme, toggle: toggleTheme } = useTheme();
   const [pushNotifs, setPushNotifs] = useState(true);
   const [habitNotifs, setHabitNotifs] = useState(true);
-  const [gcal, setGcal] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -212,16 +211,16 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
 
         {/* Integrations */}
         <Section title="Integraciones">
-          <ToggleRow icon={<IconCalendar size={16} color="var(--color-blue)" />} iconBg="var(--color-blue-wash)" label="Google Calendar" sub={gcal ? "Conectado" : "No conectado"} on={gcal} onChange={() => setGcal(!gcal)} />
+          {/* Sin estado propio: no se muestra una cuenta ni una conexión hasta que exista la integración real (#47). */}
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-8 h-8 rounded-full bg-paper flex items-center justify-center flex-shrink-0">
-              <IconGoogle size={16} />
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "var(--color-blue-wash)" }}>
+              <IconCalendar size={16} color="var(--color-blue)" />
             </div>
-            <div className="flex-1">
-              <p className="text-[14px] font-bold text-ink">Cuenta Google</p>
-              <p className="text-[13px] text-ink-3">daniela.garcia@gmail.com</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-bold text-ink">Google Calendar</p>
+              <p className="text-[13px] text-ink-3">Sincroniza tus fechas límite con tu calendario</p>
             </div>
-            <span className="text-[13px] font-bold text-green-ink">Activa</span>
+            <span className="flex-shrink-0 rounded-[3px] bg-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-ink-2">Próximamente</span>
           </div>
         </Section>
 
