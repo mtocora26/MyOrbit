@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/shared";
 import SubjectFormSheet from "../components/SubjectFormSheet";
+import { fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
 
 interface Props { onSubjectTap: (subject: Subject) => void; }
@@ -11,6 +12,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [semester, setSemester] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [summary, setSummary] = useState<AcademicSummary | null>(null);
 
   async function load() {
     try {
@@ -32,6 +34,18 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
   const visible = useMemo(() => subjects.filter((subject) => subject.semester === activeSemester), [subjects, activeSemester]);
   const totalCredits = visible.reduce((sum, subject) => sum + subject.credits, 0);
 
+  // El resumen es informativo: si falla, la lista de materias sigue funcionando sin cifras.
+  const subjectsKey = visible.map((subject) => `${subject.id}:${subject.credits}`).join("|");
+  useEffect(() => {
+    if (!activeSemester || visible.length === 0) { setSummary(null); return; }
+    let cancelled = false;
+    fetchAcademicSummary(activeSemester).then((value) => { if (!cancelled) setSummary(value); }).catch(() => { if (!cancelled) setSummary(null); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSemester, subjectsKey]);
+
+  const standingById = useMemo(() => new Map<string, SubjectStanding>((summary?.subjects ?? []).map((standing) => [standing.subjectId, standing])), [summary]);
+
   return (
     <div className="relative flex h-full flex-col bg-paper">
       <header className="flex-shrink-0 border-b border-line px-4 pt-5 pb-4 lg:px-8 lg:pt-8">
@@ -44,10 +58,19 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         </div>
 
         {visible.length > 0 && (
-          <dl className="mt-4 grid grid-cols-2 divide-x divide-line rounded-md border border-line bg-card lg:max-w-[420px]">
-            <Stat label="Materias" value={String(visible.length)} />
+          <>
+          <dl className="mt-4 grid grid-cols-3 divide-x divide-line rounded-md border border-line bg-card lg:max-w-[560px]">
+            <Stat label="Promedio" value={summary?.weightedAverage != null ? formatGrade(summary.weightedAverage) : "–"} sub="/5" />
+            <Stat label="Meta" value={summary ? formatGrade(summary.targetGrade) : "–"} sub="/5" accent />
             <Stat label="Créditos" value={String(totalCredits)} />
           </dl>
+          {summary && summary.atRisk.length > 0 && (
+            <p className="mt-2 inline-flex items-center gap-2 rounded-[4px] bg-danger-wash px-2 py-1.5 text-[14px] font-semibold text-danger">
+              <span aria-hidden="true" className="num">!</span>
+              {summary.atRisk.length === 1 ? "1 materia en riesgo" : `${summary.atRisk.length} materias en riesgo`}
+            </p>
+          )}
+          </>
         )}
 
         {semesters.length > 1 && (
@@ -81,8 +104,14 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
                     <span className="h-3 w-3 flex-shrink-0 rounded-[3px]" style={{ background: subject.color }} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[16px] font-semibold text-ink">{subject.name}</span>
-                      <span className="num block text-[13px] text-ink-2">{subject.credits} {subject.credits === 1 ? "crédito" : "créditos"} · {subject.semester}</span>
+                      <span className="num block text-[13px] text-ink-2">{subject.credits} {subject.credits === 1 ? "crédito" : "créditos"}{standingById.get(subject.id) ? ` · ${gradeStatus(standingById.get(subject.id)!.grades).short}` : ""}</span>
                     </span>
+                    {standingById.get(subject.id) && (
+                      <span className="flex flex-shrink-0 flex-col items-end gap-1">
+                        <span className="num text-[26px] font-semibold leading-none text-ink">{standingById.get(subject.id)!.grades.currentGrade === null ? "–" : formatGrade(standingById.get(subject.id)!.grades.currentGrade as number)}</span>
+                        {standingById.get(subject.id)!.atRisk && <span className="rounded-[3px] bg-danger-wash px-1.5 py-[3px] text-[12px] font-semibold leading-none text-danger">En riesgo</span>}
+                      </span>
+                    )}
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
                   </button>
                 </li>
@@ -104,11 +133,14 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
     <div className="px-3 py-3">
       <dt className="text-[13px] font-medium text-ink-2">{label}</dt>
-      <dd className="num mt-1 text-[28px] font-semibold leading-none text-ink">{value}</dd>
+      <dd className="mt-1 flex items-baseline gap-0.5">
+        <span className={`num text-[28px] font-semibold leading-none ${accent ? "text-coral-ink" : "text-ink"}`}>{value}</span>
+        {sub && <span className="num text-[14px] text-ink-3">{sub}</span>}
+      </dd>
     </div>
   );
 }
