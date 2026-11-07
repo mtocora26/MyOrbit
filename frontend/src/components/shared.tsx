@@ -71,7 +71,7 @@ export function CategoryBadge({ name, color }: { name: string; color?: string })
   );
 }
 
-const CATEGORY_PALETTE = ["#FF6B4A", "#2E90FA", "#12B76A", "#7A5AF8", "#F79009", "#EE46BC", "#0BA5EC", "#667085"];
+export const CATEGORY_PALETTE = ["#FF6B4A", "#2E90FA", "#12B76A", "#7A5AF8", "#F79009", "#EE46BC", "#0BA5EC", "#667085"];
 
 interface CategoryOption { id: string; name: string; color: string; }
 interface CategoryPickerProps {

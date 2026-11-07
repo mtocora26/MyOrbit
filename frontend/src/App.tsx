@@ -14,13 +14,14 @@ import HabitsScreen from "./screens/HabitsScreen";
 import RadarScreen from "./screens/RadarScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import AdminScreen from "./screens/AdminScreen";
+import CategoriesScreen from "./screens/CategoriesScreen";
 import QuickAddSheet from "./components/QuickAddSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
 import { getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
-export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "radar" | "profile" | "admin";
+export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "radar" | "profile" | "admin" | "categories";
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getSession());
@@ -45,7 +46,7 @@ export default function App() {
   const goBack = () => {
     const wasTaskDetail = subScreen === "taskDetail";
     setSubScreen(null);
-    if (wasTaskDetail || subScreen === "profile") {
+    if (wasTaskDetail || subScreen === "profile" || subScreen === "categories") {
       setTasksRefreshTick((prev) => prev + 1);
     }
   };
@@ -84,6 +85,7 @@ export default function App() {
             {subScreen === "radar"         && <RadarScreen onBack={goBack} />}
             {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onUserUpdated={(next) => setSession(next)} />}
             {subScreen === "admin"         && <AdminScreen onBack={goBack} />}
+            {subScreen === "categories"    && <CategoriesScreen onBack={goBack} />}
 
             {subScreen === null && (
               <>
@@ -91,7 +93,7 @@ export default function App() {
                 {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "agenda"     && <AgendaScreen onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "university" && <UniversityScreen onSubjectTap={() => setSubScreen("subjectDetail")} />}
-                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
+                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onRadar={() => setSubScreen("radar")} onProfile={() => setSubScreen("profile")} onCategories={() => setSubScreen("categories")} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
               </>
             )}
 
