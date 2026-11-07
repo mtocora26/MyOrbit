@@ -14,6 +14,10 @@ import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+import com.app.myorbit.tasks.domain.TaskCompletedEvent;
+import com.app.myorbit.tasks.domain.TaskCreatedEvent;
+import com.app.myorbit.tasks.api.UpdateTaskStatusRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,13 +35,15 @@ import static org.mockito.Mockito.when;
 class TaskServiceTest {
     private TaskRepository repository;
     private CategoryService categoryService;
+    private ApplicationEventPublisher events;
     private TaskService service;
 
     @BeforeEach
     void setUp() {
         repository = mock(TaskRepository.class);
         categoryService = mock(CategoryService.class);
-        service = new TaskService(repository, categoryService);
+        events = mock(ApplicationEventPublisher.class);
+        service = new TaskService(repository, categoryService, events);
     }
 
     private Task taskOf(String userId) {
@@ -335,5 +341,67 @@ class TaskServiceTest {
         service.onCategoryDeleted(new CategoryDeletedEvent("u1", "c1"));
 
         verify(repository, never()).saveAll(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    private UpdateTaskStatusRequest statusRequest(boolean done) {
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest();
+        request.setDone(done);
+        return request;
+    }
+
+    @Test
+    void createPublishesTaskCreatedEvent() {
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Task created = service.create("u1", new CreateTaskRequest("Estudiar", null, null, null));
+
+        verify(events).publishEvent(new TaskCreatedEvent("u1", created.getId(), "Estudiar", null));
+    }
+
+    @Test
+    void invalidCreateDoesNotPublishAnything() {
+        assertThrows(BusinessRuleException.class, () -> service.create("u1", new CreateTaskRequest(" ", null, null, null)));
+
+        verify(events, never()).publishEvent(org.mockito.ArgumentMatchers.any(Object.class));
+    }
+
+    @Test
+    void completingATaskPublishesTaskCompletedEventOnce() {
+        Task task = taskOf("u1");
+        task.setTitle("Entregar");
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updateStatus("u1", "t1", statusRequest(true));
+        service.updateStatus("u1", "t1", statusRequest(true));
+
+        verify(events, org.mockito.Mockito.times(1)).publishEvent(new TaskCompletedEvent("u1", "t1", "Entregar"));
+    }
+
+    @Test
+    void reopeningATaskDoesNotPublishCompletion() {
+        Task task = taskOf("u1");
+        task.setDone(true);
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updateStatus("u1", "t1", statusRequest(false));
+
+        verify(events, never()).publishEvent(org.mockito.ArgumentMatchers.any(Object.class));
+    }
+
+    @Test
+    void completingTheLastSubtaskCompletesTheTaskAndPublishes() {
+        Task task = taskOf("u1");
+        task.setTitle("Proyecto");
+        Subtask only = new Subtask();
+        only.setId("s1");
+        task.getSubtasks().add(only);
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updateSubtaskStatus("u1", "t1", "s1", new UpdateSubtaskStatusRequest(true));
+
+        verify(events).publishEvent(new TaskCompletedEvent("u1", "t1", "Proyecto"));
     }
 }

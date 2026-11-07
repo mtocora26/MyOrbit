@@ -3,11 +3,13 @@ package com.app.myorbit.habits.application;
 import com.app.myorbit.habits.api.UpdateHabitCompletionRequest;
 import com.app.myorbit.habits.api.UpdateHabitRequest;
 import com.app.myorbit.habits.domain.HabitFrequency;
+import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
 import com.app.myorbit.shared.error.NotFoundException;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -25,7 +27,8 @@ import static org.mockito.Mockito.when;
 
 class HabitServiceTest {
     private final HabitRepository repository = mock(HabitRepository.class);
-    private final HabitService service = new HabitService(repository, Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC));
+    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    private final HabitService service = new HabitService(repository, Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC), events);
 
     private Habit habitOf(String userId) {
         Habit habit = new Habit();
@@ -156,5 +159,33 @@ class HabitServiceTest {
         when(repository.findById("h1")).thenReturn(Optional.of(habitOf("u2")));
 
         assertThrows(NotFoundException.class, () -> service.update("u1", "h1", new UpdateHabitRequest("X", null, null, null, null)));
+    }
+
+    private Habit scheduled(String id, String userId, HabitFrequency frequency, List<Integer> days, String... done) {
+        Habit habit = habitOf(userId);
+        habit.setId(id);
+        habit.setTitle("H" + id);
+        habit.setFrequency(frequency);
+        habit.setDaysOfWeek(days);
+        habit.setCompletedDates(new java.util.ArrayList<>(List.of(done)));
+        return habit;
+    }
+
+    @Test
+    void publishPendingHabitsNotifiesOnlyScheduledAndNotDone() {
+        // 2026-10-10 es sábado (6)
+        java.time.LocalDate saturday = java.time.LocalDate.of(2026, 10, 10);
+        Habit daily = scheduled("a", "u1", HabitFrequency.DAILY, List.of(1, 2, 3, 4, 5, 6, 7));
+        Habit dailyDone = scheduled("b", "u1", HabitFrequency.DAILY, List.of(1, 2, 3, 4, 5, 6, 7), "2026-10-10");
+        Habit customToday = scheduled("c", "u2", HabitFrequency.CUSTOM, List.of(6));
+        Habit customOtherDay = scheduled("d", "u2", HabitFrequency.CUSTOM, List.of(1, 3));
+        when(repository.findAll()).thenReturn(List.of(daily, dailyDone, customToday, customOtherDay));
+
+        int count = service.publishPendingHabits(saturday);
+
+        assertEquals(2, count);
+        org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u1", "a", "Ha", saturday));
+        org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u2", "c", "Hc", saturday));
+        org.mockito.Mockito.verifyNoMoreInteractions(events);
     }
 }

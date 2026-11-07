@@ -165,3 +165,18 @@ Con este marco, cada avance tecnico debe indicar:
 ---
 
 Ver también: [docs/BUENAS_PRACTICAS.md](docs/BUENAS_PRACTICAS.md) (SOLID y convenciones de código) y [docs/BACKLOG.md](docs/BACKLOG.md) (issues y milestones).
+
+## Decision: eventos de dominio con Observer (#40)
+
+- **Nivel afectado:** Aplicación (módulos `tasks` y `habits`).
+- **Objetivo:** que las notificaciones (M4-02/M4-04) reaccionen a lo que ocurre en tareas y hábitos sin que esos módulos las conozcan.
+
+| Evento | Paquete | Cuándo se publica |
+|---|---|---|
+| `TaskCreatedEvent(userId, taskId, title, due)` | `tasks.domain` | Después de guardar una tarea nueva. |
+| `TaskCompletedEvent(userId, taskId, title)` | `tasks.domain` | Cuando la tarea **pasa** de pendiente a completada: por estado de la tarea, al completar su última subtarea o al borrar la última pendiente. No se repite si ya estaba completada. |
+| `HabitPendingEvent(userId, habitId, title, date)` | `habits.domain` | Por cada hábito programado para `date` y no cumplido ese día, al invocar `HabitService.publishPendingHabits(date)`. |
+
+- Se publican con `ApplicationEventPublisher` de Spring, **después** de persistir; si la operación falla no se emite nada.
+- Los eventos son `record` inmutables en `domain`; los observadores los consumen con `@EventListener` en su propio módulo (misma técnica que `CategoryDeletedEvent`).
+- `publishPendingHabits` solo detecta y notifica; quien lo llama periódicamente es el recordatorio programado (M4-04). Un hábito `diaria` está programado todos los días; uno `personalizada`, en sus `daysOfWeek` (1 = lunes … 7 = domingo).
