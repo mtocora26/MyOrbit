@@ -42,6 +42,24 @@ export async function fetchGradeSummary(subjectId: string): Promise<GradeSummary
   return response.json();
 }
 
+/** Evaluación con fecha, junto a su materia, lista para la Agenda. */
+export interface AgendaEvaluation {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  subjectColor: string;
+  name: string;
+  percentage: number;
+  grade: number | null;
+  due: string;
+}
+
+export async function fetchAgendaEvaluations(): Promise<AgendaEvaluation[]> {
+  const response = await fetch(`${API_BASE_URL}/api/academic/evaluations`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las evaluaciones"));
+  return response.json();
+}
+
 export async function fetchAcademicSummary(semester?: string): Promise<AcademicSummary> {
   const query = semester ? `?semester=${encodeURIComponent(semester)}` : "";
   const response = await fetch(`${API_BASE_URL}/api/academic/summary${query}`, { headers: authHeaders() });

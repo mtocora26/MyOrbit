@@ -4,6 +4,7 @@ import com.app.myorbit.academic.api.EvaluationRequest;
 import com.app.myorbit.academic.domain.Evaluation;
 import com.app.myorbit.academic.infrastructure.EvaluationRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
+import com.app.myorbit.shared.time.DueDate;
 import com.app.myorbit.shared.error.NotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -72,7 +73,7 @@ public class EvaluationService {
 
     private void apply(Evaluation evaluation, EvaluationRequest request) {
         try {
-            evaluation.update(request.name(), request.percentage(), request.grade());
+            evaluation.update(request.name(), request.percentage(), request.grade(), DueDate.parse(request.due()));
         } catch (IllegalArgumentException invalid) {
             throw new BusinessRuleException(invalid.getMessage());
         }

@@ -64,15 +64,16 @@ Cada evaluación pertenece a una materia del usuario de la sesión. Si la materi
 | `name` | string | Obligatorio, máximo 100 caracteres. |
 | `percentage` | número | Obligatorio, mayor que 0 y máximo 100. La suma de la materia no puede superar 100. |
 | `grade` | número | Opcional (`null` hasta conocer la nota), entre 0 y 5. |
+| `due` | texto ISO | Opcional: fecha y hora de la evaluación (`2026-11-20T08:00`). Ausente, `null` o vacío = sin fecha (el `PUT` reemplaza, así que omitirla la quita). Otro formato responde `400` (`La fecha debe tener el formato AAAA-MM-DDTHH:mm`). |
 
 ```json
-{ "name": "Parcial 1", "percentage": 30, "grade": 4.5 }
+{ "name": "Parcial 1", "percentage": 30, "grade": 4.5, "due": "2026-11-20T08:00" }
 ```
 
 ### Respuesta
 
 ```json
-{ "id": "a91d…", "subjectId": "6f1c…", "name": "Parcial 1", "percentage": 30.0, "grade": 4.5 }
+{ "id": "a91d…", "subjectId": "6f1c…", "name": "Parcial 1", "percentage": 30.0, "grade": 4.5, "due": "2026-11-20T08:00:00" }
 ```
 
 ### Errores
@@ -267,3 +268,20 @@ Cada usuario elige qué tipos de aviso quiere recibir. Sin haber guardado nada, 
 
 - `gradeTarget` es la meta de promedio por defecto de los resúmenes de notas.
 - El **código estudiantil se eliminó** del perfil (#128): un cliente antiguo que lo envíe es ignorado, y el dato guardado desaparece la próxima vez que se guarde el perfil.
+
+
+## Evaluaciones con fecha para la Agenda (`GET /api/academic/evaluations`)
+
+Evaluaciones de **todas** las materias del usuario que tienen fecha, de la más próxima a la más lejana, cada una con su materia. Las que no tienen fecha no aparecen.
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `dueFrom` | `AAAA-MM-DDTHH:mm`, opcional | Incluye desde esa fecha. |
+| `dueTo` | `AAAA-MM-DDTHH:mm`, opcional | Incluye hasta esa fecha. |
+
+`400` si `dueFrom` es posterior a `dueTo`; `401` sin sesión.
+
+```json
+[ { "id": "a91d…", "subjectId": "6f1c…", "subjectName": "Redes", "subjectColor": "#2E90FA",
+    "name": "Parcial 2", "percentage": 30.0, "grade": null, "due": "2026-11-20T08:00:00" } ]
+```

@@ -80,4 +80,35 @@ class EvaluationServiceTest {
 
         assertThrows(NotFoundException.class, () -> service.list("u1", "nope"));
     }
+
+    @Test
+    void createStoresTheParsedDueDate() {
+        when(repository.findByUserIdAndSubjectId("u1", "s1")).thenReturn(List.of());
+        when(repository.save(any(Evaluation.class))).then(returnsFirstArg());
+
+        Evaluation created = service.create("u1", "s1", new EvaluationRequest("Parcial", 30.0, null, "2026-11-20T08:00"));
+
+        assertEquals(java.time.LocalDateTime.of(2026, 11, 20, 8, 0), created.getDue());
+    }
+
+    @Test
+    void invalidDueDateIsRejectedWithoutSaving() {
+        when(repository.findByUserIdAndSubjectId("u1", "s1")).thenReturn(List.of());
+
+        assertThrows(BusinessRuleException.class, () -> service.create("u1", "s1", new EvaluationRequest("Parcial", 30.0, null, "20/11/2026")));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void updateWithoutDueClearsIt() {
+        Evaluation existing = evaluation("e1", "u1", "s1", 30, null);
+        existing.update("Parcial", 30, null, java.time.LocalDateTime.of(2026, 11, 20, 8, 0));
+        when(repository.findById("e1")).thenReturn(Optional.of(existing));
+        when(repository.findByUserIdAndSubjectId("u1", "s1")).thenReturn(List.of(existing));
+        when(repository.save(any(Evaluation.class))).then(returnsFirstArg());
+
+        Evaluation updated = service.update("u1", "s1", "e1", new EvaluationRequest("Parcial", 30.0, null, ""));
+
+        org.junit.jupiter.api.Assertions.assertNull(updated.getDue());
+    }
 }
