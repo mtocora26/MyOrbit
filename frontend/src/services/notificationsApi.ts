@@ -38,3 +38,28 @@ export async function markAllNotificationsRead(): Promise<number> {
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible marcar las notificaciones"));
   return (await response.json()).updated;
 }
+
+export interface NotificationPreferences {
+  /** Fechas límite: al crear una tarea con fecha y el recordatorio de 24 h. */
+  deadline: boolean;
+  /** Tareas completadas. */
+  event: boolean;
+  /** Hábitos pendientes del día. */
+  habit: boolean;
+}
+
+export async function fetchNotificationPreferences(): Promise<NotificationPreferences> {
+  const response = await fetch(`${API_BASE_URL}/api/notifications/preferences`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar tus preferencias"));
+  return response.json();
+}
+
+export async function updateNotificationPreferences(preferences: NotificationPreferences): Promise<NotificationPreferences> {
+  const response = await fetch(`${API_BASE_URL}/api/notifications/preferences`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(preferences),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible guardar tus preferencias"));
+  return response.json();
+}

@@ -239,3 +239,21 @@ Reglas:
 - Hoy cuenta en `scheduledDays` solo si ya está cumplido (no penaliza el día en curso).
 - La ventana no se extiende antes del día de creación del hábito (`createdDate`, que se guarda al crearlo), para no penalizar un hábito nuevo; los hábitos anteriores a este cambio no tienen ese dato y usan la ventana completa.
 - Las fechas guardadas que no sean ISO (datos previos a #38) se ignoran.
+
+## Preferencias de notificaciones (`/api/notifications/preferences`)
+
+Cada usuario elige qué tipos de aviso quiere recibir. Sin haber guardado nada, todos están activados.
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/notifications/preferences` | | `200` `{ "deadline": true, "event": true, "habit": true }` |
+| `PUT` | `/api/notifications/preferences` | `{ deadline, event, habit }` (los tres obligatorios) | `200` las preferencias guardadas · `400` si falta algún campo · `401` sin sesión |
+
+| Campo | Controla | Tipo de notificación |
+|---|---|---|
+| `deadline` | Aviso al crear una tarea con fecha y recordatorio 24 h antes del vencimiento | `DEADLINE` |
+| `event` | Aviso al completar una tarea | `EVENT` |
+| `habit` | Recordatorio diario de hábitos pendientes | `HABIT` |
+
+- Un tipo desactivado **no se genera**: `NotificationService` lo descarta tanto para avisos inmediatos como para los recordatorios programados, sin afectar a los demás tipos ni a otros usuarios. Las notificaciones ya creadas se conservan.
+- No existe un interruptor «push»: hoy los avisos viven solo dentro de la app. Web Push (PWA) sería un cambio aparte.

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from "../services/notificationsApi";
 import { ScreenHeader, Toggle } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
 import { IconCalendar, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
@@ -10,8 +11,9 @@ interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; o
 
 export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }: Props) {
   const { theme, toggle: toggleTheme } = useTheme();
-  const [pushNotifs, setPushNotifs] = useState(true);
-  const [habitNotifs, setHabitNotifs] = useState(true);
+  const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
+  const [prefsError, setPrefsError] = useState<string | null>(null);
+  const [savingPrefs, setSavingPrefs] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -105,6 +107,31 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
       setAccountError(error instanceof Error ? error.message : "No fue posible actualizar tu cuenta");
     } finally {
       setSavingAccount(false);
+    }
+  }
+
+  function loadPrefs() {
+    setPrefsError(null);
+    fetchNotificationPreferences().then(setPrefs).catch((err) => setPrefsError(err instanceof Error ? err.message : "No fue posible cargar tus preferencias"));
+  }
+
+  useEffect(() => { loadPrefs(); }, []);
+
+  // Se muestra el cambio al instante y se revierte si el servidor no lo guarda.
+  async function changePref(key: keyof NotificationPreferences) {
+    if (!prefs || savingPrefs) return;
+    const previous = prefs;
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    setPrefsError(null);
+    setSavingPrefs(true);
+    try {
+      setPrefs(await updateNotificationPreferences(next));
+    } catch (err) {
+      setPrefs(previous);
+      setPrefsError(err instanceof Error ? err.message : "No fue posible guardar tus preferencias");
+    } finally {
+      setSavingPrefs(false);
     }
   }
 
@@ -205,8 +232,20 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
 
         {/* Notifications */}
         <Section title="Notificaciones">
-          <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Notificaciones push" sub="Alertas generales" on={pushNotifs} onChange={() => setPushNotifs(!pushNotifs)} />
-          <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Recordatorios de hábitos" sub="Aviso diario" on={habitNotifs} onChange={() => setHabitNotifs(!habitNotifs)} />
+          {prefs ? (
+            <>
+              <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Fechas límite" sub="Al crear una tarea con fecha y 24 h antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-green)" />} iconBg="var(--color-green-wash)" label="Tareas completadas" sub="Aviso al terminar una tarea" on={prefs.event} onChange={() => changePref("event")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Hábitos pendientes" sub="Recordatorio diario de lo que falta hoy" on={prefs.habit} onChange={() => changePref("habit")} />
+            </>
+          ) : (
+            <div className="px-4 py-3 min-h-[60px] flex items-center">
+              {prefsError
+                ? <div role="alert" className="flex w-full items-center justify-between gap-3"><p className="text-[14px] font-semibold text-danger">{prefsError}</p><button onClick={loadPrefs} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button></div>
+                : <p className="text-[14px] text-ink-2">Cargando preferencias...</p>}
+            </div>
+          )}
+          {prefs && prefsError && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{prefsError}</p>}
         </Section>
 
         {/* Integrations */}
@@ -271,7 +310,7 @@ function ToggleRow({ label, sub, on, onChange, icon, iconBg }: { label: string; 
         <p className="text-[16px] font-semibold text-ink">{label}</p>
         <p className="text-[14px] text-ink-2">{sub}</p>
       </div>
-      <Toggle on={on} onChange={onChange} />
+      <Toggle on={on} onChange={onChange} label={label} />
     </div>
   );
 }

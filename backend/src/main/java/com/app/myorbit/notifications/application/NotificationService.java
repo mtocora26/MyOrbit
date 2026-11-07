@@ -17,11 +17,13 @@ import java.util.Map;
 @Service
 public class NotificationService {
     private final NotificationRepository repository;
+    private final NotificationPreferencesService preferences;
     private final Clock clock;
     private final Map<NotificationType, NotificationFactory> factories = new EnumMap<>(NotificationType.class);
 
-    public NotificationService(NotificationRepository repository, Clock clock, List<NotificationFactory> factories) {
+    public NotificationService(NotificationRepository repository, NotificationPreferencesService preferences, Clock clock, List<NotificationFactory> factories) {
         this.repository = repository;
+        this.preferences = preferences;
         this.clock = clock;
         for (NotificationFactory factory : factories) {
             if (this.factories.put(factory.type(), factory) != null) {
@@ -35,8 +37,13 @@ public class NotificationService {
         }
     }
 
-    /** Crea la notificación con la fábrica de su tipo y la guarda. */
+    /**
+     * Crea la notificación con la fábrica de su tipo y la guarda.
+     *
+     * @return la notificación creada, o {@code null} si el usuario desactivó ese tipo de aviso
+     */
     public Notification notify(NotificationRequest request) {
+        if (!preferences.isEnabled(request.userId(), request.type())) return null;
         return repository.save(factories.get(request.type()).create(request, Instant.now(clock)));
     }
 

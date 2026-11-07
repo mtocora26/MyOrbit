@@ -1,6 +1,9 @@
 package com.app.myorbit.notifications.api;
 
+import com.app.myorbit.notifications.application.NotificationPreferencesService;
 import com.app.myorbit.notifications.application.NotificationService;
+import com.app.myorbit.notifications.domain.NotificationPreferences;
+import org.springframework.http.MediaType;
 import com.app.myorbit.notifications.domain.Notification;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.shared.error.NotFoundException;
@@ -17,9 +20,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.List;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,6 +38,9 @@ class NotificationControllerTest {
 
     @MockitoBean
     private NotificationService notificationService;
+
+    @MockitoBean
+    private NotificationPreferencesService preferencesService;
 
     @MockitoBean
     private CurrentUserProvider currentUserProvider;
@@ -119,5 +128,50 @@ class NotificationControllerTest {
     void requestsWithoutSessionAreUnauthorized() throws Exception {
         mockMvc.perform(get("/api/notifications")).andExpect(status().isUnauthorized());
         mockMvc.perform(patch("/api/notifications/read-all")).andExpect(status().isUnauthorized());
+    }
+
+    private NotificationPreferences preferences(boolean deadline, boolean event, boolean habit) {
+        NotificationPreferences preferences = NotificationPreferences.defaultsFor("u1");
+        preferences.update(deadline, event, habit);
+        return preferences;
+    }
+
+    @Test
+    void preferencesReturnTheCurrentChoices() throws Exception {
+        when(preferencesService.get("u1")).thenReturn(preferences(true, false, true));
+
+        mockMvc.perform(get("/api/notifications/preferences").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deadline").value(true))
+                .andExpect(jsonPath("$.event").value(false))
+                .andExpect(jsonPath("$.habit").value(true));
+    }
+
+    @Test
+    void updatePreferencesSavesAndReturnsThem() throws Exception {
+        when(preferencesService.update("u1", false, true, false)).thenReturn(preferences(false, true, false));
+
+        mockMvc.perform(put("/api/notifications/preferences").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"deadline\":false,\"event\":true,\"habit\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deadline").value(false))
+                .andExpect(jsonPath("$.habit").value(false));
+        verify(preferencesService).update("u1", false, true, false);
+    }
+
+    @Test
+    void updatePreferencesRejectsMissingFields() throws Exception {
+        mockMvc.perform(put("/api/notifications/preferences").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"deadline\":false}"))
+                .andExpect(status().isBadRequest());
+        verify(preferencesService, never()).update(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void preferencesRequireASession() throws Exception {
+        mockMvc.perform(get("/api/notifications/preferences")).andExpect(status().isUnauthorized());
+        mockMvc.perform(put("/api/notifications/preferences").contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isUnauthorized());
     }
 }
