@@ -226,12 +226,13 @@ export function Checkbox({ checked, onChange }: { checked: boolean; onChange: ()
 }
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
-export function Toggle({ on, onChange }: { on: boolean; onChange: () => void; }) {
+export function Toggle({ on, onChange, label }: { on: boolean; onChange: () => void; label?: string; }) {
   return (
     <button
       onClick={onChange}
       role="switch"
       aria-checked={on}
+      aria-label={label}
       className="relative h-7 w-12 flex-shrink-0 rounded-[6px] transition-colors duration-200"
       style={{ background: on ? "var(--color-coral)" : "var(--color-line-strong)" }}
     >

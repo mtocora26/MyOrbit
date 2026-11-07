@@ -25,13 +25,18 @@ import static org.mockito.Mockito.when;
 
 class NotificationServiceTest {
     private final NotificationRepository repository = mock(NotificationRepository.class);
+    private final NotificationPreferencesService preferences = mock(NotificationPreferencesService.class);
     private final Clock clock = Clock.fixed(Instant.parse("2026-11-07T12:00:00Z"), ZoneOffset.UTC);
+    {
+        when(preferences.isEnabled(org.mockito.ArgumentMatchers.anyString(), any(NotificationType.class))).thenReturn(true);
+    }
+
     private final List<NotificationFactory> allFactories =
             List.of(new DeadlineNotificationFactory(), new EventNotificationFactory(), new HabitNotificationFactory());
 
     @Test
     void notifyUsesTheFactoryOfTheTypeAndSaves() {
-        NotificationService service = new NotificationService(repository, clock, allFactories);
+        NotificationService service = new NotificationService(repository, preferences, clock, allFactories);
         when(repository.save(any(Notification.class))).then(returnsFirstArg());
 
         Notification saved = service.notify(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", null));
@@ -46,7 +51,7 @@ class NotificationServiceTest {
     void failsAtStartupWhenATypeHasNoFactory() {
         List<NotificationFactory> incomplete = List.of(new DeadlineNotificationFactory(), new EventNotificationFactory());
 
-        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, clock, incomplete));
+        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, clock, incomplete));
     }
 
     @Test
@@ -54,7 +59,7 @@ class NotificationServiceTest {
         List<NotificationFactory> duplicated = List.of(new DeadlineNotificationFactory(), new DeadlineNotificationFactory(),
                 new EventNotificationFactory(), new HabitNotificationFactory());
 
-        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, clock, duplicated));
+        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, clock, duplicated));
     }
 
     private Notification notificationOf(String userId, boolean read) {
@@ -66,7 +71,7 @@ class NotificationServiceTest {
     }
 
     private NotificationService service() {
-        return new NotificationService(repository, clock, allFactories);
+        return new NotificationService(repository, preferences, clock, allFactories);
     }
 
     @Test
@@ -149,5 +154,33 @@ class NotificationServiceTest {
 
         assertEquals(NotificationType.HABIT, created.getType());
         verify(repository).save(created);
+    }
+
+    @Test
+    void notifyDoesNothingWhenTheUserTurnedOffThatType() {
+        when(preferences.isEnabled("u1", NotificationType.HABIT)).thenReturn(false);
+
+        org.junit.jupiter.api.Assertions.assertNull(
+                service().notify(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", null)));
+        verify(repository, never()).save(any(Notification.class));
+    }
+
+    @Test
+    void turningOffOneTypeDoesNotAffectTheOthers() {
+        when(preferences.isEnabled("u1", NotificationType.HABIT)).thenReturn(false);
+        when(repository.save(any(Notification.class))).then(returnsFirstArg());
+
+        Notification deadline = service().notify(new NotificationRequest(NotificationType.DEADLINE, "u1", "t1", "Informe", null));
+
+        assertEquals(NotificationType.DEADLINE, deadline.getType());
+    }
+
+    @Test
+    void notifyOncePerDayAlsoRespectsPreferences() {
+        when(preferences.isEnabled("u1", NotificationType.DEADLINE)).thenReturn(false);
+
+        org.junit.jupiter.api.Assertions.assertNull(
+                service().notifyOncePerDay(new NotificationRequest(NotificationType.DEADLINE, "u1", "t1", "Informe", null)));
+        verify(repository, never()).save(any(Notification.class));
     }
 }
