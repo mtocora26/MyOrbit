@@ -257,3 +257,13 @@ Cada usuario elige qué tipos de aviso quiere recibir. Sin haber guardado nada, 
 
 - Un tipo desactivado **no se genera**: `NotificationService` lo descarta tanto para avisos inmediatos como para los recordatorios programados, sin afectar a los demás tipos ni a otros usuarios. Las notificaciones ya creadas se conservan.
 - No existe un interruptor «push»: hoy los avisos viven solo dentro de la app. Web Push (PWA) sería un cambio aparte.
+
+## Perfil académico (`/api/profile`)
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/profile` | | `200` `{ userId, program, semester, gradeTarget }` · `204` si aún no se configuró |
+| `PUT` | `/api/profile` | `{ program, semester, gradeTarget }` | `200` el perfil guardado |
+
+- `gradeTarget` es la meta de promedio por defecto de los resúmenes de notas.
+- El **código estudiantil se eliminó** del perfil (#128): un cliente antiguo que lo envíe es ignorado, y el dato guardado desaparece la próxima vez que se guarde el perfil.

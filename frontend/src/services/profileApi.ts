@@ -5,7 +5,6 @@ export interface UserProfile {
   userId: string;
   program: string;
   semester: string;
-  studentCode: string;
   gradeTarget: string;
 }
 

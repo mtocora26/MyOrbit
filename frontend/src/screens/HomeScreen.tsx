@@ -270,7 +270,6 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               </div>
               <dl className="mt-4 flex gap-8">
                 <Metric label="Meta" value={profile.gradeTarget || "-"} />
-                <Metric label="Código" value={profile.studentCode || "-"} />
               </dl>
             </>
           ) : (

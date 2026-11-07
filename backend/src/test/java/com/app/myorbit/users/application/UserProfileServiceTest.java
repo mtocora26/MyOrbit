@@ -21,12 +21,11 @@ class UserProfileServiceTest {
         when(repository.findById("u1")).thenReturn(Optional.empty());
         when(repository.save(any(UserProfile.class))).then(returnsFirstArg());
 
-        UserProfile profile = service.update("u1", "  Ingeniería  ", null, " 123 ", "4.5");
+        UserProfile profile = service.update("u1", "  Ingeniería  ", null, "4.5");
 
         assertEquals("u1", profile.getUserId());
         assertEquals("Ingeniería", profile.getProgram());
         assertEquals("", profile.getSemester());
-        assertEquals("123", profile.getStudentCode());
         assertEquals("4.5", profile.getGradeTarget());
     }
 
