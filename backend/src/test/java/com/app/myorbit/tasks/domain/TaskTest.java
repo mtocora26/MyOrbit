@@ -71,4 +71,66 @@ class TaskTest {
 
         assertFalse(empty.isDone());
     }
+
+    @Test
+    void findAndRemoveReturnNothingOnATaskWithoutSubtasks() {
+        Task empty = new Task();
+
+        assertTrue(empty.findSubtask("x").isEmpty());
+        assertFalse(empty.removeSubtask("x"));
+    }
+
+    @Test
+    void removeSubtaskRemovesATopLevelBranchWithItsDescendants() {
+        assertTrue(task.removeSubtask("parent"));
+
+        assertTrue(task.getSubtasks().isEmpty());
+        assertTrue(task.findSubtask("child").isEmpty());
+    }
+
+    @Test
+    void markAllCanReopenAFinishedTree() {
+        task.markAll(true);
+        task.markAll(false);
+
+        assertFalse(task.isDone());
+        assertFalse(parent.isDone());
+        assertFalse(child.isDone());
+    }
+
+    @Test
+    void synchronizeRequiresEveryBranchToBeDone() {
+        Subtask sibling = subtask("sibling");
+        task.getSubtasks().add(sibling);
+        child.setDone(true);
+
+        task.synchronizeCompletion();
+        assertFalse(task.isDone());
+        assertTrue(parent.isDone());
+
+        sibling.setDone(true);
+        task.synchronizeCompletion();
+        assertTrue(task.isDone());
+    }
+
+    @Test
+    void removingTheLastPendingSubtaskCompletesTheTask() {
+        Subtask pending = subtask("pending");
+        task.getSubtasks().add(pending);
+        child.setDone(true);
+        task.synchronizeCompletion();
+        assertFalse(task.isDone());
+
+        task.removeSubtask("pending");
+        task.synchronizeCompletion();
+
+        assertTrue(task.isDone());
+    }
+
+    @Test
+    void setSubtasksWithNullFallsBackToAnEmptyList() {
+        task.setSubtasks(null);
+
+        assertTrue(task.getSubtasks().isEmpty());
+    }
 }
