@@ -180,3 +180,19 @@ Ver también: [docs/BUENAS_PRACTICAS.md](docs/BUENAS_PRACTICAS.md) (SOLID y conv
 - Se publican con `ApplicationEventPublisher` de Spring, **después** de persistir; si la operación falla no se emite nada.
 - Los eventos son `record` inmutables en `domain`; los observadores los consumen con `@EventListener` en su propio módulo (misma técnica que `CategoryDeletedEvent`).
 - `publishPendingHabits` solo detecta y notifica; quien lo llama periódicamente es el recordatorio programado (M4-04). Un hábito `diaria` está programado todos los días; uno `personalizada`, en sus `daysOfWeek` (1 = lunes … 7 = domingo).
+
+## Decision: notificaciones por tipo con Factory Method (#41)
+
+- **Nivel afectado:** Aplicación (módulo nuevo `notifications`).
+- **Objetivo:** crear notificaciones distintas según el origen sin `if/switch` por tipo, de modo que un tipo nuevo no obligue a modificar código existente (OCP).
+
+| Tipo | Origen (evento del #40) | Fábrica |
+|---|---|---|
+| `DEADLINE` | `TaskCreatedEvent` con `due` (sin fecha no se notifica) | `DeadlineNotificationFactory` |
+| `EVENT` | `TaskCompletedEvent` | `EventNotificationFactory` |
+| `HABIT` | `HabitPendingEvent` | `HabitNotificationFactory` |
+
+- `NotificationFactory` es la interfaz; `AbstractNotificationFactory` arma los campos comunes (id, usuario, referencia, fecha, `read = false`) y cada subclase aporta `title()` y `message()` (los factory methods).
+- `NotificationService` indexa las fábricas por tipo con las que inyecta Spring y **falla al arrancar** si falta una fábrica o hay dos para el mismo tipo. `NotificationEventListener` observa los eventos y llama a `notify(...)`.
+- Un fallo al crear una notificación se registra en el log y no se propaga: la tarea u hábito ya guardados no se deshacen.
+- Agregar un tipo: valor en `NotificationType` + una subclase `@Component`. Listar y marcar como leídas llega en M4-03 (#42).
