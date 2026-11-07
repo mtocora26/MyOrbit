@@ -110,4 +110,26 @@ class AuthServiceAccountTest {
         verify(sessionRepository).delete(other);
         verify(sessionRepository, never()).delete(current);
     }
+
+    @Test
+    void updateTimeZoneSavesAValidRegionZone() {
+        User updated = service.updateTimeZone("u1", "  America/Mexico_City ");
+
+        assertEquals("America/Mexico_City", updated.getTimeZone());
+        assertEquals(java.time.ZoneId.of("America/Mexico_City"), updated.zone());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateTimeZoneRejectsUnknownOrBlankZones() {
+        for (String invalid : new String[]{"Marte/Olympus", "bogota", "+05:00", "Etc/GMT+5", " ", null}) {
+            assertThrows(BusinessRuleException.class, () -> service.updateTimeZone("u1", invalid), String.valueOf(invalid));
+        }
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void anAccountWithoutZoneUsesColombia() {
+        assertEquals(java.time.ZoneId.of("America/Bogota"), user.zone());
+    }
 }

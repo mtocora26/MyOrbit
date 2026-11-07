@@ -414,14 +414,14 @@ class TaskServiceTest {
         Task a = taskOf("u1");
         a.setTitle("Informe");
         a.setDue(from.plusHours(5));
-        Task b = taskOf("u2");
+        Task b = taskOf("u1");
         b.setId("t2");
         b.setTitle("Parcial");
         b.setDue(from.plusHours(20));
-        when(repository.findByDoneFalseAndDueBetween(from, to)).thenReturn(List.of(a, b));
+        when(repository.findByUserIdAndDoneFalseAndDueBetween("u1", from, to)).thenReturn(List.of(a, b));
 
-        assertEquals(2, service.publishDueSoon(from, to));
+        assertEquals(2, service.publishDueSoon("u1", from, to));
         verify(events).publishEvent(new TaskDueSoonEvent("u1", "t1", "Informe", from.plusHours(5)));
-        verify(events).publishEvent(new TaskDueSoonEvent("u2", "t2", "Parcial", from.plusHours(20)));
+        verify(events).publishEvent(new TaskDueSoonEvent("u1", "t2", "Parcial", from.plusHours(20)));
     }
 }

@@ -10,10 +10,10 @@ import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.habits.domain.HabitStats;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
+import com.app.myorbit.users.application.UserZoneService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -22,12 +22,12 @@ import java.util.UUID;
 @Service
 public class HabitService {
     private final HabitRepository habitRepository;
-    private final Clock clock;
+    private final UserZoneService userZone;
     private final ApplicationEventPublisher events;
 
-    public HabitService(HabitRepository habitRepository, Clock clock, ApplicationEventPublisher events) {
+    public HabitService(HabitRepository habitRepository, UserZoneService userZone, ApplicationEventPublisher events) {
         this.habitRepository = habitRepository;
-        this.clock = clock;
+        this.userZone = userZone;
         this.events = events;
     }
 
@@ -46,7 +46,7 @@ public class HabitService {
         Habit habit = new Habit();
         habit.setId(UUID.randomUUID().toString());
         habit.setUserId(userId);
-        habit.setCreatedDate(LocalDate.now(clock).toString());
+        habit.setCreatedDate(userZone.today(userId).toString());
         habit.setTitle(request.title().trim());
         habit.setFrequency(request.frequency() == null ? HabitFrequency.DAILY : request.frequency());
         habit.setDaysOfWeek(normalizeDays(request.daysOfWeek(), habit.getFrequency()));
@@ -71,15 +71,15 @@ public class HabitService {
 
     public Habit updateCompletion(String userId, String id, UpdateHabitCompletionRequest request) {
         Habit habit = getOwned(userId, id);
-        String date = resolveDate(request.date());
+        String date = resolveDate(userId, request.date());
         if (request.completed() && !habit.getCompletedDates().contains(date)) habit.getCompletedDates().add(date);
         if (!request.completed()) habit.getCompletedDates().remove(date);
         return habitRepository.save(habit);
     }
 
     /** Sin fecha usa hoy; con fecha exige formato ISO (AAAA-MM-DD) y que exista en el calendario. */
-    private String resolveDate(String raw) {
-        if (raw == null || raw.isBlank()) return LocalDate.now(clock).toString();
+    private String resolveDate(String userId, String raw) {
+        if (raw == null || raw.isBlank()) return userZone.today(userId).toString();
         try {
             return LocalDate.parse(raw).toString();
         } catch (DateTimeParseException e) {
@@ -88,15 +88,16 @@ public class HabitService {
     }
 
     /**
-     * Publica un {@link HabitPendingEvent} por cada hábito programado para {@code date} que aún no está
-     * cumplido ese día. Lo invoca el recordatorio programado (M4-04); aquí solo se detecta y se notifica.
+     * Publica un {@link HabitPendingEvent} por cada hábito del usuario programado para {@code date} que aún no
+     * está cumplido ese día ({@code date} es "hoy" en la zona horaria del usuario). Lo invoca el recordatorio
+     * programado; aquí solo se detecta y se notifica.
      *
      * @return cantidad de hábitos pendientes notificados
      */
-    public int publishPendingHabits(LocalDate date) {
+    public int publishPendingHabits(String userId, LocalDate date) {
         String key = date.toString();
         int pending = 0;
-        for (Habit habit : habitRepository.findAll()) {
+        for (Habit habit : habitRepository.findByUserIdOrderByTitleAsc(userId)) {
             if (!habit.isScheduledOn(date) || habit.getCompletedDates().contains(key)) continue;
             events.publishEvent(new HabitPendingEvent(habit.getUserId(), habit.getId(), habit.getTitle(), date));
             pending++;
@@ -111,7 +112,7 @@ public class HabitService {
         if (days < 1 || days > MAX_STATS_DAYS) {
             throw new BusinessRuleException("El parametro days debe estar entre 1 y " + MAX_STATS_DAYS);
         }
-        return HabitStats.calculate(getOwned(userId, id), LocalDate.now(clock), days);
+        return HabitStats.calculate(getOwned(userId, id), userZone.today(userId), days);
     }
 
     public boolean delete(String userId, String id) {

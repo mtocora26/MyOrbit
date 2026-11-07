@@ -4,7 +4,7 @@ import { ScreenHeader, Toggle } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
 import { IconCalendar, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
 import type { AuthSession } from "../services/authApi";
-import { updateName, changePassword } from "../services/authApi";
+import { updateName, changePassword, updateTimeZone, availableTimeZones, detectTimeZone } from "../services/authApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 
 interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
@@ -13,6 +13,8 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   const { theme, toggle: toggleTheme } = useTheme();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [prefsError, setPrefsError] = useState<string | null>(null);
+  const [zoneError, setZoneError] = useState<string | null>(null);
+  const [savingZone, setSavingZone] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -118,6 +120,19 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   useEffect(() => { loadPrefs(); }, []);
 
   // Se muestra el cambio al instante y se revierte si el servidor no lo guarda.
+  async function changeZone(zone: string) {
+    if (savingZone) return;
+    try {
+      setSavingZone(true);
+      setZoneError(null);
+      onUserUpdated?.(await updateTimeZone(zone));
+    } catch (err) {
+      setZoneError(err instanceof Error ? err.message : "No fue posible guardar tu zona horaria");
+    } finally {
+      setSavingZone(false);
+    }
+  }
+
   async function changePref(key: keyof NotificationPreferences) {
     if (!prefs || savingPrefs) return;
     const previous = prefs;
@@ -259,6 +274,20 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           </div>
         </Section>
 
+        {/* Time zone */}
+        <Section title="Zona horaria">
+          <div className="flex flex-col gap-2 px-4 py-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[14px] text-ink-2">Los recordatorios y «hoy» se calculan con esta zona</span>
+              <select value={user.timeZone ?? detectTimeZone() ?? "America/Bogota"} onChange={(event) => changeZone(event.target.value)} disabled={savingZone} aria-label="Zona horaria" className="rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
+                {zoneOptions(user.timeZone ?? detectTimeZone()).map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
+              </select>
+            </label>
+            {!user.timeZone && <p className="text-[13px] text-ink-3">Aún no está guardada: se muestra la de tu dispositivo.</p>}
+            {zoneError && <p role="alert" className="text-[14px] font-semibold text-danger">{zoneError}</p>}
+          </div>
+        </Section>
+
         {/* Appearance */}
         <Section title="Apariencia">
           <ToggleRow icon={<IconMoon size={16} color="var(--color-ink)" />} iconBg="var(--color-wash)" label="Modo oscuro" sub="Tema oscuro de la interfaz" on={theme === "dark"} onChange={toggleTheme} />
@@ -309,4 +338,10 @@ function ToggleRow({ label, sub, on, onChange, icon, iconBg }: { label: string; 
       <Toggle on={on} onChange={onChange} label={label} />
     </div>
   );
+}
+
+/** Zonas para el selector; incluye la actual aunque el navegador no la liste. */
+function zoneOptions(current: string | null): string[] {
+  const zones = availableTimeZones();
+  return current && !zones.includes(current) ? [current, ...zones] : zones;
 }

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -116,6 +117,18 @@ public class AuthService implements CurrentUserProvider {
         return userRepository.save(user);
     }
 
+    /** Solo se aceptan zonas con nombre de región (America/Bogota) o UTC; se guarda tal cual la define el sistema. */
+    public User updateTimeZone(String userId, String timeZone) {
+        String zone = required(timeZone, "La zona horaria es obligatoria");
+        if (!ZoneId.getAvailableZoneIds().contains(zone) || zone.startsWith("Etc/") && !zone.equals("Etc/UTC")) {
+            throw new BusinessRuleException("La zona horaria no es valida, usa un nombre como America/Bogota");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new com.app.myorbit.shared.error.NotFoundException("Usuario no encontrado"));
+        user.setTimeZone(zone);
+        return userRepository.save(user);
+    }
+
     public void changePassword(String userId, String authorization, String currentPassword, String newPassword) {
         String password = required(newPassword, "La contrasena es obligatoria");
         if (password.length() < 8) {
@@ -144,7 +157,7 @@ public class AuthService implements CurrentUserProvider {
         session.setUserId(user.getId());
         session.setExpiresAt(Instant.now(clock).plus(sessionTtl));
         sessionRepository.save(session);
-        return new AuthResponse(session.getToken(), user.getId(), user.getName(), user.getEmail(), user.getRole());
+        return new AuthResponse(session.getToken(), user.getId(), user.getName(), user.getEmail(), user.getRole(), user.getTimeZone());
     }
 
     private String required(String value, String message) {

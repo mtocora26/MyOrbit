@@ -5,6 +5,7 @@ import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.notifications.infrastructure.NotificationRepository;
 import com.app.myorbit.shared.error.NotFoundException;
+import com.app.myorbit.users.application.UserZoneService;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 class NotificationServiceTest {
     private final NotificationRepository repository = mock(NotificationRepository.class);
     private final NotificationPreferencesService preferences = mock(NotificationPreferencesService.class);
+    private final UserZoneService userZone = mock(UserZoneService.class);
     private final Clock clock = Clock.fixed(Instant.parse("2026-11-07T12:00:00Z"), ZoneOffset.UTC);
     {
         when(preferences.isEnabled(org.mockito.ArgumentMatchers.anyString(), any(NotificationType.class))).thenReturn(true);
@@ -36,7 +38,7 @@ class NotificationServiceTest {
 
     @Test
     void notifyUsesTheFactoryOfTheTypeAndSaves() {
-        NotificationService service = new NotificationService(repository, preferences, clock, allFactories);
+        NotificationService service = new NotificationService(repository, preferences, userZone, clock, allFactories);
         when(repository.save(any(Notification.class))).then(returnsFirstArg());
 
         Notification saved = service.notify(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", null));
@@ -51,7 +53,7 @@ class NotificationServiceTest {
     void failsAtStartupWhenATypeHasNoFactory() {
         List<NotificationFactory> incomplete = List.of(new DeadlineNotificationFactory(), new EventNotificationFactory());
 
-        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, clock, incomplete));
+        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, incomplete));
     }
 
     @Test
@@ -59,7 +61,7 @@ class NotificationServiceTest {
         List<NotificationFactory> duplicated = List.of(new DeadlineNotificationFactory(), new DeadlineNotificationFactory(),
                 new EventNotificationFactory(), new HabitNotificationFactory());
 
-        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, clock, duplicated));
+        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, duplicated));
     }
 
     private Notification notificationOf(String userId, boolean read) {
@@ -71,7 +73,7 @@ class NotificationServiceTest {
     }
 
     private NotificationService service() {
-        return new NotificationService(repository, preferences, clock, allFactories);
+        return new NotificationService(repository, preferences, userZone, clock, allFactories);
     }
 
     @Test
@@ -137,7 +139,9 @@ class NotificationServiceTest {
 
     @Test
     void notifyOncePerDaySkipsWhenAlreadyNotifiedToday() {
-        Instant startOfToday = Instant.parse("2026-11-07T00:00:00Z");
+        // El día del usuario empezó a las 05:00Z (medianoche en Bogotá), no a las 00:00Z del servidor.
+        Instant startOfToday = Instant.parse("2026-11-07T05:00:00Z");
+        when(userZone.startOfToday("u1")).thenReturn(startOfToday);
         when(repository.existsByUserIdAndTypeAndReferenceIdAndCreatedAtGreaterThanEqual("u1", NotificationType.HABIT, "h1", startOfToday))
                 .thenReturn(true);
 
@@ -148,6 +152,7 @@ class NotificationServiceTest {
 
     @Test
     void notifyOncePerDayCreatesWhenNothingTodayYet() {
+        when(userZone.startOfToday("u1")).thenReturn(Instant.parse("2026-11-07T05:00:00Z"));
         when(repository.save(any(Notification.class))).then(returnsFirstArg());
 
         Notification created = service().notifyOncePerDay(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", null));

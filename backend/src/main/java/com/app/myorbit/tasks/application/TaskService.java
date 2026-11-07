@@ -63,13 +63,13 @@ public class TaskService {
     }
 
     /**
-     * Publica un {@link TaskDueSoonEvent} por cada tarea pendiente con vencimiento en [{@code from}, {@code to}].
-     * Lo invoca el recordatorio programado (M4-04).
+     * Publica un {@link TaskDueSoonEvent} por cada tarea pendiente del usuario con vencimiento en
+     * [{@code from}, {@code to}] (hora local del usuario, como se guarda {@code due}). Lo invoca el recordatorio programado.
      *
      * @return cantidad de tareas notificadas
      */
-    public int publishDueSoon(LocalDateTime from, LocalDateTime to) {
-        List<Task> dueSoon = taskRepository.findByDoneFalseAndDueBetween(from, to);
+    public int publishDueSoon(String userId, LocalDateTime from, LocalDateTime to) {
+        List<Task> dueSoon = taskRepository.findByUserIdAndDoneFalseAndDueBetween(userId, from, to);
         dueSoon.forEach(task -> events.publishEvent(new TaskDueSoonEvent(task.getUserId(), task.getId(), task.getTitle(), task.getDue())));
         return dueSoon.size();
     }

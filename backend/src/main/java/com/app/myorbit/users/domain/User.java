@@ -4,7 +4,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.ZoneId;
 
 @Document(collection = "users")
 public class User {
@@ -23,6 +25,21 @@ public class User {
     private Role role;
     private Boolean active;
     private Instant createdAt;
+    /** Zona horaria IANA elegida por el usuario (America/Bogota); null = no la ha fijado. */
+    private String timeZone;
+    public static final String DEFAULT_TIME_ZONE = "America/Bogota";
+
+    public String getTimeZone() { return timeZone; }
+    public void setTimeZone(String timeZone) { this.timeZone = timeZone; }
+
+    /** Zona con la que se calculan "hoy" y las horas de los avisos; si no hay una válida guardada, la de Colombia. */
+    public ZoneId zone() {
+        try {
+            return ZoneId.of(timeZone == null || timeZone.isBlank() ? DEFAULT_TIME_ZONE : timeZone);
+        } catch (DateTimeException invalid) {
+            return ZoneId.of(DEFAULT_TIME_ZONE);
+        }
+    }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

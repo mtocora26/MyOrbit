@@ -10,11 +10,9 @@ import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
 import com.app.myorbit.shared.error.NotFoundException;
 import org.junit.jupiter.api.Test;
+import com.app.myorbit.users.application.UserZoneService;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +27,13 @@ import static org.mockito.Mockito.when;
 class HabitServiceTest {
     private final HabitRepository repository = mock(HabitRepository.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final HabitService service = new HabitService(repository, Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC), events);
+    private final UserZoneService userZone = mock(UserZoneService.class);
+    private final HabitService service = new HabitService(repository, userZone, events);
+
+    {
+        // Hoy es 2026-10-10 para cualquier usuario, salvo que un test diga otra cosa.
+        when(userZone.today(org.mockito.ArgumentMatchers.anyString())).thenReturn(java.time.LocalDate.of(2026, 10, 10));
+    }
 
     private Habit habitOf(String userId) {
         Habit habit = new Habit();
@@ -178,16 +182,38 @@ class HabitServiceTest {
         java.time.LocalDate saturday = java.time.LocalDate.of(2026, 10, 10);
         Habit daily = scheduled("a", "u1", HabitFrequency.DAILY, List.of(1, 2, 3, 4, 5, 6, 7));
         Habit dailyDone = scheduled("b", "u1", HabitFrequency.DAILY, List.of(1, 2, 3, 4, 5, 6, 7), "2026-10-10");
-        Habit customToday = scheduled("c", "u2", HabitFrequency.CUSTOM, List.of(6));
-        Habit customOtherDay = scheduled("d", "u2", HabitFrequency.CUSTOM, List.of(1, 3));
-        when(repository.findAll()).thenReturn(List.of(daily, dailyDone, customToday, customOtherDay));
+        Habit customToday = scheduled("c", "u1", HabitFrequency.CUSTOM, List.of(6));
+        Habit customOtherDay = scheduled("d", "u1", HabitFrequency.CUSTOM, List.of(1, 3));
+        when(repository.findByUserIdOrderByTitleAsc("u1")).thenReturn(List.of(daily, dailyDone, customToday, customOtherDay));
 
-        int count = service.publishPendingHabits(saturday);
+        int count = service.publishPendingHabits("u1", saturday);
 
         assertEquals(2, count);
         org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u1", "a", "Ha", saturday));
-        org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u2", "c", "Hc", saturday));
+        org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u1", "c", "Hc", saturday));
         org.mockito.Mockito.verifyNoMoreInteractions(events);
+    }
+
+    @Test
+    void publishPendingHabitsOnlyLooksAtTheGivenUser() {
+        when(repository.findByUserIdOrderByTitleAsc("u2")).thenReturn(List.of());
+
+        assertEquals(0, service.publishPendingHabits("u2", java.time.LocalDate.of(2026, 10, 10)));
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).findAll();
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).findByUserIdOrderByTitleAsc("u1");
+    }
+
+    @Test
+    void todayDependsOnTheUsersZoneNotTheServers() {
+        // Para u9 ya es 11 de octubre aunque para el resto sea el 10.
+        when(userZone.today("u9")).thenReturn(java.time.LocalDate.of(2026, 10, 11));
+        Habit habit = habitOf("u9");
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        Habit saved = service.updateCompletion("u9", "h1", new UpdateHabitCompletionRequest(true, null));
+
+        assertEquals(List.of("2026-10-11"), saved.getCompletedDates());
     }
 
     @Test

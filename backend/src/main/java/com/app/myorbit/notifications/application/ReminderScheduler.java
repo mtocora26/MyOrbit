@@ -2,21 +2,26 @@ package com.app.myorbit.notifications.application;
 
 import com.app.myorbit.habits.application.HabitService;
 import com.app.myorbit.tasks.application.TaskService;
+import com.app.myorbit.users.application.UserZoneService;
+import com.app.myorbit.users.application.UserZoneService.UserLocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.function.IntSupplier;
 
 /**
  * Recordatorios diarios: hábitos de hoy sin cumplir y tareas que vencen en las próximas 24 horas.
- * Solo publica eventos; {@link NotificationEventListener} los convierte en notificaciones.
- * Se desactiva con {@code myorbit.reminders.enabled=false} y su hora con {@code myorbit.reminders.cron}.
+ * Corre cada hora y avisa a cada usuario cuando es su hora local de recordatorio (08:00 por defecto), así que
+ * funciona igual con el servidor en cualquier zona. Solo publica eventos; {@link NotificationEventListener} los
+ * convierte en notificaciones, sin repetir el mismo aviso dentro del día.
+ * Se desactiva con {@code myorbit.reminders.enabled=false}; la hora con {@code myorbit.reminders.hour}.
  */
 @Component
 @ConditionalOnProperty(name = "myorbit.reminders.enabled", havingValue = "true", matchIfMissing = true)
@@ -26,27 +31,41 @@ public class ReminderScheduler {
 
     private final HabitService habitService;
     private final TaskService taskService;
-    private final Clock clock;
+    private final UserZoneService userZone;
+    private final int reminderHour;
 
-    public ReminderScheduler(HabitService habitService, TaskService taskService, Clock clock) {
+    public ReminderScheduler(HabitService habitService, TaskService taskService, UserZoneService userZone,
+                             @Value("${myorbit.reminders.hour:8}") int reminderHour) {
         this.habitService = habitService;
         this.taskService = taskService;
-        this.clock = clock;
+        this.userZone = userZone;
+        this.reminderHour = reminderHour;
     }
 
-    @Scheduled(cron = "${myorbit.reminders.cron:0 0 8 * * *}")
+    @Scheduled(cron = "${myorbit.reminders.cron:0 0 * * * *}")
     public void run() {
-        runSafely("hábitos pendientes", () -> habitService.publishPendingHabits(LocalDate.now(clock)));
-        LocalDateTime now = LocalDateTime.now(clock);
-        runSafely("tareas por vencer", () -> taskService.publishDueSoon(now, now.plus(DUE_SOON_WINDOW)));
+        List<UserLocalTime> users;
+        try {
+            users = userZone.activeUsersLocalTime();
+        } catch (RuntimeException e) {
+            log.warn("No se pudieron cargar los usuarios para los recordatorios", e);
+            return;
+        }
+        for (UserLocalTime user : users) {
+            if (user.now().getHour() != reminderHour) continue;
+            LocalDateTime local = user.now().toLocalDateTime();
+            runSafely("hábitos pendientes", user.userId(), () -> habitService.publishPendingHabits(user.userId(), local.toLocalDate()));
+            runSafely("tareas por vencer", user.userId(), () -> taskService.publishDueSoon(user.userId(), local, local.plus(DUE_SOON_WINDOW)));
+        }
     }
 
-    /** Un fallo en un recordatorio no debe impedir el otro ni detener la programación. */
-    private void runSafely(String name, java.util.function.IntSupplier job) {
+    /** Un fallo en un recordatorio de un usuario no debe impedir los demás ni detener la programación. */
+    private void runSafely(String name, String userId, IntSupplier job) {
         try {
-            log.info("Recordatorio de {}: {} aviso(s)", name, job.getAsInt());
+            int count = job.getAsInt();
+            if (count > 0) log.info("Recordatorio de {} para {}: {} aviso(s)", name, userId, count);
         } catch (RuntimeException e) {
-            log.warn("Falló el recordatorio de {}", name, e);
+            log.warn("Falló el recordatorio de {} para {}", name, userId, e);
         }
     }
 }

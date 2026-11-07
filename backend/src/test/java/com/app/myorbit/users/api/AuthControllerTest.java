@@ -107,4 +107,31 @@ class AuthControllerTest {
                         .content("{\"currentPassword\":\"mal\",\"newPassword\":\"nueva-secreta\"}"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void updateTimeZoneReturnsTheAccountWithItsZone() throws Exception {
+        User updated = new User();
+        updated.setId("u1");
+        updated.setName("Ana");
+        updated.setEmail("ana@uni.edu");
+        updated.setRole(Role.USER);
+        updated.setTimeZone("America/Bogota");
+        when(authService.updateTimeZone("u1", "America/Bogota")).thenReturn(updated);
+
+        mockMvc.perform(put("/api/auth/me/timezone").header("Authorization", AUTH)
+                        .contentType("application/json")
+                        .content("{\"timeZone\":\"America/Bogota\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timeZone").value("America/Bogota"));
+    }
+
+    @Test
+    void updateTimeZoneRejectsBlankAndRequiresASession() throws Exception {
+        mockMvc.perform(put("/api/auth/me/timezone").header("Authorization", AUTH)
+                        .contentType("application/json").content("{\"timeZone\":\" \"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/auth/me/timezone").contentType("application/json").content("{\"timeZone\":\"America/Bogota\"}"))
+                .andExpect(status().isUnauthorized());
+        verify(authService, never()).updateTimeZone(any(), any());
+    }
 }

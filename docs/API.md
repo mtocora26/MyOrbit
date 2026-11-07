@@ -285,3 +285,17 @@ Evaluaciones de **todas** las materias del usuario que tienen fecha, de la más 
 [ { "id": "a91d…", "subjectId": "6f1c…", "subjectName": "Redes", "subjectColor": "#2E90FA",
     "name": "Parcial 2", "percentage": 30.0, "grade": null, "due": "2026-11-20T08:00:00" } ]
 ```
+
+
+## Zona horaria de la cuenta (`PUT /api/auth/me/timezone`)
+
+Los recordatorios, el «hoy» de los hábitos y el día en que se agrupan los avisos se calculan con la zona horaria de cada usuario, no con la del servidor (en la nube suele ser UTC).
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `PUT` | `/api/auth/me/timezone` | `{ "timeZone": "America/Bogota" }` | `200` la cuenta con `timeZone` · `400` si es vacía o no es una zona válida · `401` sin sesión |
+| `GET` | `/api/auth/me` | | incluye `timeZone` (`null` si aún no se fijó) |
+
+- Se aceptan zonas con nombre de región (`America/Bogota`, `Europe/Madrid`) y `UTC`; no desplazamientos (`+05:00`) ni `Etc/GMT+5`.
+- Una cuenta sin zona usa **America/Bogota**. El frontend guarda automáticamente la zona del dispositivo la primera vez que se abre la app, y se puede cambiar en el Perfil.
+- Las fechas de tareas y evaluaciones (`due`) son hora local sin zona: se interpretan en la zona del usuario.
