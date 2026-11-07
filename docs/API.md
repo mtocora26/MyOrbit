@@ -204,3 +204,16 @@ Body: `{ title, frequency?, daysOfWeek?, color?, icon? }`
 ## Marcar hábito (`PATCH /api/habits/{id}/completion`)
 
 Body: `{ completed, date? }`. `date` es opcional (por defecto, hoy según el reloj del servidor) y, si viene, debe tener formato ISO `AAAA-MM-DD` y ser una fecha real del calendario. Cualquier otro valor (`hoy`, `10/10/2026`, `2026-02-30`, con hora…) responde `400` y no modifica el hábito. Aplica tanto al marcar como al desmarcar.
+
+## Notificaciones (`/api/notifications`)
+
+Las notificaciones las genera el sistema a partir de eventos (tarea con fecha creada → `DEADLINE`, tarea completada → `EVENT`, hábito pendiente → `HABIT`); el usuario solo las consulta y las marca como leídas. Cada usuario ve únicamente las suyas.
+
+| Método | Ruta | Respuesta |
+|---|---|---|
+| `GET` | `/api/notifications?unread=true` | `200` lista, más recientes primero. `unread=true` devuelve solo las no leídas (por defecto, todas). |
+| `GET` | `/api/notifications/unread-count` | `200` `{ "count": 3 }` |
+| `PATCH` | `/api/notifications/{id}/read` | `200` notificación con `read: true` (idempotente) · `404` no existe o es de otro usuario |
+| `PATCH` | `/api/notifications/read-all` | `200` `{ "updated": 2 }` (cuántas pasaron a leídas) |
+
+Notificación: `{ id, type: "DEADLINE"|"EVENT"|"HABIT", title, message, referenceId, createdAt (ISO-8601 UTC), read }`. `referenceId` es el id de la tarea u hábito de origen.

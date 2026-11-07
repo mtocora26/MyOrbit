@@ -1,0 +1,40 @@
+import { readErrorMessage } from "./apiError";
+import { authHeaders } from "./authApi";
+import { API_BASE_URL } from "./apiConfig";
+
+export type NotificationType = "DEADLINE" | "EVENT" | "HABIT";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  /** Id de la tarea u hábito de origen. */
+  referenceId: string;
+  createdAt: string;
+  read: boolean;
+}
+
+export async function fetchNotifications(unreadOnly = false): Promise<AppNotification[]> {
+  const response = await fetch(`${API_BASE_URL}/api/notifications${unreadOnly ? "?unread=true" : ""}`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las notificaciones"));
+  return response.json();
+}
+
+export async function fetchUnreadCount(): Promise<number> {
+  const response = await fetch(`${API_BASE_URL}/api/notifications/unread-count`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las notificaciones"));
+  return (await response.json()).count;
+}
+
+export async function markNotificationRead(id: string): Promise<AppNotification> {
+  const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, { method: "PATCH", headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible marcar la notificación"));
+  return response.json();
+}
+
+export async function markAllNotificationsRead(): Promise<number> {
+  const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, { method: "PATCH", headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible marcar las notificaciones"));
+  return (await response.json()).updated;
+}
