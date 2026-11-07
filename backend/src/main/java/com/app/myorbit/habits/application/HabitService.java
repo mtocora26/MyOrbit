@@ -7,7 +7,9 @@ import com.app.myorbit.habits.api.UpdateHabitCompletionRequest;
 import com.app.myorbit.habits.api.UpdateHabitRequest;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.domain.HabitFrequency;
+import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -20,10 +22,12 @@ import java.util.UUID;
 public class HabitService {
     private final HabitRepository habitRepository;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
-    public HabitService(HabitRepository habitRepository, Clock clock) {
+    public HabitService(HabitRepository habitRepository, Clock clock, ApplicationEventPublisher events) {
         this.habitRepository = habitRepository;
         this.clock = clock;
+        this.events = events;
     }
 
     public List<Habit> listByUser(String userId) {
@@ -79,6 +83,28 @@ public class HabitService {
         } catch (DateTimeParseException e) {
             throw new BusinessRuleException("La fecha debe tener el formato AAAA-MM-DD, por ejemplo 2026-10-10");
         }
+    }
+
+    /**
+     * Publica un {@link HabitPendingEvent} por cada hábito programado para {@code date} que aún no está
+     * cumplido ese día. Lo invoca el recordatorio programado (M4-04); aquí solo se detecta y se notifica.
+     *
+     * @return cantidad de hábitos pendientes notificados
+     */
+    public int publishPendingHabits(LocalDate date) {
+        String key = date.toString();
+        int pending = 0;
+        for (Habit habit : habitRepository.findAll()) {
+            if (!isScheduledOn(habit, date) || habit.getCompletedDates().contains(key)) continue;
+            events.publishEvent(new HabitPendingEvent(habit.getUserId(), habit.getId(), habit.getTitle(), date));
+            pending++;
+        }
+        return pending;
+    }
+
+    private boolean isScheduledOn(Habit habit, LocalDate date) {
+        return habit.getFrequency() != HabitFrequency.CUSTOM
+                || habit.getDaysOfWeek().contains(date.getDayOfWeek().getValue());
     }
 
     public boolean delete(String userId, String id) {
