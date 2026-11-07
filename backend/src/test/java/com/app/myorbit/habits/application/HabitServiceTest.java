@@ -60,6 +60,38 @@ class HabitServiceTest {
         assertEquals(java.util.List.of("2026-10-10"), saved.getCompletedDates());
     }
 
+    @Test
+    void completionAcceptsAnIsoDate() {
+        Habit habit = habitOf("u1");
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        Habit saved = service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(true, "2026-09-30"));
+
+        assertEquals(List.of("2026-09-30"), saved.getCompletedDates());
+    }
+
+    @Test
+    void completionRejectsInvalidDatesWithoutSaving() {
+        for (String invalid : new String[]{"hoy", "10/10/2026", "2026-10-1", "2026-13-01", "2026-02-30", "2026-10-10T08:00"}) {
+            Habit habit = habitOf("u1");
+            when(repository.findById("h1")).thenReturn(Optional.of(habit));
+
+            assertThrows(BusinessRuleException.class,
+                    () -> service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(true, invalid)), invalid);
+            assertEquals(List.of(), habit.getCompletedDates(), invalid);
+        }
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).save(any(Habit.class));
+    }
+
+    @Test
+    void uncheckingAlsoValidatesTheDate() {
+        when(repository.findById("h1")).thenReturn(Optional.of(habitOf("u1")));
+
+        assertThrows(BusinessRuleException.class,
+                () -> service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(false, "basura")));
+    }
+
     private Habit existing() {
         Habit habit = habitOf("u1");
         habit.setTitle("Leer");
