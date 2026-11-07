@@ -129,4 +129,25 @@ class NotificationServiceTest {
 
         assertEquals(3L, service().countUnread("u1"));
     }
+
+    @Test
+    void notifyOncePerDaySkipsWhenAlreadyNotifiedToday() {
+        Instant startOfToday = Instant.parse("2026-11-07T00:00:00Z");
+        when(repository.existsByUserIdAndTypeAndReferenceIdAndCreatedAtGreaterThanEqual("u1", NotificationType.HABIT, "h1", startOfToday))
+                .thenReturn(true);
+
+        org.junit.jupiter.api.Assertions.assertNull(
+                service().notifyOncePerDay(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", null)));
+        verify(repository, never()).save(any(Notification.class));
+    }
+
+    @Test
+    void notifyOncePerDayCreatesWhenNothingTodayYet() {
+        when(repository.save(any(Notification.class))).then(returnsFirstArg());
+
+        Notification created = service().notifyOncePerDay(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", null));
+
+        assertEquals(NotificationType.HABIT, created.getType());
+        verify(repository).save(created);
+    }
 }

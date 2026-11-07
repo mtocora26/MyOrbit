@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import com.app.myorbit.tasks.domain.TaskCompletedEvent;
 import com.app.myorbit.tasks.domain.TaskCreatedEvent;
+import com.app.myorbit.tasks.domain.TaskDueSoonEvent;
 import com.app.myorbit.tasks.api.UpdateTaskStatusRequest;
 
 import java.util.List;
@@ -403,5 +404,23 @@ class TaskServiceTest {
         service.updateSubtaskStatus("u1", "t1", "s1", new UpdateSubtaskStatusRequest(true));
 
         verify(events).publishEvent(new TaskCompletedEvent("u1", "t1", "Proyecto"));
+    }
+
+    @Test
+    void publishDueSoonNotifiesEveryPendingTaskInTheRange() {
+        java.time.LocalDateTime from = java.time.LocalDateTime.of(2026, 11, 7, 8, 0);
+        java.time.LocalDateTime to = from.plusHours(24);
+        Task a = taskOf("u1");
+        a.setTitle("Informe");
+        a.setDue(from.plusHours(5));
+        Task b = taskOf("u2");
+        b.setId("t2");
+        b.setTitle("Parcial");
+        b.setDue(from.plusHours(20));
+        when(repository.findByDoneFalseAndDueBetween(from, to)).thenReturn(List.of(a, b));
+
+        assertEquals(2, service.publishDueSoon(from, to));
+        verify(events).publishEvent(new TaskDueSoonEvent("u1", "t1", "Informe", from.plusHours(5)));
+        verify(events).publishEvent(new TaskDueSoonEvent("u2", "t2", "Parcial", from.plusHours(20)));
     }
 }

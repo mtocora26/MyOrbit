@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,21 @@ public class NotificationService {
     /** Crea la notificación con la fábrica de su tipo y la guarda. */
     public Notification notify(NotificationRequest request) {
         return repository.save(factories.get(request.type()).create(request, Instant.now(clock)));
+    }
+
+    /**
+     * Como {@link #notify} pero omite la notificación si ya se creó una igual (mismo usuario, tipo y referencia)
+     * hoy: así un recordatorio que corre dos veces el mismo día no duplica avisos.
+     *
+     * @return la notificación creada, o {@code null} si ya existía una de hoy
+     */
+    public Notification notifyOncePerDay(NotificationRequest request) {
+        Instant startOfDay = LocalDate.now(clock).atStartOfDay(clock.getZone()).toInstant();
+        if (repository.existsByUserIdAndTypeAndReferenceIdAndCreatedAtGreaterThanEqual(
+                request.userId(), request.type(), request.referenceId(), startOfDay)) {
+            return null;
+        }
+        return notify(request);
     }
 
     /** Más recientes primero; con {@code unreadOnly} solo las no leídas. */

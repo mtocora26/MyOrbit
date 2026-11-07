@@ -5,6 +5,7 @@ import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.tasks.domain.TaskCompletedEvent;
 import com.app.myorbit.tasks.domain.TaskCreatedEvent;
+import com.app.myorbit.tasks.domain.TaskDueSoonEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -35,14 +36,26 @@ public class NotificationEventListener {
         send(new NotificationRequest(NotificationType.EVENT, event.userId(), event.taskId(), event.title(), null));
     }
 
+    /** Recordatorio de vencimiento: una sola vez por día y tarea. */
+    @EventListener
+    public void onTaskDueSoon(TaskDueSoonEvent event) {
+        send(new NotificationRequest(NotificationType.DEADLINE, event.userId(), event.taskId(), event.title(), event.due()), true);
+    }
+
+    /** Recordatorio de hábito: una sola vez por día y hábito. */
     @EventListener
     public void onHabitPending(HabitPendingEvent event) {
-        send(new NotificationRequest(NotificationType.HABIT, event.userId(), event.habitId(), event.title(), event.date().atStartOfDay()));
+        send(new NotificationRequest(NotificationType.HABIT, event.userId(), event.habitId(), event.title(), event.date().atStartOfDay()), true);
     }
 
     private void send(NotificationRequest request) {
+        send(request, false);
+    }
+
+    private void send(NotificationRequest request, boolean oncePerDay) {
         try {
-            notificationService.notify(request);
+            if (oncePerDay) notificationService.notifyOncePerDay(request);
+            else notificationService.notify(request);
         } catch (RuntimeException e) {
             log.warn("No se pudo crear la notificación {} para {}", request.type(), request.referenceId(), e);
         }

@@ -5,6 +5,7 @@ import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.tasks.domain.TaskCompletedEvent;
 import com.app.myorbit.tasks.domain.TaskCreatedEvent;
+import com.app.myorbit.tasks.domain.TaskDueSoonEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -47,7 +48,7 @@ class NotificationEventListenerTest {
     void habitPendingBecomesAHabitNotification() {
         listener.onHabitPending(new HabitPendingEvent("u1", "h1", "Leer", LocalDate.of(2026, 11, 7)));
 
-        verify(service).notify(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", LocalDate.of(2026, 11, 7).atStartOfDay()));
+        verify(service).notifyOncePerDay(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", LocalDate.of(2026, 11, 7).atStartOfDay()));
     }
 
     @Test
@@ -55,5 +56,15 @@ class NotificationEventListenerTest {
         doThrow(new IllegalStateException("mongo caído")).when(service).notify(any());
 
         listener.onTaskCompleted(new TaskCompletedEvent("u1", "t1", "Informe"));
+    }
+
+    @Test
+    void taskDueSoonBecomesADeadlineReminderOncePerDay() {
+        LocalDateTime due = LocalDateTime.of(2026, 11, 8, 9, 0);
+
+        listener.onTaskDueSoon(new TaskDueSoonEvent("u1", "t1", "Informe", due));
+
+        verify(service).notifyOncePerDay(new NotificationRequest(NotificationType.DEADLINE, "u1", "t1", "Informe", due));
+        verify(service, never()).notify(any());
     }
 }
