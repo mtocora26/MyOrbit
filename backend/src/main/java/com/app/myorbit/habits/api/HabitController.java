@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -35,6 +36,11 @@ public class HabitController {
     @ResponseStatus(HttpStatus.CREATED)
     public HabitResponse create(@Valid @RequestBody CreateHabitRequest request, @CurrentUser User user) {
         return HabitResponse.from(habitService.create(user.getId(), request));
+    }
+
+    @PutMapping("/{id}")
+    public HabitResponse update(@PathVariable String id, @Valid @RequestBody UpdateHabitRequest request, @CurrentUser User user) {
+        return HabitResponse.from(habitService.update(user.getId(), id, request));
     }
 
     @PatchMapping("/{id}/completion")
