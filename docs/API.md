@@ -200,3 +200,7 @@ Body: `{ title, frequency?, daysOfWeek?, color?, icon? }`
 - `title` es obligatorio. `frequency`, `color` e `icon` ausentes conservan el valor actual.
 - `daysOfWeek` (1 = lunes … 7 = domingo) solo aplica a `personalizada`: se descartan valores fuera de rango y duplicados; si queda vacío o la frecuencia es `diaria`, se usa toda la semana. Si se omite en un hábito personalizado se conservan los días actuales.
 - El historial `completedDates` **no cambia** al editar.
+
+## Marcar hábito (`PATCH /api/habits/{id}/completion`)
+
+Body: `{ completed, date? }`. `date` es opcional (por defecto, hoy según el reloj del servidor) y, si viene, debe tener formato ISO `AAAA-MM-DD` y ser una fecha real del calendario. Cualquier otro valor (`hoy`, `10/10/2026`, `2026-02-30`, con hora…) responde `400` y no modifica el hábito. Aplica tanto al marcar como al desmarcar.

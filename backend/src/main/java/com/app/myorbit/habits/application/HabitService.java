@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,10 +65,20 @@ public class HabitService {
 
     public Habit updateCompletion(String userId, String id, UpdateHabitCompletionRequest request) {
         Habit habit = getOwned(userId, id);
-        String date = request.date() == null || request.date().isBlank() ? LocalDate.now(clock).toString() : request.date();
+        String date = resolveDate(request.date());
         if (request.completed() && !habit.getCompletedDates().contains(date)) habit.getCompletedDates().add(date);
         if (!request.completed()) habit.getCompletedDates().remove(date);
         return habitRepository.save(habit);
+    }
+
+    /** Sin fecha usa hoy; con fecha exige formato ISO (AAAA-MM-DD) y que exista en el calendario. */
+    private String resolveDate(String raw) {
+        if (raw == null || raw.isBlank()) return LocalDate.now(clock).toString();
+        try {
+            return LocalDate.parse(raw).toString();
+        } catch (DateTimeParseException e) {
+            throw new BusinessRuleException("La fecha debe tener el formato AAAA-MM-DD, por ejemplo 2026-10-10");
+        }
     }
 
     public boolean delete(String userId, String id) {
