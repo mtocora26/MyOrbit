@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "../components/ThemeToggle";
+import NotificationBell from "../components/NotificationBell";
 import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
@@ -14,6 +15,8 @@ interface Props {
   onFab: () => void;
   onViewTasks: () => void;
   onConfigureProfile: () => void;
+  unreadCount: number;
+  onNotifications: () => void;
   onAgenda: () => void;
   refreshTick: number;
 }
@@ -37,7 +40,7 @@ function dueTimestamp(task: UiTask): number {
   return date ? new Date(`${date}T${time || "23:59"}`).getTime() : Number.MAX_SAFE_INTEGER;
 }
 
-export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onViewTasks, onConfigureProfile, onAgenda, refreshTick }: Props) {
+export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onViewTasks, onConfigureProfile, unreadCount, onNotifications, onAgenda, refreshTick }: Props) {
   const [tasks, setTasks] = useState<UiTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [taskError, setTaskError] = useState<string | null>(null);
@@ -134,7 +137,10 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
             </h1>
             <p className="mt-0.5 text-[14px] text-ink-2">{currentDateLabel()}</p>
           </div>
-          <ThemeToggle className="-mr-2 flex-shrink-0 lg:hidden" />
+          <div className="-mr-2 flex flex-shrink-0 items-center">
+            <NotificationBell count={unreadCount} onClick={onNotifications} className="lg:hidden" />
+            <ThemeToggle className="flex-shrink-0 lg:hidden" />
+          </div>
         </div>
         <div className="mt-3 flex items-center gap-3">
           <div className="flex-1"><ProgressBar value={taskProgress} height={4} /></div>

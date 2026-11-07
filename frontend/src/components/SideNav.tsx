@@ -1,6 +1,7 @@
 import type { MainTab } from "../App";
 import { TABS } from "./BottomNav";
 import ThemeToggle from "./ThemeToggle";
+import { IconBell } from "./icons";
 
 interface Props {
   active: MainTab;
@@ -8,10 +9,12 @@ interface Props {
   onChange: (tab: MainTab) => void;
   onFab: () => void;
   onProfile: () => void;
+  unreadCount: number;
+  onNotifications: () => void;
 }
 
 /** Navegación de escritorio: la misma red, en vertical. Visible desde lg. */
-export default function SideNav({ active, userName, onChange, onFab, onProfile }: Props) {
+export default function SideNav({ active, userName, onChange, onFab, onProfile, unreadCount, onNotifications }: Props) {
   return (
     <nav aria-label="Principal" className="hidden w-[232px] flex-shrink-0 flex-col border-r border-line bg-card px-3 py-5 lg:flex">
       <div className="flex items-center gap-2.5 px-2">
@@ -48,7 +51,12 @@ export default function SideNav({ active, userName, onChange, onFab, onProfile }
         })}
       </ul>
 
-      <ThemeToggle withLabel className="mt-auto w-full justify-start px-3" />
+      <button onClick={onNotifications} className="mt-auto flex min-h-[44px] w-full items-center gap-3 rounded-md px-3 text-left text-[16px] font-semibold text-ink-2 transition-colors duration-150 hover:bg-wash hover:text-ink">
+        <IconBell size={20} />
+        <span className="flex-1">Notificaciones</span>
+        {unreadCount > 0 && <span aria-label={`${unreadCount} sin leer`} className="num flex h-[20px] min-w-[20px] items-center justify-center rounded-[4px] bg-coral px-1.5 text-[12px] font-semibold leading-none text-night">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+      </button>
+      <ThemeToggle withLabel className="mt-1 w-full justify-start px-3" />
       <button onClick={onProfile} className="mt-1 flex min-h-[48px] items-center gap-3 rounded-md px-3 text-left transition-colors duration-150 hover:bg-wash">
         <span className="flex h-8 w-8 items-center justify-center rounded-md bg-wash font-display text-[16px] font-semibold text-ink" aria-hidden="true">{userName.slice(0, 1).toUpperCase()}</span>
         <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{userName}</span>
