@@ -84,8 +84,8 @@ export default function App() {
           <div className="relative min-h-0 flex-1 overflow-hidden">
             <div className={`h-full w-full lg:mx-auto ${subScreen === null ? "lg:max-w-[1180px]" : "lg:max-w-[820px] lg:mx-0"}`}>
             {subScreen === "taskDetail"    && <TaskDetailScreen onBack={goBack} taskId={selectedTaskId} />}
-            {subScreen === "subjectDetail" && selectedSubject && <SubjectDetailScreen key={selectedSubject.id} subject={selectedSubject} onBack={goBack} onDeleted={goBack} />}
-            {subScreen === "grades"        && <GradesScreen onBack={() => setSubScreen("subjectDetail")} />}
+            {subScreen === "subjectDetail" && selectedSubject && <SubjectDetailScreen key={selectedSubject.id} subject={selectedSubject} onBack={goBack} onDeleted={goBack} onGrades={() => setSubScreen("grades")} />}
+            {subScreen === "grades"        && selectedSubject && <GradesScreen subject={selectedSubject} onBack={() => setSubScreen("subjectDetail")} />}
             {subScreen === "habits"        && <HabitsScreen onBack={goBack} refreshTick={habitsRefreshTick} />}
             {subScreen === "radar"         && <RadarScreen onBack={goBack} />}
             {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onUserUpdated={(next) => setSession(next)} />}

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { BottomSheet, EmptyState, ProgressBar, ScreenHeader } from "../components/shared";
+import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader } from "../components/shared";
+import GradeStatusLine from "../components/GradeStatusLine";
+import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
@@ -11,9 +13,10 @@ interface Props {
   onBack: () => void;
   /** Se llama tras eliminar la materia para salir de su detalle. */
   onDeleted: () => void;
+  onGrades: () => void;
 }
 
-export default function SubjectDetailScreen({ subject: initial, onBack, onDeleted }: Props) {
+export default function SubjectDetailScreen({ subject: initial, onBack, onDeleted, onGrades }: Props) {
   const [subject, setSubject] = useState(initial);
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -23,6 +26,8 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   const [loadingEvals, setLoadingEvals] = useState(true);
   const [evalsError, setEvalsError] = useState<string | null>(null);
   // La hoja de evaluación conserva su contenido mientras anima la salida.
+  const [summary, setSummary] = useState<GradeSummary | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const [editingEval, setEditingEval] = useState<Evaluation | null>(null);
   const [evalSheetOpen, setEvalSheetOpen] = useState(false);
 
@@ -40,6 +45,17 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
 
   useEffect(() => { loadEvaluations(); }, [subject.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // La nota actual y la necesaria dependen de cada evaluación: se recalculan cuando cambian.
+  const evaluationsKey = evaluations.map((evaluation) => `${evaluation.id}:${evaluation.percentage}:${evaluation.grade ?? ""}`).join("|");
+  useEffect(() => {
+    let cancelled = false;
+    fetchGradeSummary(subject.id)
+      .then((value) => { if (!cancelled) { setSummary(value); setSummaryError(null); } })
+      .catch((err) => { if (!cancelled) setSummaryError(err instanceof Error ? err.message : "No fue posible calcular las notas"); });
+    return () => { cancelled = true; };
+  }, [subject.id, evaluationsKey]);
+
+  const status = summary ? gradeStatus(summary) : null;
   const assigned = evaluations.reduce((sum, evaluation) => sum + evaluation.percentage, 0);
   const remaining = Math.max(0, MAX_PERCENTAGE - assigned);
 
@@ -85,6 +101,23 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
             <div><dt className="text-[13px] text-ink-2">Semestre</dt><dd className="num mt-0.5 text-[26px] font-semibold leading-none text-ink">{subject.semester}</dd></div>
           </dl>
         </div>
+
+        {summary && status && (
+          <section aria-label="Notas de la materia" className="rounded-md border border-line bg-card p-4">
+            <div className="flex items-center gap-4">
+              <ProgressRing value={((summary.currentGrade ?? 0) / MAX_GRADE) * 100} size={72} stroke={6} color={subject.color}>
+                <span className="num text-[22px] font-semibold leading-none text-ink">{summary.currentGrade === null ? "–" : formatGrade(summary.currentGrade)}</span>
+              </ProgressRing>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold text-ink">{summary.currentGrade === null ? "Sin notas aún" : "Nota actual"}</p>
+                <p className="num text-[14px] text-ink-2">Meta {formatGrade(summary.targetGrade)} · {formatNumber(summary.gradedPercentage)}% calificado</p>
+              </div>
+            </div>
+            <div className="mt-3"><GradeStatusLine tone={status.tone}>{status.long}</GradeStatusLine></div>
+            <button onClick={onGrades} className="mt-3 min-h-[44px] w-full rounded-md bg-wash text-[15px] font-semibold text-ink">Ver notas y proyección</button>
+          </section>
+        )}
+        {summaryError && !summary && <p role="alert" className="text-[14px] font-semibold text-danger">{summaryError}</p>}
 
         <section aria-labelledby="evals-title" className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
