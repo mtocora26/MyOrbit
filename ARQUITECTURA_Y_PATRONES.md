@@ -196,3 +196,20 @@ Ver también: [docs/BUENAS_PRACTICAS.md](docs/BUENAS_PRACTICAS.md) (SOLID y conv
 - `NotificationService` indexa las fábricas por tipo con las que inyecta Spring y **falla al arrancar** si falta una fábrica o hay dos para el mismo tipo. `NotificationEventListener` observa los eventos y llama a `notify(...)`.
 - Un fallo al crear una notificación se registra en el log y no se propaga: la tarea u hábito ya guardados no se deshacen.
 - Agregar un tipo: valor en `NotificationType` + una subclase `@Component`. Listar y marcar como leídas llega en M4-03 (#42).
+
+## Decision: recordatorios programados (#43)
+
+- **Nivel afectado:** Aplicación/infraestructura (`notifications`, con apoyo de `tasks` y `habits`).
+- **Objetivo:** avisar sin que el usuario abra la app, reutilizando el Observer (#40) y las fábricas (#41).
+
+| Pieza | Responsabilidad |
+|---|---|
+| `ReminderScheduler` (`@Scheduled`) | Cada día (08:00 por defecto) invoca `HabitService.publishPendingHabits(hoy)` y `TaskService.publishDueSoon(ahora, ahora + 24 h)`. Solo publica eventos. |
+| `TaskDueSoonEvent` / `HabitPendingEvent` | Eventos de dominio de los recordatorios. |
+| `NotificationEventListener` | Los convierte en `DEADLINE` / `HABIT` con `notifyOncePerDay`. |
+| `NotificationService.notifyOncePerDay` | Omite el aviso si ya hay uno igual (usuario + tipo + referencia) creado hoy, así reiniciar la app o ejecutar el job dos veces no duplica notificaciones. |
+
+- Configuración: `myorbit.reminders.enabled` (por defecto `true`) y `myorbit.reminders.cron` (por defecto `0 0 8 * * *`, zona horaria del servidor). `@EnableScheduling` vive en `shared/config/SchedulingConfig`.
+- Cada recordatorio corre aislado: si uno falla se registra en el log y el otro se ejecuta igual.
+- Solo se consideran tareas pendientes con `due` en las próximas 24 h; las subtareas no generan recordatorio por ahora.
+- Limitación: con varias instancias del backend el job correría en cada una; el dedupe por día evita avisos repetidos, pero un lock distribuido queda fuera de alcance.

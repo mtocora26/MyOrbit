@@ -13,6 +13,7 @@ import com.app.myorbit.tasks.api.UpdateTaskStatusRequest;
 import com.app.myorbit.tasks.domain.Priority;
 import com.app.myorbit.tasks.domain.TaskCompletedEvent;
 import com.app.myorbit.tasks.domain.TaskCreatedEvent;
+import com.app.myorbit.tasks.domain.TaskDueSoonEvent;
 import com.app.myorbit.tasks.domain.Subtask;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
@@ -20,6 +21,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -57,6 +59,18 @@ public class TaskService {
         List<Task> affected = taskRepository.findByUserIdAndCategoryId(event.userId(), event.categoryId());
         affected.forEach(task -> task.setCategoryId(null));
         if (!affected.isEmpty()) taskRepository.saveAll(affected);
+    }
+
+    /**
+     * Publica un {@link TaskDueSoonEvent} por cada tarea pendiente con vencimiento en [{@code from}, {@code to}].
+     * Lo invoca el recordatorio programado (M4-04).
+     *
+     * @return cantidad de tareas notificadas
+     */
+    public int publishDueSoon(LocalDateTime from, LocalDateTime to) {
+        List<Task> dueSoon = taskRepository.findByDoneFalseAndDueBetween(from, to);
+        dueSoon.forEach(task -> events.publishEvent(new TaskDueSoonEvent(task.getUserId(), task.getId(), task.getTitle(), task.getDue())));
+        return dueSoon.size();
     }
 
     public Task getOwned(String userId, String id) {
