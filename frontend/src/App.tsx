@@ -20,7 +20,7 @@ import { useUnreadNotifications } from "./hooks/useUnreadNotifications";
 import QuickAddSheet from "./components/QuickAddSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
-import { getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
+import { ensureTimeZone, getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
 export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "profile" | "admin" | "categories" | "notifications";
@@ -32,7 +32,10 @@ export default function App() {
 
   // Al abrir la app se confirma la sesión y se trae el rol actual (también invalida sesiones desactivadas).
   useEffect(() => {
-    refreshSession().then((fresh) => setSession(fresh)).catch(() => undefined);
+    refreshSession().then(async (fresh) => {
+      setSession(fresh);
+      if (fresh) setSession(await ensureTimeZone(fresh));
+    }).catch(() => undefined);
   }, []);
   const [activeTab, setActiveTab] = useState<MainTab>("home");
   const [subScreen, setSubScreen] = useState<SubScreen>(null);
@@ -71,6 +74,7 @@ export default function App() {
     return <AuthScreen onAuthenticated={(newSession, isNewAccount) => {
       setSession(newSession);
       setShowWelcome(isNewAccount);
+      ensureTimeZone(newSession).then(setSession);
     }} />;
   }
 

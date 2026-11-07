@@ -209,7 +209,7 @@ Ver también: [docs/BUENAS_PRACTICAS.md](docs/BUENAS_PRACTICAS.md) (SOLID y conv
 | `NotificationEventListener` | Los convierte en `DEADLINE` / `HABIT` con `notifyOncePerDay`. |
 | `NotificationService.notifyOncePerDay` | Omite el aviso si ya hay uno igual (usuario + tipo + referencia) creado hoy, así reiniciar la app o ejecutar el job dos veces no duplica notificaciones. |
 
-- Configuración: `myorbit.reminders.enabled` (por defecto `true`) y `myorbit.reminders.cron` (por defecto `0 0 8 * * *`, zona horaria del servidor). `@EnableScheduling` vive en `shared/config/SchedulingConfig`.
+- Configuración: `myorbit.reminders.enabled` (por defecto `true`), `myorbit.reminders.cron` (por defecto cada hora, `0 0 * * * *`) y `myorbit.reminders.hour` (hora local del recordatorio, 8 por defecto). **Actualizado en #130:** el planificador ya no corre una vez al día en la zona del servidor; cada hora recorre los usuarios activos y avisa a quien, **en su zona horaria**, está en la hora del recordatorio. `UserZoneService` (módulo `users`) responde «qué día y hora es para este usuario» y lo usan hábitos (hoy, racha, fecha de creación), tareas por vencer y la deduplicación diaria de avisos. Con el servidor en UTC el aviso sigue llegando a las 08:00 de cada usuario. `@EnableScheduling` vive en `shared/config/SchedulingConfig`.
 - Cada recordatorio corre aislado: si uno falla se registra en el log y el otro se ejecuta igual.
 - Solo se consideran tareas pendientes con `due` en las próximas 24 h; las subtareas no generan recordatorio por ahora.
 - Limitación: con varias instancias del backend el job correría en cada una; el dedupe por día evita avisos repetidos, pero un lock distribuido queda fuera de alcance.

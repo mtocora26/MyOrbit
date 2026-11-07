@@ -35,13 +35,19 @@ public class AuthController {
 
     @GetMapping("/me")
     public AuthResponse me(@CurrentUser User user) {
-        return new AuthResponse(null, user.getId(), user.getName(), user.getEmail(), user.getRole());
+        return new AuthResponse(null, user.getId(), user.getName(), user.getEmail(), user.getRole(), user.getTimeZone());
     }
 
     @PutMapping("/me/name")
     public AuthResponse updateName(@CurrentUser User user, @Valid @RequestBody UpdateNameRequest request) {
         com.app.myorbit.users.domain.User updated = authService.updateName(user.getId(), request.name());
-        return new AuthResponse(null, updated.getId(), updated.getName(), updated.getEmail(), updated.getRole());
+        return new AuthResponse(null, updated.getId(), updated.getName(), updated.getEmail(), updated.getRole(), updated.getTimeZone());
+    }
+
+    @PutMapping("/me/timezone")
+    public AuthResponse updateTimeZone(@CurrentUser User user, @Valid @RequestBody UpdateTimeZoneRequest request) {
+        com.app.myorbit.users.domain.User updated = authService.updateTimeZone(user.getId(), request.timeZone());
+        return new AuthResponse(null, updated.getId(), updated.getName(), updated.getEmail(), updated.getRole(), updated.getTimeZone());
     }
 
     @PutMapping("/me/password")

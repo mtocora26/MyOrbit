@@ -9,7 +9,7 @@ import java.util.List;
 public interface TaskRepository extends MongoRepository<Task, String> {
     List<Task> findByUserIdOrderByIdAsc(String userId);
 
-    List<Task> findByDoneFalseAndDueBetween(LocalDateTime from, LocalDateTime to);
+    List<Task> findByUserIdAndDoneFalseAndDueBetween(String userId, LocalDateTime from, LocalDateTime to);
 
     List<Task> findByUserIdAndCategoryId(String userId, String categoryId);
 }

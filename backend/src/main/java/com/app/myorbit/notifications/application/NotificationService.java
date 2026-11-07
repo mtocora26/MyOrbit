@@ -2,6 +2,7 @@ package com.app.myorbit.notifications.application;
 
 import com.app.myorbit.notifications.domain.Notification;
 import com.app.myorbit.shared.error.NotFoundException;
+import com.app.myorbit.users.application.UserZoneService;
 import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.notifications.infrastructure.NotificationRepository;
@@ -9,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -18,12 +18,14 @@ import java.util.Map;
 public class NotificationService {
     private final NotificationRepository repository;
     private final NotificationPreferencesService preferences;
+    private final UserZoneService userZone;
     private final Clock clock;
     private final Map<NotificationType, NotificationFactory> factories = new EnumMap<>(NotificationType.class);
 
-    public NotificationService(NotificationRepository repository, NotificationPreferencesService preferences, Clock clock, List<NotificationFactory> factories) {
+    public NotificationService(NotificationRepository repository, NotificationPreferencesService preferences, UserZoneService userZone, Clock clock, List<NotificationFactory> factories) {
         this.repository = repository;
         this.preferences = preferences;
+        this.userZone = userZone;
         this.clock = clock;
         for (NotificationFactory factory : factories) {
             if (this.factories.put(factory.type(), factory) != null) {
@@ -49,12 +51,12 @@ public class NotificationService {
 
     /**
      * Como {@link #notify} pero omite la notificación si ya se creó una igual (mismo usuario, tipo y referencia)
-     * hoy: así un recordatorio que corre dos veces el mismo día no duplica avisos.
+     * hoy (según la zona horaria del usuario): así un recordatorio que corre dos veces el mismo día no duplica avisos.
      *
      * @return la notificación creada, o {@code null} si ya existía una de hoy
      */
     public Notification notifyOncePerDay(NotificationRequest request) {
-        Instant startOfDay = LocalDate.now(clock).atStartOfDay(clock.getZone()).toInstant();
+        Instant startOfDay = userZone.startOfToday(request.userId());
         if (repository.existsByUserIdAndTypeAndReferenceIdAndCreatedAtGreaterThanEqual(
                 request.userId(), request.type(), request.referenceId(), startOfDay)) {
             return null;
