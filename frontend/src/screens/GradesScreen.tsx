@@ -94,17 +94,18 @@ export default function GradesScreen({ subject, onBack }: Props) {
                 <ul className="overflow-hidden rounded-md border border-line bg-card">
                   {evaluations.map((evaluation, index) => {
                     const graded = evaluation.grade !== null;
+                    const provisional = !graded && evaluation.provisionalGrade !== null ? evaluation.provisionalGrade : null;
                     const points = graded ? ((evaluation.grade as number) * evaluation.percentage) / 100 : null;
                     return (
                       <li key={evaluation.id} className={`flex items-center gap-3 px-4 py-3 ${index > 0 ? "border-t border-line" : ""}`}>
                         <span className="h-[18px] w-[18px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color, background: graded ? subject.color : "var(--color-card)" }} aria-hidden="true" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[16px] font-semibold text-ink">{evaluation.name}</span>
-                          <span className="num block text-[13px] text-ink-2">{formatNumber(evaluation.percentage)}%{points !== null ? ` · aporta ${formatGrade(points)}` : ""}</span>
+                          <span className="num block text-[13px] text-ink-2">{formatNumber(evaluation.percentage)}%{points !== null ? ` · aporta ${formatGrade(points)}` : ""}{evaluation.components.length > 0 ? ` · ${evaluation.components.length} ${evaluation.components.length === 1 ? "componente" : "componentes"}` : ""}</span>
                         </span>
                         {graded
                           ? <span className="num text-[26px] font-semibold leading-none text-ink">{formatGrade(evaluation.grade as number)}</span>
-                          : <span className="num text-right text-[13px] font-semibold text-ink-2">{summary.requiredGrade !== null && summary.requiredGrade > 0 ? `Necesitas ${formatGrade(summary.requiredGrade)}` : "Pendiente"}</span>}
+                          : <span className="num text-right text-[13px] font-semibold text-ink-2">{provisional !== null && <span className="mb-0.5 block text-[20px] leading-none text-ink">{formatGrade(provisional)} <span className="text-[12px] font-semibold text-ink-3">prov.</span></span>}{summary.requiredGrade !== null && summary.requiredGrade > 0 ? `Necesitas ${formatGrade(summary.requiredGrade)}` : "Pendiente"}</span>}
                       </li>
                     );
                   })}
