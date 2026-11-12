@@ -4,6 +4,9 @@ import { categoryLabel, fetchCategories, type Category } from "../services/categ
 import { fromTaskDue } from "../services/taskDue";
 import { describeClassNow, fetchAgendaEvaluations, fetchClasses, fetchClassesNow, formatGrade, type AgendaEvaluation, type ClassNow, type ClassOccurrence } from "../services/academicApi";
 import { CategoryBadge, EmptyState, PriorityDot, Station } from "../components/shared";
+import EventFormSheet from "../components/EventFormSheet";
+import { coversDay, dayOfEvent, daysBetween, fetchEvents, type CalendarEvent } from "../services/eventsApi";
+import { fetchSubjects, type Subject } from "../services/subjectsApi";
 
 const DAYS = ["L", "M", "X", "J", "V", "S", "D"];
 
@@ -27,6 +30,11 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
   const [evaluations, setEvaluations] = useState<AgendaEvaluation[]>([]);
   const [classes, setClasses] = useState<ClassOccurrence[]>([]);
   const [classNow, setClassNow] = useState<ClassNow | null>(null);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  // La hoja conserva su contenido mientras anima la salida: se cierra con `eventSheetOpen`, no vaciando `editingEvent`.
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [eventSheetOpen, setEventSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
@@ -52,6 +60,21 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     fetchClasses(dayKey(weekStart), dayKey(end)).then((data) => { if (!ignore) setClasses(data); }).catch(() => { if (!ignore) setClasses([]); });
     return () => { ignore = true; };
   }, [weekStart, refreshTick]);
+
+  // Los eventos que tocan la semana que se ve (los de varios días aparecen en todas las semanas que cubren). Son informativos.
+  useEffect(() => {
+    let ignore = false;
+    const end = new Date(weekStart);
+    end.setDate(end.getDate() + 6);
+    fetchEvents(dayKey(weekStart), dayKey(end)).then((data) => { if (!ignore) setEvents(data); }).catch(() => { if (!ignore) setEvents([]); });
+    return () => { ignore = true; };
+  }, [weekStart, refreshTick]);
+
+  useEffect(() => {
+    let ignore = false;
+    fetchSubjects().then((data) => { if (!ignore) setSubjects(data); }).catch(() => undefined);
+    return () => { ignore = true; };
+  }, [refreshTick]);
 
   // «Estás en clase» / próxima clase: según la hora local de la cuenta, se refresca cada minuto.
   useEffect(() => {
@@ -91,13 +114,39 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     return map;
   }, [classes]);
 
+  const eventColor = (event: CalendarEvent) =>
+    subjects.find((subject) => subject.id === event.subjectId)?.color ?? categories.find((category) => category.id === event.categoryId)?.color ?? "#FF6B4A";
+
+  // Franjas de la semana: cada evento cubre desde su primer hasta su último día visible; se apilan en filas sin cruzarse.
+  const weekKey = dayKey(weekStart);
+  const bands = useMemo(() => {
+    const placed: { event: CalendarEvent; from: number; to: number; lane: number }[] = [];
+    [...events].sort((a, b) => a.startDate.localeCompare(b.startDate) || b.endDate.localeCompare(a.endDate)).forEach((event) => {
+      const from = Math.max(0, daysBetween(weekKey, event.startDate));
+      const to = Math.min(6, daysBetween(weekKey, event.endDate));
+      let lane = 0;
+      while (placed.some((band) => band.lane === lane && band.from <= to && from <= band.to)) lane += 1;
+      placed.push({ event, from, to, lane });
+    });
+    return placed;
+  }, [events, weekKey]);
+  const MAX_LANES = 3;
+  const hiddenBands = bands.filter((band) => band.lane >= MAX_LANES).length;
+
+  function openEventSheet(event: CalendarEvent | null) {
+    setEditingEvent(event);
+    setEventSheetOpen(true);
+  }
+
   const dayTasks = byDay.get(selected) ?? [];
   // Tareas y evaluaciones del día en un solo orden por hora.
-  type DayItem = { kind: "task"; task: UiTask; time: string } | { kind: "evaluation"; evaluation: AgendaEvaluation; time: string } | { kind: "class"; occurrence: ClassOccurrence; time: string };
+  type DayItem = { kind: "task"; task: UiTask; time: string } | { kind: "evaluation"; evaluation: AgendaEvaluation; time: string } | { kind: "class"; occurrence: ClassOccurrence; time: string } | { kind: "event"; event: CalendarEvent; time: string };
   const dayItems: DayItem[] = [
     ...dayTasks.map((task): DayItem => ({ kind: "task", task, time: fromTaskDue(task.rawDue).time })),
     ...(evaluationsByDay.get(selected) ?? []).map((evaluation): DayItem => ({ kind: "evaluation", evaluation, time: fromTaskDue(evaluation.due).time })),
     ...(classesByDay.get(selected) ?? []).map((occurrence): DayItem => ({ kind: "class", occurrence, time: occurrence.start })),
+    // Un evento con hora la muestra solo el primer día; el resto de sus días (y los sin hora) cuentan como «todo el día» y van primero.
+    ...events.filter((event) => coversDay(event, selected)).map((event): DayItem => ({ kind: "event", event, time: event.startDate === selected ? event.startTime ?? "" : "" })),
   ].sort((a, b) => a.time.localeCompare(b.time));
   const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
   const nameOf = (task: UiTask) => {
@@ -136,7 +185,8 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
       <div className="flex-shrink-0 border-b border-line">
         <div className="flex items-center justify-between px-4 pt-3 pb-1 lg:px-8 lg:pt-8">
           <h1 className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">{monthLabel}</h1>
-          <div className="-mr-2 flex">
+          <div className="-mr-2 flex items-center">
+            <button onClick={() => openEventSheet(null)} className="mr-1 min-h-[44px] px-2 text-[14px] font-semibold text-coral-ink">+ Evento</button>
             <WeekButton label="Semana anterior" onClick={() => shiftWeek(-1)} path="M15 18l-6-6 6-6" />
             <WeekButton label="Semana siguiente" onClick={() => shiftWeek(1)} path="M9 18l6-6-6-6" />
           </div>
@@ -147,7 +197,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
             const key = dayKey(date);
             const isSelected = key === selected;
             const isToday = key === todayKey;
-            const pending = (byDay.get(key) ?? []).filter((task) => !task.done).length + (evaluationsByDay.get(key) ?? []).filter((evaluation) => evaluation.grade === null).length + (classesByDay.get(key) ?? []).length;
+            const pending = (byDay.get(key) ?? []).filter((task) => !task.done).length + (evaluationsByDay.get(key) ?? []).filter((evaluation) => evaluation.grade === null).length + (classesByDay.get(key) ?? []).length + events.filter((event) => coversDay(event, key)).length;
             return (
               <button
                 key={key}
@@ -163,6 +213,28 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
             );
           })}
         </div>
+
+        {bands.length > 0 && (
+          <div className="px-3 pb-3 lg:max-w-[760px] lg:px-8" role="group" aria-label="Eventos de la semana">
+            <div className="grid gap-y-1" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", columnGap: 4 }}>
+              {bands.filter((band) => band.lane < MAX_LANES).map(({ event, from, to, lane }) => {
+                const color = eventColor(event);
+                return (
+                  <button
+                    key={event.id}
+                    onClick={() => openEventSheet(event)}
+                    aria-label={`Editar evento ${event.title}`}
+                    className="min-h-[28px] truncate rounded-[4px] px-2 text-left text-[13px] font-semibold leading-tight text-ink"
+                    style={{ gridColumn: `${from + 1} / ${to + 2}`, gridRow: lane + 1, background: `color-mix(in srgb, ${color} 22%, transparent)`, borderLeft: `3px solid ${color}` }}
+                  >
+                    {event.title}
+                  </button>
+                );
+              })}
+            </div>
+            {hiddenBands > 0 && <p className="num mt-1 text-[13px] text-ink-3">+{hiddenBands} {hiddenBands === 1 ? "evento más" : "eventos más"} esta semana</p>}
+          </div>
+        )}
       </div>
 
       <div className="no-scrollbar flex-1 overflow-y-auto px-4 pt-3 pb-24 lg:px-8">
@@ -184,11 +256,37 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
           {loading ? (
             <div className="flex flex-col gap-2" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-[60px] animate-pulse rounded-md bg-wash" />)}</div>
           ) : dayItems.length === 0 ? (
-            <EmptyState title="Día libre" sub="No hay clases, entregas ni evaluaciones para esta fecha." />
+            <EmptyState title="Día libre" sub="No hay clases, eventos, entregas ni evaluaciones para esta fecha." />
           ) : (
             <ol>
               {dayItems.map((item, index) => {
                 const last = index === dayItems.length - 1;
+                if (item.kind === "event") {
+                  const { event } = item;
+                  const color = eventColor(event);
+                  const progress = dayOfEvent(event, selected);
+                  return (
+                    <li key={`event-${event.id}`} className="orbit-rise flex gap-3" style={{ ["--i" as string]: index }}>
+                      <span className="num w-11 flex-shrink-0 pt-3 text-right text-[16px] font-semibold leading-none text-ink">{item.time || "Día"}</span>
+                      <div className="relative flex w-7 flex-shrink-0 justify-center">
+                        {!last && <span className="absolute left-1/2 top-[30px] bottom-0 w-0 -translate-x-1/2" style={{ borderLeft: `3px solid ${color}` }} />}
+                        {/* Evento: cápsula (tarea = círculo, evaluación = cuadrado, clase = rombo) */}
+                        <span className="mt-2.5 h-[14px] w-[22px] rounded-full border-[3px]" style={{ borderColor: color, background: `color-mix(in srgb, ${color} 35%, transparent)` }} aria-hidden="true" />
+                      </div>
+                      <button onClick={() => openEventSheet(event)} aria-label={`Editar evento ${event.title}`} className="mb-1 flex min-w-0 flex-1 items-start justify-between gap-2 rounded-md py-2 text-left active:bg-wash">
+                        <div className="min-w-0">
+                          <p className="text-[16px] font-semibold leading-snug text-ink">{event.title}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <CategoryBadge name="Evento" color={color} />
+                            <span className="num text-[13px] text-ink-2">
+                              {[progress, event.startTime && event.startDate === selected ? `${event.startTime}${event.endTime && !event.multiDay ? `–${event.endTime}` : ""}` : null, event.endTime && event.endDate === selected && event.multiDay ? `hasta ${event.endTime}` : null].filter(Boolean).join(" · ") || "Todo el día"}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                }
                 if (item.kind === "class") {
                   const { occurrence } = item;
                   const inProgress = classNow?.current?.subjectId === occurrence.subjectId && classNow.current.startsAt === occurrence.startsAt;
@@ -255,6 +353,16 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
           )}
         </div>
       </div>
+      <EventFormSheet
+        open={eventSheetOpen}
+        onClose={() => setEventSheetOpen(false)}
+        event={editingEvent}
+        defaultDate={selected}
+        subjects={subjects}
+        categories={categories}
+        onSaved={(saved) => setEvents((current) => (current.some((item) => item.id === saved.id) ? current.map((item) => (item.id === saved.id ? saved : item)) : [...current, saved]))}
+        onDeleted={(id) => setEvents((current) => current.filter((item) => item.id !== id))}
+      />
     </div>
   );
 }
