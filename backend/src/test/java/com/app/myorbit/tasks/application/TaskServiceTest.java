@@ -1,6 +1,7 @@
 package com.app.myorbit.tasks.application;
 
 import com.app.myorbit.shared.time.DueDate;
+import com.app.myorbit.academic.application.SubjectService;
 import com.app.myorbit.categories.application.CategoryService;
 import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.categories.domain.CategoryDeletedEvent;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.when;
 class TaskServiceTest {
     private TaskRepository repository;
     private CategoryService categoryService;
+    private SubjectService subjectService;
     private ApplicationEventPublisher events;
     private TaskService service;
 
@@ -44,8 +46,9 @@ class TaskServiceTest {
     void setUp() {
         repository = mock(TaskRepository.class);
         categoryService = mock(CategoryService.class);
+        subjectService = mock(SubjectService.class);
         events = mock(ApplicationEventPublisher.class);
-        service = new TaskService(repository, categoryService, events);
+        service = new TaskService(repository, categoryService, subjectService, events);
     }
 
     private Task taskOf(String userId) {

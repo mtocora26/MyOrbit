@@ -12,6 +12,8 @@ export interface UiTask {
   rawDue: string;
   priority: TaskPriority;
   categoryId: string | null;
+  /** Materia a la que pertenece la tarea; null si no tiene. */
+  subjectId: string | null;
   done: boolean;
   subtasks: Subtask[];
 }
@@ -31,6 +33,7 @@ export interface ApiTask {
   due: string | null;
   priority: string;
   categoryId: string | null;
+  subjectId?: string | null;
   done: boolean;
   subtasks?: Subtask[];
 }
@@ -40,6 +43,8 @@ export interface CreateTaskInput {
   due?: string;
   priority?: TaskPriority;
   categoryId?: string | null;
+  /** Materia a la que se vincula; el servidor deja la tarea en Universidad si no se pide otra categoría. */
+  subjectId?: string | null;
   userId?: string;
 }
 
@@ -48,6 +53,8 @@ export interface UpdateTaskInput {
   due: string;
   priority: TaskPriority;
   categoryId: string | null;
+  /** undefined no cambia la materia; null quita el vínculo; un id vincula esa materia. */
+  subjectId?: string | null;
 }
 
 function requestHeaders(): HeadersInit {
@@ -74,6 +81,7 @@ export function toUiTask(task: ApiTask): UiTask {
     rawDue: task.due ?? "",
     priority: normalizePriority(task.priority),
     categoryId: normalizeCategoryId(task.categoryId),
+    subjectId: task.subjectId ?? null,
     done: task.done,
     subtasks: normalizeSubtasks(task.subtasks),
   };
@@ -100,6 +108,8 @@ export interface TaskFilters {
   priority?: TaskPriority;
   categoryId?: string;
   uncategorized?: boolean;
+  /** Solo las tareas de esa materia. */
+  subjectId?: string;
 }
 
 export async function fetchTasks(filters: TaskFilters = {}): Promise<ApiTask[]> {
@@ -110,6 +120,7 @@ export async function fetchTasks(filters: TaskFilters = {}): Promise<ApiTask[]> 
   if (filters.priority) params.set("priority", filters.priority);
   if (filters.categoryId) params.set("categoryId", filters.categoryId);
   if (filters.uncategorized) params.set("uncategorized", "true");
+  if (filters.subjectId) params.set("subjectId", filters.subjectId);
   const query = params.size ? `?${params}` : "";
   const response = await fetch(`${API_BASE_URL}/api/tasks${query}`, { headers: authHeaders() });
   if (!response.ok) {
@@ -128,6 +139,7 @@ export async function createTask(input: CreateTaskInput): Promise<ApiTask> {
       due: input.due ?? "",
       priority: input.priority ?? "media",
       categoryId: input.categoryId ?? null,
+      subjectId: input.subjectId || null,
     }),
   });
 
@@ -167,6 +179,7 @@ export async function updateTask(taskId: string, input: UpdateTaskInput): Promis
       due: input.due,
       priority: input.priority,
       categoryId: input.categoryId,
+      ...(input.subjectId === undefined ? {} : { subjectId: input.subjectId ?? "" }),
     }),
   });
 

@@ -50,7 +50,7 @@ class TaskFilterSubcategoriesTest {
     void serviceListingByAParentIncludesTheTasksOfItsSubcategories() {
         TaskRepository repository = mock(TaskRepository.class);
         CategoryService categories = mock(CategoryService.class);
-        TaskService service = new TaskService(repository, categories, mock(ApplicationEventPublisher.class));
+        TaskService service = new TaskService(repository, categories, mock(com.app.myorbit.academic.application.SubjectService.class), mock(ApplicationEventPublisher.class));
         when(repository.findByUserIdOrderByIdAsc("u1")).thenReturn(List.of(task("1", "uni"), task("2", "sem"), task("3", "per"), task("4", null)));
         when(categories.withSubcategories("u1", "uni")).thenReturn(Set.of("uni", "sem"));
 

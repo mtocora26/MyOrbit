@@ -4,6 +4,8 @@ import { IconCalendar } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
 import { categoryLabel, createCategory, fetchCategories, type Category } from "../services/categoriesApi";
+import { fetchSubjects, type Subject } from "../services/subjectsApi";
+import SubjectPicker from "../components/SubjectPicker";
 
 interface Props { onBack: () => void; taskId: string | null; }
 
@@ -24,6 +26,8 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   const [draftTime, setDraftTime] = useState("");
   const [draftPriority, setDraftPriority] = useState<TaskPriority>("media");
   const [draftCategoryId, setDraftCategoryId] = useState<string>("");
+  const [draftSubjectId, setDraftSubjectId] = useState<string>("");
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [newSubtaskDate, setNewSubtaskDate] = useState("");
   const [newSubtaskTime, setNewSubtaskTime] = useState("");
@@ -33,7 +37,16 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setCategories([]));
+    // Las materias son informativas: si no cargan, la tarea se ve igual.
+    fetchSubjects().then(setSubjects).catch(() => setSubjects([]));
   }, []);
+
+  // Al elegir una materia, la categoría pasa a Universidad (se puede cambiar después).
+  function handleSubjectChange(id: string) {
+    setDraftSubjectId(id);
+    const university = categories.find((item) => !item.parentId && item.name.toLowerCase() === "universidad");
+    if (id && university) setDraftCategoryId(university.id);
+  }
 
   async function handleCreateCategory(name: string, color: string) {
     const category = await createCategory(name, color);
@@ -64,6 +77,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
           setDraftTime(dueInput.time);
           setDraftPriority(mapped.priority);
           setDraftCategoryId(mapped.categoryId ?? "");
+          setDraftSubjectId(mapped.subjectId ?? "");
           setEditing(false);
         }
       } catch (err) {
@@ -201,6 +215,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
     setDraftTime(dueInput.time);
     setDraftPriority(task.priority);
     setDraftCategoryId(task.categoryId ?? "");
+    setDraftSubjectId(task.subjectId ?? "");
     setEditing(true);
   }
 
@@ -248,6 +263,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
       rawDue: due,
       priority: draftPriority,
       categoryId: draftCategoryId || null,
+      subjectId: draftSubjectId || null,
     };
     setTask(optimistic);
 
@@ -259,6 +275,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
         due,
         priority: draftPriority,
         categoryId: draftCategoryId || null,
+        subjectId: draftSubjectId || null,
       });
       setTask(toUiTask(updated));
       setEditing(false);
@@ -340,6 +357,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                       <option value="baja">Baja</option>
                     </select>
                     <CategoryPicker categories={categories} value={draftCategoryId} onChange={setDraftCategoryId} onCreate={handleCreateCategory} className="col-span-2" />
+                    <SubjectPicker subjects={subjects} value={draftSubjectId} onChange={handleSubjectChange} className="col-span-2" />
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -384,6 +402,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                 <MetaField icon={<IconCalendar size={13} color={overdue ? "var(--color-danger)" : "var(--color-ink-3)"} />} label="Fecha limite" value={task.due} valueClassName={overdue ? "text-danger" : undefined} />
                 <MetaField icon={<StatusIcon />} label="Estado" value={task.done ? "Completada" : overdue ? "Vencida" : "En progreso"} valueClassName={overdue && !task.done ? "text-danger" : undefined} />
                 <MetaField icon={<FolderIcon />} label="Categoria" value={categoryName} />
+                {task.subjectId && <MetaField icon={<FolderIcon />} label="Materia" value={subjects.find((subject) => subject.id === task.subjectId)?.name ?? "Materia"} />}
               </div>
             </div>
 

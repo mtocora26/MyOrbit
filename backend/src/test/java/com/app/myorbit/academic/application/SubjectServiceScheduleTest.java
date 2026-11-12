@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 class SubjectServiceScheduleTest {
     private final SubjectRepository repository = mock(SubjectRepository.class);
-    private final SubjectService service = new SubjectService(repository, mock(EvaluationRepository.class), mock(SemesterService.class));
+    private final SubjectService service = new SubjectService(repository, mock(EvaluationRepository.class), mock(SemesterService.class), mock(org.springframework.context.ApplicationEventPublisher.class));
 
     @BeforeEach
     void stubRepository() {

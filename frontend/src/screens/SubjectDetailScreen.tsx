@@ -7,6 +7,7 @@ import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
 import { createEvaluation, DEFAULT_CUTS, fetchEvaluations, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
 import { formatTaskDue } from "../services/taskDue";
+import { fetchTasks, type ApiTask } from "../services/tasksApi";
 import { DAY_NAMES, deleteSubject, sortSlots, type Subject } from "../services/subjectsApi";
 
 interface Props {
@@ -32,6 +33,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   const [editingEval, setEditingEval] = useState<Evaluation | null>(null);
   const [evalSheetOpen, setEvalSheetOpen] = useState(false);
   const [creatingCuts, setCreatingCuts] = useState(false);
+  const [pendingTasks, setPendingTasks] = useState<ApiTask[]>([]);
 
   async function loadEvaluations() {
     try {
@@ -56,6 +58,15 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
       .catch((err) => { if (!cancelled) setSummaryError(err instanceof Error ? err.message : "No fue posible calcular las notas"); });
     return () => { cancelled = true; };
   }, [subject.id, evaluationsKey]);
+
+  // Las tareas pendientes de la materia son informativas: si no cargan, el resto del detalle sigue igual.
+  useEffect(() => {
+    let cancelled = false;
+    fetchTasks({ subjectId: subject.id, done: false })
+      .then((data) => { if (!cancelled) setPendingTasks([...data].sort((a, b) => (a.due ?? "9999").localeCompare(b.due ?? "9999"))); })
+      .catch(() => { if (!cancelled) setPendingTasks([]); });
+    return () => { cancelled = true; };
+  }, [subject.id]);
 
   const status = summary ? gradeStatus(summary) : null;
   const pass = summary ? passStatus(summary) : null;
@@ -133,6 +144,21 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
                   <span className="w-[88px] flex-shrink-0 text-[15px] font-semibold text-ink">{DAY_NAMES[slot.dayOfWeek - 1]}</span>
                   <span className="num flex-1 text-[15px] text-ink">{slot.start}–{slot.end}</span>
                   {slot.room && <span className="min-w-0 truncate text-[14px] text-ink-2">{slot.room}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {pendingTasks.length > 0 && (
+          <section aria-labelledby="pending-tasks-title" className="flex flex-col gap-2">
+            <h2 id="pending-tasks-title" className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Tareas pendientes ({pendingTasks.length})</h2>
+            <ul className="overflow-hidden rounded-md border border-line bg-card">
+              {pendingTasks.map((task, index) => (
+                <li key={task.id} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
+                  <span className="h-[14px] w-[14px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color }} aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{task.title}</span>
+                  {task.due && <span className="num flex-shrink-0 text-[13px] text-ink-2">{formatTaskDue(task.due)}</span>}
                 </li>
               ))}
             </ul>

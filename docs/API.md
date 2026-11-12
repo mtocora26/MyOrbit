@@ -299,6 +299,20 @@ La tarea referencia su categoría; ya no existe el campo libre `tag`.
 - Al editar: `categoryId` ausente/null no cambia la categoría, cadena vacía la quita (`null`) y un valor válido la reemplaza.
 - Al arrancar, una migración única convierte cada `tag` legado en su `categoryId` (reutilizando la categoría con ese nombre para el usuario o creándola) y elimina el campo `tag`.
 
+## Materia de la tarea (`subjectId`)
+
+Una tarea puede vincularse a una materia registrada (campo opcional `subjectId`). Es independiente de la categoría.
+
+| Método | Ruta | Body / parámetro | Notas |
+|---|---|---|---|
+| `POST` | `/api/tasks` | `{ title, …, subjectId? }` | `201` tarea con `subjectId` (`null` si viene ausente o en blanco) |
+| `PUT` | `/api/tasks/{id}` | `{ …, subjectId? }` | `subjectId` **ausente/null no cambia la materia**, cadena vacía quita el vínculo y un id la vincula (mismo criterio que `categoryId`) |
+| `GET` | `/api/tasks?subjectId=<id>` | | Solo las tareas de esa materia; se combina con el resto de filtros (p. ej. `done=false` para sus pendientes) |
+
+- `subjectId` debe ser el `id` de una materia del usuario de la sesión; si no existe o es de otro usuario responde `404` (`Materia no encontrada`) y no se guarda nada.
+- **Categoría Universidad:** al vincular una materia a una tarea **sin categoría** (al crearla, o al editarla), la tarea queda en la categoría raíz «Universidad» del usuario, si la tiene (no se crea una). Una categoría pedida en la misma petición, o ya asignada, **no se cambia**. Quitar la materia tampoco cambia la categoría.
+- **Al eliminar una materia** sus tareas **no se borran ni se bloquea la operación**: solo pierden el vínculo (`subjectId: null`) y conservan su categoría. El módulo académico publica un `SubjectDeletedEvent` y el de tareas lo escucha, como con `CategoryDeletedEvent`.
+
 ## Editar y eliminar categorías (`/api/categories/{id}`)
 
 | Método | Ruta | Body | Respuesta |

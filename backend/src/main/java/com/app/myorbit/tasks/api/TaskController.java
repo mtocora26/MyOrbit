@@ -40,9 +40,10 @@ public class TaskController {
                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueTo,
                                    @RequestParam(required = false) String priority,
                                    @RequestParam(required = false) String categoryId,
-                                   @RequestParam(required = false, defaultValue = "false") boolean uncategorized) {
+                                   @RequestParam(required = false, defaultValue = "false") boolean uncategorized,
+                                   @RequestParam(required = false) String subjectId) {
         Priority parsedPriority = priority == null ? null : Priority.parse(priority);
-        return taskService.listByUser(user.getId(), new TaskFilter(done, dueFrom, dueTo, parsedPriority, categoryId, uncategorized)).stream().map(TaskResponse::from).toList();
+        return taskService.listByUser(user.getId(), new TaskFilter(done, dueFrom, dueTo, parsedPriority, categoryId, uncategorized, subjectId)).stream().map(TaskResponse::from).toList();
     }
 
     @GetMapping("/{id}")

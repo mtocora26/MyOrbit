@@ -1,7 +1,10 @@
 package com.app.myorbit.tasks.application;
 
 import com.app.myorbit.shared.time.DueDate;
+import com.app.myorbit.academic.application.SubjectService;
+import com.app.myorbit.academic.domain.SubjectDeletedEvent;
 import com.app.myorbit.categories.application.CategoryService;
+import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.categories.domain.CategoryDeletedEvent;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
@@ -31,13 +34,16 @@ import java.util.UUID;
 @Service
 public class TaskService {
 
+    static final String UNIVERSITY_CATEGORY = "Universidad";
     private final TaskRepository taskRepository;
     private final CategoryService categoryService;
+    private final SubjectService subjectService;
     private final ApplicationEventPublisher events;
 
-    public TaskService(TaskRepository taskRepository, CategoryService categoryService, ApplicationEventPublisher events) {
+    public TaskService(TaskRepository taskRepository, CategoryService categoryService, SubjectService subjectService, ApplicationEventPublisher events) {
         this.taskRepository = taskRepository;
         this.categoryService = categoryService;
+        this.subjectService = subjectService;
         this.events = events;
     }
 
@@ -63,6 +69,14 @@ public class TaskService {
     public void onCategoryDeleted(CategoryDeletedEvent event) {
         List<Task> affected = taskRepository.findByUserIdAndCategoryId(event.userId(), event.categoryId());
         affected.forEach(task -> task.setCategoryId(null));
+        if (!affected.isEmpty()) taskRepository.saveAll(affected);
+    }
+
+    /** Al borrar una materia, sus tareas se conservan pero dejan de estar vinculadas a ella. */
+    @EventListener
+    public void onSubjectDeleted(SubjectDeletedEvent event) {
+        List<Task> affected = taskRepository.findByUserIdAndSubjectId(event.userId(), event.subjectId());
+        affected.forEach(task -> task.setSubjectId(null));
         if (!affected.isEmpty()) taskRepository.saveAll(affected);
     }
 
@@ -95,6 +109,8 @@ public class TaskService {
         task.setDue(DueDate.parse(request.due()));
         task.setPriority(request.priority() == null ? Priority.MEDIUM : request.priority());
         task.setCategoryId(resolveNewCategory(userId, request.categoryId()));
+        task.setSubjectId(resolveSubject(userId, request.subjectId()));
+        if (task.getSubjectId() != null && task.getCategoryId() == null) task.setCategoryId(universityCategoryId(userId));
         task.setDone(false);
         Task saved = taskRepository.save(task);
         events.publishEvent(new TaskCreatedEvent(userId, saved.getId(), saved.getTitle(), saved.getDue()));
@@ -167,6 +183,11 @@ public class TaskService {
         if (request.priority() != null) task.setPriority(request.priority());
         // categoryId: null = no cambiar; cadena vacia = quitar la categoría.
         if (request.categoryId() != null) task.setCategoryId(resolveNewCategory(userId, request.categoryId()));
+        // subjectId: null = no cambiar; cadena vacia = quitar la materia. Al vincular una materia a una tarea sin categoría, queda en Universidad.
+        if (request.subjectId() != null) {
+            task.setSubjectId(resolveSubject(userId, request.subjectId()));
+            if (task.getSubjectId() != null && task.getCategoryId() == null) task.setCategoryId(universityCategoryId(userId));
+        }
         return taskRepository.save(task);
     }
 
@@ -202,6 +223,17 @@ public class TaskService {
 
     private Subtask requireSubtask(Task task, String subtaskId) {
         return task.findSubtask(subtaskId).orElseThrow(() -> new NotFoundException("Subtarea no encontrada"));
+    }
+
+    /** La materia indicada (debe ser del usuario: si no, 404), o null si viene vacía. */
+    private String resolveSubject(String userId, String subjectId) {
+        if (subjectId == null || subjectId.isBlank()) return null;
+        return subjectService.getOwned(userId, subjectId.trim()).getId();
+    }
+
+    /** La categoría «Universidad» del usuario, si la tiene (no se crea una). */
+    private String universityCategoryId(String userId) {
+        return categoryService.findRootByName(userId, UNIVERSITY_CATEGORY).map(Category::getId).orElse(null);
     }
 
     private String resolveNewCategory(String userId, String categoryId) {
