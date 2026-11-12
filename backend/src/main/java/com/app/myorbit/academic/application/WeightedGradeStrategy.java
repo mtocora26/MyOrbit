@@ -16,7 +16,7 @@ public class WeightedGradeStrategy implements GradeStrategy {
         for (Evaluation evaluation : evaluations) {
             if (!evaluation.isGraded()) continue;
             gradedPercentage += evaluation.getPercentage();
-            points += evaluation.getGrade() * evaluation.getPercentage() / 100;
+            points += evaluation.effectiveGrade() * evaluation.getPercentage() / 100;
         }
         double remaining = Math.max(0, Evaluation.MAX_PERCENTAGE - gradedPercentage);
         Double current = gradedPercentage > EPSILON ? round(points * 100 / gradedPercentage) : null;

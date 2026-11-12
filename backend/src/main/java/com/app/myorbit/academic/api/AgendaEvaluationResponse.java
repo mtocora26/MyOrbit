@@ -9,6 +9,6 @@ public record AgendaEvaluationResponse(String id, String subjectId, String subje
     public static AgendaEvaluationResponse from(AgendaItem item) {
         return new AgendaEvaluationResponse(item.evaluation().getId(), item.subject().getId(), item.subject().getName(),
                 item.subject().getColor(), item.evaluation().getName(), item.evaluation().getPercentage(),
-                item.evaluation().getGrade(), item.evaluation().getDue());
+                item.evaluation().effectiveGrade(), item.evaluation().getDue());
     }
 }
