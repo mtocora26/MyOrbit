@@ -25,6 +25,7 @@ no tiene ese semestre se crea solo (sin fechas). Al arrancar, una migración ide
 | `name` | string | Obligatorio, formato `AAAA-1` o `AAAA-2`. Único por usuario. Si cambia, las materias del semestre se mueven al nuevo nombre. |
 | `startDate` | fecha `AAAA-MM-DD` | Opcional. |
 | `endDate` | fecha `AAAA-MM-DD` | Opcional; no puede ser anterior a `startDate`. |
+| `targetAverage` | número | Opcional, entre 0 y 5. **Meta de promedio del semestre**. El `PUT` reemplaza: omitirla la quita. |
 
 ```json
 { "name": "2026-1", "startDate": "2026-02-01", "endDate": "2026-06-15" }
@@ -33,7 +34,7 @@ no tiene ese semestre se crea solo (sin fechas). Al arrancar, una migración ide
 ### Respuesta
 
 ```json
-{ "id": "b3e0…", "name": "2026-1", "startDate": "2026-02-01", "endDate": "2026-06-15", "current": true, "missingDates": false }
+{ "id": "b3e0…", "name": "2026-1", "startDate": "2026-02-01", "endDate": "2026-06-15", "current": true, "missingDates": false, "targetAverage": 4.0 }
 ```
 
 `current` es `true` si hoy, en la zona horaria del usuario (#130), cae entre `startDate` y `endDate` (ambos incluidos).
@@ -70,6 +71,8 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 | `credits` | entero | Obligatorio, entre 1 y 20. |
 | `semester` | string | Obligatorio, formato `AAAA-1` o `AAAA-2` (ej. `2026-1`). |
 | `color` | string | Opcional, hexadecimal `#RRGGBB`. Por defecto `#7A5AF8`. |
+| `targetGrade` | número | Opcional, entre 0 y 5. **Meta** de la materia. Si falta, aplica la del parámetro, el semestre o el Perfil (ver «Resumen de notas»). |
+| `passingGrade` | número | Opcional, entre 0 y 5. **Nota mínima para aprobar**, distinta de la meta. Si falta, 3.0. Si ambas vienen, la meta no puede ser menor (`400`). El `PUT` reemplaza: omitirlas las quita. |
 | `defaultCuts` | booleano | Opcional (por defecto `false`). Solo al crear: genera los cortes «Corte 1», «Corte 2» y «Corte 3» con 30 / 30 / 40 %, sin nota; después se editan como cualquier evaluación. |
 
 ```json
@@ -79,8 +82,10 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 ### Respuesta
 
 ```json
-{ "id": "6f1c…", "name": "Análisis Numérico", "credits": 3, "semester": "2026-1", "color": "#7A5AF8" }
+{ "id": "6f1c…", "name": "Análisis Numérico", "credits": 3, "semester": "2026-1", "color": "#7A5AF8", "targetGrade": 4.5, "passingGrade": 3.0 }
 ```
+
+`targetGrade` y `passingGrade` son los guardados en la materia; `null` = se usan los por defecto.
 
 ### Errores
 
@@ -157,15 +162,16 @@ Un corte con componentes **no lleva `grade` directa** (la nota sale de ellos; en
 
 ## Resumen de notas (`GET /api/subjects/{subjectId}/evaluations/summary`)
 
-Calcula la nota actual y la nota que se necesita en lo que falta para alcanzar la meta (estrategia `WeightedGradeStrategy`, escala 0–5).
+Calcula la nota actual y la nota que se necesita en lo que falta, contra la **meta** y contra la **nota mínima para aprobar** (estrategia `WeightedGradeStrategy`, escala 0–5). Son dos cifras distintas: se puede aprobar sin llegar a la meta.
 
 | Parámetro | Tipo | Descripción |
 |---|---|---|
-| `target` | número, opcional | Meta de la materia (0–5). Si falta se usa `gradeTarget` del perfil; si tampoco es válido, 3.0. |
+| `target` | número, opcional | Meta (0–5). Precedencia: este parámetro, la `targetGrade` de la materia, `gradeTarget` del perfil y, si no es válido, 3.0. La nota para aprobar es la `passingGrade` de la materia o 3.0. |
 
 ```json
 { "currentGrade": 3.6, "accumulatedPoints": 1.8, "gradedPercentage": 50.0, "remainingPercentage": 50.0,
-  "targetGrade": 3.5, "requiredGrade": 3.4, "achievable": true }
+  "targetGrade": 3.5, "requiredGrade": 3.4, "achievable": true,
+  "passingGrade": 3.0, "requiredToPass": 2.6, "canPass": true }
 ```
 
 | Campo | Significado |
@@ -175,6 +181,9 @@ Calcula la nota actual y la nota que se necesita en lo que falta para alcanzar l
 | `gradedPercentage` / `remainingPercentage` | Porcentaje calificado y por calificar (lo no planeado cuenta como pendiente). |
 | `requiredGrade` | Promedio necesario en el porcentaje pendiente para llegar a la meta (0 si ya se alcanzó); `null` si no queda nada por calificar. |
 | `achievable` | `false` si la nota necesaria supera 5 o, con todo calificado, no se llegó a la meta. |
+| `passingGrade` | Nota mínima para aprobar que se aplicó. |
+| `requiredToPass` | Igual que `requiredGrade`, pero para aprobar. |
+| `canPass` | Igual que `achievable`, pero para aprobar: `false` si ya no alcanza para aprobar. |
 
 Errores: `400` si `target` está fuera de 0–5, `401` sin sesión, `404` si la materia no existe o es de otro usuario.
 
@@ -185,7 +194,7 @@ Reúne las materias del usuario con su estado de notas, el promedio ponderado po
 | Parámetro | Tipo | Descripción |
 |---|---|---|
 | `semester` | string, opcional | Filtra por semestre (`2026-1`). Sin él incluye todas las materias. |
-| `target` | número, opcional | Meta (0–5). Misma precedencia que el resumen por materia: parámetro, perfil, 3.0. |
+| `target` | número, opcional | Meta (0–5). Precedencia: parámetro, `targetAverage` del semestre (si se filtra por uno que la tiene), perfil, 3.0. Cada materia usa su propia `targetGrade` si la tiene. |
 
 ```json
 { "weightedAverage": 3.67, "totalCredits": 9, "gradedCredits": 6, "targetGrade": 3.0,
@@ -195,7 +204,8 @@ Reúne las materias del usuario con su estado de notas, el promedio ponderado po
 
 - `weightedAverage`: promedio de `currentGrade` ponderado por créditos, solo con materias que ya tienen notas; `null` si ninguna.
 - `grades`: mismo objeto que el resumen por materia.
-- Una materia está en riesgo (`atRisk`) si su meta no es alcanzable o necesita más de 4.0 de promedio en lo que falta.
+- `targetGrade`: la meta del resumen (la del semestre, o la del perfil o 3.0).
+- Una materia está en riesgo (`atRisk`) si ya no puede **aprobar** (`canPass` falso) o necesita más de 4.0 de promedio en lo que falta para aprobar. Perder la meta, sin dejar de aprobar, no es riesgo.
 
 Errores: `400` si `target` está fuera de 0–5, `401` sin sesión.
 

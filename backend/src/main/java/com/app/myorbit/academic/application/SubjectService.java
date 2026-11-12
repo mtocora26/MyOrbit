@@ -86,7 +86,7 @@ public class SubjectService {
     private void apply(Subject subject, SubjectRequest request) {
         String color = request.color() == null || request.color().isBlank() ? DEFAULT_COLOR : request.color();
         try {
-            subject.update(request.name(), request.credits(), request.semester(), color);
+            subject.update(request.name(), request.credits(), request.semester(), color, request.targetGrade(), request.passingGrade());
         } catch (IllegalArgumentException invalid) {
             throw new BusinessRuleException(invalid.getMessage());
         }

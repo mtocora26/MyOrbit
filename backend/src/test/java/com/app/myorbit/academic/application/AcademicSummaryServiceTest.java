@@ -15,7 +15,8 @@ class AcademicSummaryServiceTest {
     private final SubjectService subjects = mock(SubjectService.class);
     private final EvaluationRepository evaluations = mock(EvaluationRepository.class);
     private final GradeSummaryService targets = mock(GradeSummaryService.class);
-    private final AcademicSummaryService service = new AcademicSummaryService(subjects, evaluations, targets, new WeightedGradeStrategy());
+    private final SemesterService semesters = mock(SemesterService.class);
+    private final AcademicSummaryService service = new AcademicSummaryService(subjects, evaluations, targets, new WeightedGradeStrategy(), semesters);
 
     private Subject subject(String id, int credits, String semester) {
         Subject subject = new Subject();

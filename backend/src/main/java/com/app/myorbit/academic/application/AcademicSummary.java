@@ -19,7 +19,7 @@ public record AcademicSummary(Double weightedAverage, int totalCredits, int grad
     }
 
     public static class Builder {
-        /** Una materia está en riesgo si no puede alcanzar la meta o necesita más de este promedio en lo que falta. */
+        /** Una materia está en riesgo si no puede aprobar o necesita más de este promedio en lo que falta para aprobar. */
         public static final double RISK_REQUIRED_GRADE = 4.0;
 
         private final double targetGrade;
@@ -33,8 +33,8 @@ public record AcademicSummary(Double weightedAverage, int totalCredits, int grad
         }
 
         public Builder addSubject(String subjectId, String name, int credits, String semester, GradeSummary grades) {
-            boolean atRisk = !grades.achievable()
-                    || (grades.requiredGrade() != null && grades.requiredGrade() > RISK_REQUIRED_GRADE);
+            boolean atRisk = !grades.canPass()
+                    || (grades.requiredToPass() != null && grades.requiredToPass() > RISK_REQUIRED_GRADE);
             subjects.add(new SubjectStanding(subjectId, name, credits, semester, grades, atRisk));
             totalCredits += credits;
             if (grades.currentGrade() != null) {
