@@ -1,6 +1,7 @@
 package com.app.myorbit.academic.application;
 
 import com.app.myorbit.academic.api.SubjectRequest;
+import com.app.myorbit.academic.domain.ClassSlot;
 import com.app.myorbit.academic.domain.Evaluation;
 import com.app.myorbit.academic.domain.Subject;
 import com.app.myorbit.academic.infrastructure.EvaluationRepository;
@@ -86,7 +87,10 @@ public class SubjectService {
     private void apply(Subject subject, SubjectRequest request) {
         String color = request.color() == null || request.color().isBlank() ? DEFAULT_COLOR : request.color();
         try {
-            subject.update(request.name(), request.credits(), request.semester(), color, request.targetGrade(), request.passingGrade());
+            List<ClassSlot> schedule = request.schedule() == null ? List.of() : request.schedule().stream()
+                    .map(slot -> ClassSlot.of(slot.dayOfWeek(), slot.start(), slot.end(), slot.room()))
+                    .toList();
+            subject.update(request.name(), request.credits(), request.semester(), color, request.targetGrade(), request.passingGrade(), schedule);
         } catch (IllegalArgumentException invalid) {
             throw new BusinessRuleException(invalid.getMessage());
         }

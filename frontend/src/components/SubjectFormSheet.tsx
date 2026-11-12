@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BottomSheet, CATEGORY_PALETTE } from "./shared";
-import { createSubject, currentSemester, semesterOptions, updateSubject, type Subject } from "../services/subjectsApi";
+import { createSubject, currentSemester, DAY_NAMES, semesterOptions, sortSlots, updateSubject, type Subject } from "../services/subjectsApi";
 import { formatNumber, parseDecimal } from "../services/evaluationsApi";
 
 interface Props {
@@ -16,6 +16,9 @@ interface Props {
 }
 
 const MAX_NAME = 100;
+const MAX_SLOTS = 14;
+
+interface SlotDraft { dayOfWeek: number; start: string; end: string; room: string; }
 
 export default function SubjectFormSheet({ open, onClose, subject, knownSemesters, defaultSemester, onSaved }: Props) {
   const [name, setName] = useState("");
@@ -25,6 +28,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
   const [defaultCuts, setDefaultCuts] = useState(true);
   const [target, setTarget] = useState("");
   const [passing, setPassing] = useState("");
+  const [slots, setSlots] = useState<SlotDraft[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +42,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
     setDefaultCuts(true);
     setTarget(subject?.targetGrade != null ? formatNumber(subject.targetGrade) : "");
     setPassing(subject?.passingGrade != null ? formatNumber(subject.passingGrade) : "");
+    setSlots(sortSlots(subject?.schedule ?? []).map((slot) => ({ dayOfWeek: slot.dayOfWeek, start: slot.start, end: slot.end, room: slot.room ?? "" })));
     setError(null);
   }, [open, subject, defaultSemester]);
 
@@ -48,7 +53,19 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
   const targetError = target !== "" && (targetValue === null || targetValue < 0 || targetValue > 5) ? "La meta va de 0 a 5" : null;
   const passingError = passing !== "" && (passingValue === null || passingValue < 0 || passingValue > 5) ? "La nota va de 0 a 5" : null;
   const orderError = !targetError && !passingError && targetValue !== null && passingValue !== null && targetValue < passingValue ? "La meta no puede ser menor que la nota para aprobar" : null;
-  const canSubmit = name.trim().length > 0 && creditsValid && !targetError && !passingError && !orderError && !saving;
+  // Cada franja necesita horas y fin posterior al inicio; dos del mismo día no pueden cruzarse (terminar justo al empezar otra sí vale).
+  const slotErrors = slots.map((slot, index) => {
+    if (!slot.start || !slot.end) return "Elige la hora de inicio y de fin";
+    if (slot.end <= slot.start) return "La hora de fin debe ser posterior a la de inicio";
+    const clash = slots.findIndex((other, position) => position !== index && other.dayOfWeek === slot.dayOfWeek && other.start && other.end && other.start < slot.end && slot.start < other.end);
+    return clash >= 0 ? `Se cruza con otra franja del ${DAY_NAMES[slot.dayOfWeek - 1].toLowerCase()}` : null;
+  });
+  const slotsInvalid = slotErrors.some((message) => message !== null);
+  const canSubmit = name.trim().length > 0 && creditsValid && !targetError && !passingError && !orderError && !slotsInvalid && !saving;
+
+  function setSlot(index: number, patch: Partial<SlotDraft>) {
+    setSlots((current) => current.map((slot, position) => position === index ? { ...slot, ...patch } : slot));
+  }
 
   function close() {
     if (!saving) onClose();
@@ -60,7 +77,9 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
     try {
       setSaving(true);
       setError(null);
-      const input = { name: name.trim(), credits: creditsNumber, semester, color, targetGrade: targetValue, passingGrade: passingValue, ...(subject ? {} : { defaultCuts }) };
+      const input = { name: name.trim(), credits: creditsNumber, semester, color, targetGrade: targetValue, passingGrade: passingValue,
+        schedule: slots.map((slot) => ({ dayOfWeek: slot.dayOfWeek, start: slot.start, end: slot.end, room: slot.room.trim() || null })),
+        ...(subject ? {} : { defaultCuts }) };
       const saved = subject ? await updateSubject(subject.id, input) : await createSubject(input);
       onSaved(saved);
       onClose();
@@ -127,6 +146,35 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
           </label>
         </div>
         {orderError && <p role="alert" className="-mt-2 text-[14px] font-semibold text-danger">{orderError}</p>}
+
+        <section aria-label="Horario" className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[14px] font-semibold text-ink">Horario (opcional)</p>
+            <button type="button" onClick={() => setSlots((current) => [...current, { dayOfWeek: 1, start: "08:00", end: "10:00", room: "" }])} disabled={slots.length >= MAX_SLOTS} className="-mr-2 min-h-[44px] px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50">+ Franja</button>
+          </div>
+          {slots.length === 0 ? (
+            <p className="text-[13px] text-ink-3">Agrega los días y horas de clase; se repiten cada semana mientras dura el semestre.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {slots.map((slot, index) => (
+                <li key={index} className="flex flex-col gap-2 rounded-md border border-line bg-card p-2">
+                  <div className="flex items-center gap-2">
+                    <select value={slot.dayOfWeek} onChange={(e) => setSlot(index, { dayOfWeek: Number(e.target.value) })} aria-label={`Día de la franja ${index + 1}`} className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral">
+                      {DAY_NAMES.map((day, position) => <option key={day} value={position + 1}>{day}</option>)}
+                    </select>
+                    <button type="button" onClick={() => setSlots((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar franja ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="time" value={slot.start} onChange={(e) => setSlot(index, { start: e.target.value })} aria-label={`Inicio de la franja ${index + 1}`} className="num min-h-[44px] rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+                    <input type="time" value={slot.end} onChange={(e) => setSlot(index, { end: e.target.value })} aria-label={`Fin de la franja ${index + 1}`} aria-invalid={!!slotErrors[index]} className={`num min-h-[44px] rounded-md border bg-card px-3 text-[16px] text-ink outline-none focus:border-coral ${slotErrors[index] ? "border-danger-line" : "border-line"}`} />
+                  </div>
+                  <input value={slot.room} maxLength={50} onChange={(e) => setSlot(index, { room: e.target.value })} aria-label={`Salón de la franja ${index + 1}`} placeholder="Salón (opcional)" className="min-h-[44px] rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+                  {slotErrors[index] && <p role="alert" className="text-[13px] font-semibold text-danger">{slotErrors[index]}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         {!subject && (
           <label className="flex min-h-[44px] items-center gap-3">
