@@ -4,7 +4,7 @@ import NotificationBell from "../components/NotificationBell";
 import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
-import { fetchCategories, type Category } from "../services/categoriesApi";
+import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, type Habit } from "../services/habitsApi";
 import { fromTaskDue, isOverdue } from "../services/taskDue";
 import { describeClassNow, fetchClassesNow, type ClassNow } from "../services/academicApi";
@@ -144,7 +144,10 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
   }
 
   const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
-  const nameOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.name ?? (task.categoryId ? "Categoría" : "Sin categoría");
+  const nameOf = (task: UiTask) => {
+    const category = categories.find((item) => item.id === task.categoryId);
+    return category ? categoryLabel(category, categories) : task.categoryId ? "Categoría" : "Sin categoría";
+  };
 
   return (
     <div className="h-full overflow-y-auto no-scrollbar bg-paper">

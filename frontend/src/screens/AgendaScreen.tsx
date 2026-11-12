@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
-import { fetchCategories, type Category } from "../services/categoriesApi";
+import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { fromTaskDue } from "../services/taskDue";
 import { describeClassNow, fetchAgendaEvaluations, fetchClasses, fetchClassesNow, formatGrade, type AgendaEvaluation, type ClassNow, type ClassOccurrence } from "../services/academicApi";
 import { CategoryBadge, EmptyState, PriorityDot, Station } from "../components/shared";
@@ -100,7 +100,10 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     ...(classesByDay.get(selected) ?? []).map((occurrence): DayItem => ({ kind: "class", occurrence, time: occurrence.start })),
   ].sort((a, b) => a.time.localeCompare(b.time));
   const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
-  const nameOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.name ?? (task.categoryId ? "Categoría" : "Sin categoría");
+  const nameOf = (task: UiTask) => {
+    const category = categories.find((item) => item.id === task.categoryId);
+    return category ? categoryLabel(category, categories) : task.categoryId ? "Categoría" : "Sin categoría";
+  };
 
   function shiftWeek(delta: number) {
     const next = new Date(weekStart);

@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -48,8 +49,11 @@ public class TaskService {
         if (filter.dueFrom() != null && filter.dueTo() != null && filter.dueFrom().isAfter(filter.dueTo())) {
             throw new BusinessRuleException("El rango de fechas no es valido: dueFrom no puede ser posterior a dueTo");
         }
+        // Filtrar por una categoría incluye también sus subcategorías.
+        Set<String> categoryIds = filter.categoryId() == null || filter.categoryId().isBlank() ? null
+                : categoryService.withSubcategories(userId, filter.categoryId().trim());
         return taskRepository.findByUserIdOrderByIdAsc(userId).stream()
-                .filter(filter::matches)
+                .filter(task -> filter.matches(task, categoryIds))
                 .sorted(Comparator.comparing(Task::getDue, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
     }

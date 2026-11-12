@@ -10,4 +10,7 @@ public interface CategoryRepository extends MongoRepository<Category, String> {
     List<Category> findByUserIdOrderByNameAsc(String userId);
 
     Optional<Category> findByUserIdAndNameIgnoreCase(String userId, String name);
+
+    /** Las subcategorías de una categoría. */
+    List<Category> findByUserIdAndParentId(String userId, String parentId);
 }
