@@ -8,7 +8,7 @@ import java.util.Collection;
 
 /**
  * Filtros de listado de tareas. Todo campo nulo/ausente significa "sin filtro"
- * (excepto {@code uncategorized}, que filtra las tareas sin categoría).
+ * (excepto {@code uncategorized}, que filtra las tareas sin categoría). {@code subjectId} deja solo las de esa materia.
  */
 public record TaskFilter(
         Boolean done,
@@ -16,7 +16,13 @@ public record TaskFilter(
         LocalDateTime dueTo,
         Priority priority,
         String categoryId,
-        boolean uncategorized) {
+        boolean uncategorized,
+        String subjectId) {
+
+    /** Sin filtro por materia. */
+    public TaskFilter(Boolean done, LocalDateTime dueFrom, LocalDateTime dueTo, Priority priority, String categoryId, boolean uncategorized) {
+        this(done, dueFrom, dueTo, priority, categoryId, uncategorized, null);
+    }
 
     public static TaskFilter empty() {
         return new TaskFilter(null, null, null, null, null, false);
@@ -44,6 +50,7 @@ public record TaskFilter(
             if (!inCategory) return false;
         }
         if (uncategorized && task.getCategoryId() != null) return false;
+        if (subjectId != null && !subjectId.isBlank() && !subjectId.equals(task.getSubjectId())) return false;
         return true;
     }
 }

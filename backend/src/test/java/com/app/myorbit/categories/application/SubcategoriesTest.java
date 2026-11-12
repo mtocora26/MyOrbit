@@ -296,6 +296,19 @@ class SubcategoriesTest {
         assertEquals("uni", event.getValue().categoryId());
     }
 
+    @Test
+    void findRootByNameIgnoresCaseAndSkipsSubcategories() {
+        root("uni", "Universidad");
+        root("per", "Personal");
+        child("x", "universidad", "per");
+
+        assertEquals("uni", service.findRootByName("u1", "UNIVERSIDAD").orElseThrow().getId());
+        assertTrue(service.findRootByName("u1", "Proyecto").isEmpty());
+        // Solo cuenta una raíz: una subcategoría con ese nombre no.
+        store.removeIf(c -> c.getId().equals("uni"));
+        assertTrue(service.findRootByName("u1", "Universidad").isEmpty());
+    }
+
     // ---------- filtro ----------
 
     @Test

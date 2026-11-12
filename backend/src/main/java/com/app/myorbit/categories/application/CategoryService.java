@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -97,6 +98,13 @@ public class CategoryService {
         promoteChildren(userId, category);
         categoryRepository.deleteById(category.getId());
         events.publishEvent(new CategoryDeletedEvent(userId, category.getId()));
+    }
+
+    /** La categoría raíz del usuario con ese nombre (sin distinguir mayúsculas), si existe. No siembra categorías por defecto. */
+    public Optional<Category> findRootByName(String userId, String name) {
+        return categoryRepository.findByUserIdOrderByNameAsc(userId).stream()
+                .filter(category -> category.isRoot() && category.getName().equalsIgnoreCase(name))
+                .findFirst();
     }
 
     /** El id de la categoría junto con los de sus subcategorías; para filtrar tareas por una categoría y lo que contiene. */

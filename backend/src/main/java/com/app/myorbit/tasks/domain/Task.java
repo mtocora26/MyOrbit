@@ -17,6 +17,8 @@ public class Task {
     private LocalDateTime due;
     private Priority priority;
     private String categoryId;
+    /** Materia a la que pertenece la tarea (opcional); null si no está vinculada a ninguna. */
+    private String subjectId;
     private boolean done;
     private List<Subtask> subtasks = new ArrayList<>();
 
@@ -50,6 +52,14 @@ public class Task {
 
     public void setDue(LocalDateTime due) {
         this.due = due;
+    }
+
+    public String getSubjectId() {
+        return subjectId;
+    }
+
+    public void setSubjectId(String subjectId) {
+        this.subjectId = subjectId;
     }
 
     public Priority getPriority() {

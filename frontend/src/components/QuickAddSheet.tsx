@@ -5,6 +5,8 @@ import { createTask, type TaskPriority } from "../services/tasksApi";
 import { todayInputValue, tomorrowInputValue, toTaskDue } from "../services/taskDue";
 import { createHabit } from "../services/habitsApi";
 import { createCategory, fetchCategories, type Category } from "../services/categoriesApi";
+import { fetchSubjects, type Subject } from "../services/subjectsApi";
+import SubjectPicker from "./SubjectPicker";
 
 interface Props { open: boolean; onClose: () => void; onTaskCreated: () => void; onHabitCreated: () => void; }
 
@@ -36,6 +38,8 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   const [priority, setPriority] = useState<TaskPriority>("media");
   const [categoryId, setCategoryId] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subjectId, setSubjectId] = useState("");
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +49,18 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       setCategoryId((current) => current || data.find((category) => category.name === "Personal")?.id || data[0]?.id || "");
     }).catch(() => setCategories([]));
   }, [open]);
+
+  // Las materias son opcionales: si no cargan, la tarea se crea igual, sin selector de materia.
+  useEffect(() => {
+    if (open) fetchSubjects().then(setSubjects).catch(() => setSubjects([]));
+  }, [open]);
+
+  // Al elegir una materia, la tarea pasa a la categoría Universidad (se puede cambiar después).
+  function handleSubjectChange(id: string) {
+    setSubjectId(id);
+    const university = categories.find((category) => !category.parentId && category.name.toLowerCase() === "universidad");
+    if (id && university) setCategoryId(university.id);
+  }
 
   async function handleCreateCategory(name: string, color: string) {
     const category = await createCategory(name, color);
@@ -68,7 +84,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       setSaving(true);
       setError(null);
       if (mode === "tarea") {
-        await createTask({ title: name.trim(), due: toTaskDue(date, time), priority, categoryId: categoryId || null });
+        await createTask({ title: name.trim(), due: toTaskDue(date, time), priority, categoryId: categoryId || null, subjectId: subjectId || null });
         onTaskCreated();
       } else {
         await createHabit({ title: name.trim(), frequency: "diaria", daysOfWeek: [1, 2, 3, 4, 5, 6, 7], color: "var(--color-violet-ink)", icon: "target" });
@@ -78,6 +94,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       setDate(todayInputValue());
       setTime("23:59");
       setPriority("media");
+      setSubjectId("");
       setCategoryId(categories.find((category) => category.name === "Personal")?.id || categories[0]?.id || "");
       closeSheet();
     } catch (err) {
@@ -168,6 +185,8 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
             </div>
 
             <CategoryPicker variant="chips" categories={categories} value={categoryId} onChange={setCategoryId} onCreate={handleCreateCategory} />
+
+            <SubjectPicker subjects={subjects} value={subjectId} onChange={handleSubjectChange} />
           </>
         )}
 

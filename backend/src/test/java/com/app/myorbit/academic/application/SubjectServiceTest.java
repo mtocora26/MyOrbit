@@ -25,7 +25,7 @@ class SubjectServiceTest {
     private final SubjectRepository repository = mock(SubjectRepository.class);
     private final EvaluationRepository evaluations = mock(EvaluationRepository.class);
     private final SemesterService semesters = mock(SemesterService.class);
-    private final SubjectService service = new SubjectService(repository, evaluations, semesters);
+    private final SubjectService service = new SubjectService(repository, evaluations, semesters, mock(org.springframework.context.ApplicationEventPublisher.class));
 
     private Subject subjectOf(String id, String userId, String name, String semester) {
         Subject subject = new Subject();

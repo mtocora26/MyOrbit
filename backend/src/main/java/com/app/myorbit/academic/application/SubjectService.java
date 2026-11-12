@@ -4,10 +4,12 @@ import com.app.myorbit.academic.api.SubjectRequest;
 import com.app.myorbit.academic.domain.ClassSlot;
 import com.app.myorbit.academic.domain.Evaluation;
 import com.app.myorbit.academic.domain.Subject;
+import com.app.myorbit.academic.domain.SubjectDeletedEvent;
 import com.app.myorbit.academic.infrastructure.EvaluationRepository;
 import com.app.myorbit.academic.infrastructure.SubjectRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,11 +23,14 @@ public class SubjectService {
     private final SubjectRepository subjectRepository;
     private final EvaluationRepository evaluationRepository;
     private final SemesterService semesterService;
+    private final ApplicationEventPublisher events;
 
-    public SubjectService(SubjectRepository subjectRepository, EvaluationRepository evaluationRepository, SemesterService semesterService) {
+    public SubjectService(SubjectRepository subjectRepository, EvaluationRepository evaluationRepository, SemesterService semesterService,
+                          ApplicationEventPublisher events) {
         this.subjectRepository = subjectRepository;
         this.evaluationRepository = evaluationRepository;
         this.semesterService = semesterService;
+        this.events = events;
     }
 
     public List<Subject> listByUser(String userId) {
@@ -76,6 +81,8 @@ public class SubjectService {
         getOwned(userId, id);
         evaluationRepository.deleteBySubjectId(id);
         subjectRepository.deleteById(id);
+        // Las tareas vinculadas se conservan; solo pierden el vínculo (las escucha el módulo de tareas).
+        events.publishEvent(new SubjectDeletedEvent(userId, id));
     }
 
     private void ensureUniqueName(String userId, SubjectRequest request, String excludedId) {
