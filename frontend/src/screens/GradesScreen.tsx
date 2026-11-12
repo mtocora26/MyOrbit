@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ProgressBar, ScreenHeader } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
-import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, projectedFinal, type GradeSummary } from "../services/academicApi";
+import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, projectedFinal, type GradeSummary } from "../services/academicApi";
 import { fetchEvaluations, formatNumber, type Evaluation } from "../services/evaluationsApi";
 import type { Subject } from "../services/subjectsApi";
 
@@ -34,8 +34,10 @@ export default function GradesScreen({ subject, onBack }: Props) {
   useEffect(() => { load(); }, [subject.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const status = summary ? gradeStatus(summary) : null;
+  const pass = summary ? passStatus(summary) : null;
   const projected = summary ? projectedFinal(summary, expected) : 0;
   const reaches = summary ? projected >= summary.targetGrade - 1e-9 : false;
+  const passes = summary ? projected >= summary.passingGrade - 1e-9 : false;
   const hasPending = !!summary && summary.remainingPercentage > 0;
 
   return (
@@ -57,13 +59,17 @@ export default function GradesScreen({ subject, onBack }: Props) {
               <dl className="grid grid-cols-3 divide-x divide-line">
                 <Figure label="Actual" value={summary.currentGrade === null ? "–" : formatGrade(summary.currentGrade)} />
                 <Figure label="Meta" value={formatGrade(summary.targetGrade)} accent />
-                <Figure label="Puntos" value={formatGrade(summary.accumulatedPoints)} sub={`de ${MAX_GRADE}`} />
+                <Figure label="Aprobar" value={formatGrade(summary.passingGrade)} />
               </dl>
               <div className="mt-4">
                 <ProgressBar value={Math.min(summary.gradedPercentage, 100)} color={subject.color} height={4} />
                 <p className="num mt-1.5 text-[13px] text-ink-2">{formatNumber(summary.gradedPercentage)}% calificado · {formatNumber(summary.remainingPercentage)}% por calificar</p>
               </div>
-              <div className="mt-3"><GradeStatusLine tone={status.tone}>{status.long}</GradeStatusLine></div>
+              <p className="num mt-2 text-[13px] text-ink-2">{formatGrade(summary.accumulatedPoints)} puntos acumulados de {MAX_GRADE}</p>
+              <div className="mt-3 flex flex-col items-start gap-2">
+                {pass && <GradeStatusLine tone={pass.tone}>{pass.long}</GradeStatusLine>}
+                <GradeStatusLine tone={status.tone}>{status.long}</GradeStatusLine>
+              </div>
             </section>
 
             {hasPending && (
@@ -78,7 +84,10 @@ export default function GradesScreen({ subject, onBack }: Props) {
                   <span>Nota final proyectada</span>
                   <span className="text-[26px] font-semibold leading-none text-ink">{formatGrade(projected)}</span>
                 </p>
-                <div className="mt-2">
+                <div className="mt-2 flex flex-col items-start gap-2">
+                  <GradeStatusLine tone={passes ? "ok" : "risk"}>
+                    {passes ? `Apruebas (mínimo ${formatGrade(summary.passingGrade)}).` : `No apruebas: te faltarían ${formatGrade(summary.passingGrade - projected)} puntos para el mínimo de ${formatGrade(summary.passingGrade)}.`}
+                  </GradeStatusLine>
                   <GradeStatusLine tone={reaches ? "ok" : "risk"}>
                     {reaches ? `Llegas a la meta de ${formatGrade(summary.targetGrade)}.` : `Te faltarían ${formatGrade(summary.targetGrade - projected)} puntos para la meta de ${formatGrade(summary.targetGrade)}.`}
                   </GradeStatusLine>

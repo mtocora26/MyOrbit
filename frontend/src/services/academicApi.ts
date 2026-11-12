@@ -15,6 +15,12 @@ export interface GradeSummary {
   /** Promedio necesario en lo pendiente (0 = ya alcanzada); null si no queda nada por calificar. */
   requiredGrade: number | null;
   achievable: boolean;
+  /** Nota mínima para aprobar (distinta de la meta). */
+  passingGrade: number;
+  /** Igual que `requiredGrade`, pero para aprobar. */
+  requiredToPass: number | null;
+  /** Igual que `achievable`, pero para aprobar: false si ya no alcanza para aprobar. */
+  canPass: boolean;
 }
 
 export interface SubjectStanding {
@@ -104,6 +110,26 @@ export function gradeStatus(summary: GradeSummary): GradeStatus {
     short: `Necesitas ${formatGrade(requiredGrade)}`,
     long: `Necesitas ${formatGrade(requiredGrade)} de promedio en el ${left} restante para llegar a la meta de ${target}.`,
   };
+}
+
+/** Estado de la aprobación: se mide contra la nota mínima para aprobar, no contra la meta. */
+export function passStatus(summary: GradeSummary): GradeStatus {
+  const pass = formatGrade(summary.passingGrade);
+  const left = `${formatGrade(summary.remainingPercentage)}%`;
+  const { requiredToPass } = summary;
+
+  if (requiredToPass === null) {
+    return summary.canPass
+      ? { tone: "ok", short: "Aprobada", long: `Materia completa: aprobaste (mínimo ${pass}).` }
+      : { tone: "risk", short: "Reprobada", long: `Materia completa: no se llegó a la nota para aprobar (${pass}).` };
+  }
+  if (requiredToPass === 0) {
+    return { tone: "ok", short: "Aprobada", long: `Ya aprobaste (mínimo ${pass}); lo que falta (${left}) no lo cambia.` };
+  }
+  if (!summary.canPass) {
+    return { tone: "risk", short: "No alcanza para aprobar", long: `Con el ${left} que queda no llegas a aprobar (${pass}): necesitarías ${formatGrade(requiredToPass)}, y el máximo es ${MAX_GRADE}.` };
+  }
+  return { tone: "need", short: `Para aprobar ${formatGrade(requiredToPass)}`, long: `Para aprobar (${pass}) necesitas ${formatGrade(requiredToPass)} de promedio en el ${left} restante.` };
 }
 
 /** Nota final si en lo pendiente se obtiene `expected` de promedio. */

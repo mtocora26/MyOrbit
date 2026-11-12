@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BottomSheet } from "./shared";
 import { createSemester, deleteSemester, updateSemester, type Semester } from "../services/semestersApi";
 import { currentSemester, semesterOptions } from "../services/subjectsApi";
+import { formatNumber, parseDecimal } from "../services/evaluationsApi";
 
 interface Props {
   open: boolean;
@@ -18,6 +19,7 @@ export default function SemesterFormSheet({ open, onClose, semester, existingNam
   const [name, setName] = useState(currentSemester());
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [target, setTarget] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,12 +31,15 @@ export default function SemesterFormSheet({ open, onClose, semester, existingNam
     setName(semester?.name ?? available[0] ?? currentSemester());
     setStartDate(semester?.startDate ?? "");
     setEndDate(semester?.endDate ?? "");
+    setTarget(semester?.targetAverage != null ? formatNumber(semester.targetAverage) : "");
     setError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, semester]);
 
   const orderInvalid = startDate !== "" && endDate !== "" && endDate < startDate;
-  const canSubmit = !orderInvalid && !saving && (semester !== null || available.includes(name));
+  const targetValue = parseDecimal(target);
+  const targetError = target !== "" && (targetValue === null || targetValue < 0 || targetValue > 5) ? "La meta va de 0 a 5" : null;
+  const canSubmit = !orderInvalid && !targetError && !saving && (semester !== null || available.includes(name));
 
   function close() {
     if (!saving) onClose();
@@ -46,7 +51,7 @@ export default function SemesterFormSheet({ open, onClose, semester, existingNam
     try {
       setSaving(true);
       setError(null);
-      const input = { name, startDate: startDate || null, endDate: endDate || null };
+      const input = { name, startDate: startDate || null, endDate: endDate || null, targetAverage: targetValue };
       const saved = semester ? await updateSemester(semester.id, input) : await createSemester(input);
       onSaved(saved);
       onClose();
@@ -95,6 +100,15 @@ export default function SemesterFormSheet({ open, onClose, semester, existingNam
           </label>
         </div>
         <p className="-mt-2 text-[13px] text-ink-3">Con las fechas completas, la app sabe cuál es tu semestre actual.</p>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[14px] font-semibold text-ink">Meta de promedio (opcional)</span>
+          <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${targetError ? "border-danger-line" : "border-line"}`}>
+            <input value={target} inputMode="decimal" onChange={(e) => setTarget(e.target.value.replace(/[^\d.,]/g, "").slice(0, 4))} aria-invalid={!!targetError} placeholder="Ej. 4,0" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
+            <span className="text-[14px] text-ink-3">/5</span>
+          </span>
+          <span className={`text-[13px] ${targetError ? "font-semibold text-danger" : "text-ink-3"}`}>{targetError ?? "Vacía: se usa la del Perfil. Cada materia puede tener la suya."}</span>
+        </label>
 
         {orderInvalid && <p role="alert" className="text-[14px] font-semibold text-danger">La fecha de fin no puede ser anterior a la de inicio</p>}
         {error && <p role="alert" className="text-[14px] font-semibold text-danger">{error}</p>}
