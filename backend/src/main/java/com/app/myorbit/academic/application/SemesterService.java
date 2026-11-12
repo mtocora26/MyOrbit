@@ -35,6 +35,11 @@ public class SemesterService {
         return userZoneService.today(userId);
     }
 
+    /** El semestre del usuario con ese nombre, si existe. */
+    public java.util.Optional<Semester> find(String userId, String name) {
+        return semesterRepository.findByUserIdAndName(userId, name);
+    }
+
     public Semester getOwned(String userId, String id) {
         return semesterRepository.findById(id)
                 .filter(semester -> semester.getUserId().equals(userId))
@@ -92,7 +97,7 @@ public class SemesterService {
 
     private void apply(Semester semester, SemesterRequest request) {
         try {
-            semester.update(request.name(), request.startDate(), request.endDate());
+            semester.update(request.name(), request.startDate(), request.endDate(), request.targetAverage());
         } catch (IllegalArgumentException invalid) {
             throw new BusinessRuleException(invalid.getMessage());
         }

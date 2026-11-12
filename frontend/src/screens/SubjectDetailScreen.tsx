@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
-import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, type GradeSummary } from "../services/academicApi";
+import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
@@ -58,6 +58,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   }, [subject.id, evaluationsKey]);
 
   const status = summary ? gradeStatus(summary) : null;
+  const pass = summary ? passStatus(summary) : null;
   // Primero las que tienen fecha (la más próxima arriba) y al final las que aún no la tienen.
   const sortedEvaluations = [...evaluations].sort((a, b) => (a.due ?? "9999").localeCompare(b.due ?? "9999"));
   const assigned = evaluations.reduce((sum, evaluation) => sum + evaluation.percentage, 0);
@@ -131,10 +132,13 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
               </ProgressRing>
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-semibold text-ink">{summary.currentGrade === null ? "Sin notas aún" : "Nota actual"}</p>
-                <p className="num text-[14px] text-ink-2">Meta {formatGrade(summary.targetGrade)} · {formatNumber(summary.gradedPercentage)}% calificado</p>
+                <p className="num text-[14px] text-ink-2">Meta {formatGrade(summary.targetGrade)} · Aprueba con {formatGrade(summary.passingGrade)} · {formatNumber(summary.gradedPercentage)}% calificado</p>
               </div>
             </div>
-            <div className="mt-3"><GradeStatusLine tone={status.tone}>{status.long}</GradeStatusLine></div>
+            <div className="mt-3 flex flex-col items-start gap-2">
+              {pass && <GradeStatusLine tone={pass.tone}>{pass.long}</GradeStatusLine>}
+              <GradeStatusLine tone={status.tone}>{status.long}</GradeStatusLine>
+            </div>
             <button onClick={onGrades} className="mt-3 min-h-[44px] w-full rounded-md bg-wash text-[15px] font-semibold text-ink">Ver notas y proyección</button>
           </section>
         )}

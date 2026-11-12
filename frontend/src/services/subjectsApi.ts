@@ -9,6 +9,10 @@ export interface Subject {
   /** Formato AAAA-1 o AAAA-2. */
   semester: string;
   color: string;
+  /** Meta propia de la materia; null = la del semestre, el Perfil o 3,0. */
+  targetGrade: number | null;
+  /** Nota mínima para aprobar; null = 3,0. */
+  passingGrade: number | null;
 }
 
 export interface SubjectInput {
@@ -16,6 +20,9 @@ export interface SubjectInput {
   credits: number;
   semester: string;
   color?: string;
+  /** null quita la meta propia (el PUT reemplaza). */
+  targetGrade?: number | null;
+  passingGrade?: number | null;
   /** Solo al crear: genera «Corte 1/2/3» con 30/30/40 %. */
   defaultCuts?: boolean;
 }

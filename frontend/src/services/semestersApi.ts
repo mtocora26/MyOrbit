@@ -13,12 +13,15 @@ export interface Semester {
   current: boolean;
   /** Falta el inicio o el fin. */
   missingDates: boolean;
+  /** Meta de promedio del semestre; null = sin meta propia. */
+  targetAverage: number | null;
 }
 
 export interface SemesterInput {
   name: string;
   startDate: string | null;
   endDate: string | null;
+  targetAverage?: number | null;
 }
 
 const JSON_HEADERS = () => ({ "Content-Type": "application/json", ...authHeaders() });

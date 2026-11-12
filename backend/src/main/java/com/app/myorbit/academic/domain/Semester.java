@@ -17,14 +17,23 @@ public class Semester {
     /** Fechas opcionales: pueden faltar hasta que el usuario las complete. */
     private LocalDate startDate;
     private LocalDate endDate;
+    /** Meta de promedio del semestre (opcional). */
+    private Double targetAverage;
 
     /** Aplica los datos editables protegiendo las invariantes: nombre válido y fin no anterior al inicio. */
     public void update(String name, LocalDate startDate, LocalDate endDate) {
+        update(name, startDate, endDate, null);
+    }
+
+    /** Igual que arriba, con la meta de promedio del semestre (null = sin meta propia). */
+    public void update(String name, LocalDate startDate, LocalDate endDate, Double targetAverage) {
+        if (targetAverage != null && (targetAverage < 0 || targetAverage > 5)) throw new IllegalArgumentException("La meta del semestre debe estar entre 0 y 5");
         if (name == null || !name.trim().matches(NAME_PATTERN)) throw new IllegalArgumentException("El semestre debe tener el formato AAAA-1 o AAAA-2");
         if (startDate != null && endDate != null && endDate.isBefore(startDate)) throw new IllegalArgumentException("La fecha de fin no puede ser anterior a la de inicio");
         this.name = name.trim();
         this.startDate = startDate;
         this.endDate = endDate;
+        this.targetAverage = targetAverage;
     }
 
     public boolean hasDates() { return startDate != null && endDate != null; }
@@ -41,4 +50,5 @@ public class Semester {
     public String getName() { return name; }
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getEndDate() { return endDate; }
+    public Double getTargetAverage() { return targetAverage; }
 }
