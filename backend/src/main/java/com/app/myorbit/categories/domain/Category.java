@@ -10,6 +10,8 @@ public class Category {
     private String userId;
     private String name;
     private String color;
+    /** Categoría padre (opcional). Solo hay un nivel de subcategorías: el padre siempre es una categoría raíz. */
+    private String parentId;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -19,4 +21,8 @@ public class Category {
     public void setName(String name) { this.name = name; }
     public String getColor() { return color; }
     public void setColor(String color) { this.color = color; }
+    public String getParentId() { return parentId; }
+    public void setParentId(String parentId) { this.parentId = parentId; }
+
+    public boolean isRoot() { return parentId == null; }
 }

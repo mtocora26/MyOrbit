@@ -3,7 +3,7 @@ import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressB
 import { IconCalendar } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
-import { createCategory, fetchCategories, type Category } from "../services/categoriesApi";
+import { categoryLabel, createCategory, fetchCategories, type Category } from "../services/categoriesApi";
 
 interface Props { onBack: () => void; taskId: string | null; }
 
@@ -92,7 +92,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
 
   const overdue = task ? !task.done && isOverdue(task.rawDue) : false;
   const category = task?.categoryId ? categories.find((item) => item.id === task.categoryId) : undefined;
-  const categoryName = category?.name ?? (task?.categoryId ? "Categoría" : "Sin categoría");
+  const categoryName = category ? categoryLabel(category, categories) : task?.categoryId ? "Categoría" : "Sin categoría";
 
   async function handleAddSubtask(title = newSubtaskTitle, parentSubtaskId?: string, due?: string) {
     if (!task || !title.trim() || saving) return;

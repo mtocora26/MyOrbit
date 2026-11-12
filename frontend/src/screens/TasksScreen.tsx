@@ -3,7 +3,7 @@ import { CategoryBadge, Checkbox, PriorityDot, ProgressBar, EmptyState, Station 
 import { IconCalendar, IconChecklist } from "../components/icons";
 import { deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
 import { isOverdue } from "../services/taskDue";
-import { fetchCategories, type Category } from "../services/categoriesApi";
+import { categoryLabel, fetchCategories, orderCategories, type Category } from "../services/categoriesApi";
 
 interface Props { onTaskTap: (taskId: string) => void; onFab: () => void; refreshTick: number; }
 
@@ -59,7 +59,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
 
   const nameByCategoryId = useMemo(() => {
     const map = new Map<string, string>();
-    categories.forEach((category) => map.set(category.id, category.name));
+    categories.forEach((category) => map.set(category.id, categoryLabel(category, categories)));
     return map;
   }, [categories]);
 
@@ -182,7 +182,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
           <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filtrar por categoría" className="flex-shrink-0 min-h-[40px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
             <option value="todas">Categoría: todas</option>
             <option value="none">Sin categoría</option>
-            {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            {orderCategories(categories).map((category) => <option key={category.id} value={category.id}>{nameByCategoryId.get(category.id) ?? category.name}</option>)}
           </select>
           {view === "tablero" && (
             <button
@@ -292,7 +292,7 @@ function TasksBoard({ tasks, categories, colorByCategoryId, nameByCategoryId, gr
         tasks: tasks.filter((task) => (column.id === "completadas") === task.done),
       }));
     }
-    const ids = categories.length ? categories.map((category) => category.id) : Array.from(new Set(tasks.map((task) => task.categoryId).filter((id): id is string => !!id)));
+    const ids = categories.length ? orderCategories(categories).map((category) => category.id) : Array.from(new Set(tasks.map((task) => task.categoryId).filter((id): id is string => !!id)));
     const uncategorized = tasks.some((task) => !task.categoryId) ? [{ id: "__none", label: "Sin categoría", color: "var(--color-ink-2)", tasks: tasks.filter((task) => !task.categoryId) }] : [];
     return [
       ...ids.map((id) => ({

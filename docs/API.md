@@ -303,12 +303,31 @@ La tarea referencia su categoría; ya no existe el campo libre `tag`.
 
 | Método | Ruta | Body | Respuesta |
 |---|---|---|---|
-| `PUT` | `/api/categories/{id}` | `{ name, color? }` | `200` categoría actualizada · `400` nombre vacío/largo (máx. 50), nombre repetido o color no hexadecimal · `404` no existe o es de otro usuario |
+| `PUT` | `/api/categories/{id}` | `{ name, color?, parentId? }` | `200` categoría actualizada · `400` nombre vacío/largo (máx. 50), nombre repetido, color no hexadecimal o jerarquía inválida · `404` no existe o es de otro usuario |
 | `DELETE` | `/api/categories/{id}` | | `204` · `404` no existe o es de otro usuario |
 
-- `name` es obligatorio y no puede repetirse (sin distinguir mayúsculas) entre las categorías del usuario; conservar el nombre propio sí está permitido.
+- `name` es obligatorio y no puede repetirse (sin distinguir mayúsculas) entre sus **hermanas** (las que tienen el mismo padre; ver «Subcategorías»); conservar el nombre propio sí está permitido.
 - `color` ausente conserva el color actual; si viene debe ser `#RRGGBB`.
 - **Tareas asociadas:** al eliminar una categoría sus tareas **no se borran ni se bloquea la operación**; quedan sin categoría (`categoryId: null`) y pasan a aparecer con `GET /api/tasks?uncategorized=true`. El módulo de categorías publica un `CategoryDeletedEvent` y el de tareas lo escucha, así no hay dependencia circular entre módulos.
+
+## Subcategorías (`parentId`)
+
+Una categoría puede tener **un nivel** de subcategorías («Universidad › Semillero»). `GET /api/categories` devuelve todas en una lista plana; cada una trae `parentId` (`null` si es raíz).
+
+| Método | Ruta | Body | Notas |
+|---|---|---|---|
+| `POST` | `/api/categories` | `{ name, color?, parentId? }` | Con `parentId` crea una subcategoría de esa categoría. Sin `color`, hereda el de su padre. |
+| `PUT` | `/api/categories/{id}` | `{ name, color?, parentId? }` | `parentId` **ausente/null no cambia el padre**, cadena vacía la convierte en raíz y un id la mueve bajo esa categoría (mismo criterio que `categoryId` en las tareas). |
+
+Reglas (`400` si se incumplen, `404` si el padre no existe o es de otro usuario):
+
+- El padre debe ser una **categoría raíz**: no hay subcategorías de subcategorías.
+- Una categoría no puede ser su propio padre, ni una categoría **con subcategorías** pasar a ser subcategoría (serían tres niveles).
+- El nombre es único **entre hermanas** (sin distinguir mayúsculas): se puede repetir bajo otro padre, y una subcategoría puede llamarse igual que una raíz. Las raíces siguen siendo únicas entre sí.
+
+**Al eliminar una categoría con subcategorías**, estas **no se borran ni se bloquea la operación**: pasan a ser categorías raíz. Si su nombre choca con otra raíz se renombran «Padre › Hija» (con « (2)», « (3)»… si aún choca; máximo 50 caracteres). Las tareas de la categoría eliminada quedan sin categoría, como antes; **las de sus subcategorías se conservan** en ellas.
+
+**Filtrar tareas** con `GET /api/tasks?categoryId=<id>` por una categoría raíz devuelve también las tareas de sus subcategorías; por una subcategoría, solo las suyas.
 
 ## Editar hábitos (`PUT /api/habits/{id}`)
 

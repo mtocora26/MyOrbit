@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader } from "../components/shared";
 import { IconPencil } from "../components/icons";
-import { createCategory, deleteCategory, fetchCategories, updateCategory, type Category } from "../services/categoriesApi";
+import { createCategory, deleteCategory, fetchCategories, orderCategories, updateCategory, type Category } from "../services/categoriesApi";
 import { fetchTasks } from "../services/tasksApi";
 
 interface Props { onBack: () => void; }
 
-type Sheet = { kind: "form"; category: Category | null } | { kind: "delete"; category: Category };
+type Sheet = { kind: "form"; category: Category | null; /** Padre preseleccionado al crear una subcategoría. */ parentId?: string } | { kind: "delete"; category: Category };
 
 const MAX_NAME = 50;
 
@@ -20,6 +20,7 @@ export default function CategoriesScreen({ onBack }: Props) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(CATEGORY_PALETTE[0]);
+  const [parentId, setParentId] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -43,12 +44,17 @@ export default function CategoriesScreen({ onBack }: Props) {
 
   useEffect(() => { load(); }, []);
 
-  const sorted = useMemo(() => [...categories].sort((a, b) => a.name.localeCompare(b.name, "es")), [categories]);
+  // Raíces con sus subcategorías debajo (un solo nivel).
+  const sorted = useMemo(() => orderCategories(categories), [categories]);
+  const roots = useMemo(() => categories.filter((category) => !category.parentId), [categories]);
+  const childrenOf = (id: string) => categories.filter((category) => category.parentId === id);
 
-  function openForm(category: Category | null) {
-    setSheet({ kind: "form", category });
+  function openForm(category: Category | null, presetParentId?: string) {
+    setSheet({ kind: "form", category, parentId: presetParentId });
     setName(category?.name ?? "");
-    setColor(category?.color ?? CATEGORY_PALETTE[0]);
+    const parent = categories.find((item) => item.id === (category?.parentId ?? presetParentId));
+    setColor(category?.color ?? parent?.color ?? CATEGORY_PALETTE[0]);
+    setParentId(category?.parentId ?? presetParentId ?? "");
     setFormError(null);
     setOpen(true);
   }
@@ -71,10 +77,11 @@ export default function CategoriesScreen({ onBack }: Props) {
       setFormError(null);
       const existing = sheet.category;
       if (existing) {
-        const updated = await updateCategory(existing.id, name.trim(), color);
+        // Siempre se envía el padre: "" (null) la deja como categoría raíz.
+        const updated = await updateCategory(existing.id, name.trim(), color, parentId || null);
         setCategories((current) => current.map((item) => item.id === updated.id ? updated : item));
       } else {
-        const created = await createCategory(name.trim(), color);
+        const created = await createCategory(name.trim(), color, parentId || null);
         setCategories((current) => [...current, created]);
       }
       setOpen(false);
@@ -92,7 +99,9 @@ export default function CategoriesScreen({ onBack }: Props) {
       setSaving(true);
       setFormError(null);
       await deleteCategory(target.id);
-      setCategories((current) => current.filter((item) => item.id !== target.id));
+      // Las subcategorías de la eliminada pasan a ser categorías raíz; el servidor puede renombrarlas si chocan: se recarga.
+      if (childrenOf(target.id).length > 0) await load();
+      else setCategories((current) => current.filter((item) => item.id !== target.id));
       setOpen(false);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "No fue posible eliminar la categoría");
@@ -129,13 +138,20 @@ export default function CategoriesScreen({ onBack }: Props) {
           <EmptyState title="Aún no tienes categorías" sub="Agrupa tus tareas por materia, proyecto o ámbito de tu vida." action="Crear categoría" onAction={() => openForm(null)} />
         ) : (
           <ul className="overflow-hidden rounded-md border border-line bg-card">
-            {sorted.map((category, index) => (
-              <li key={category.id} className={`flex items-center gap-3 pl-4 pr-1 ${index > 0 ? "border-t border-line" : ""}`}>
-                <span className="h-3 w-3 flex-shrink-0 rounded-[3px]" style={{ background: category.color }} aria-hidden="true" />
+            {sorted.map((category, index) => {
+              const isChild = !!category.parentId && categories.some((item) => item.id === category.parentId);
+              return (
+              <li key={category.id} className={`flex items-center gap-3 pr-1 ${isChild ? "pl-9" : "pl-4"} ${index > 0 ? "border-t border-line" : ""}`}>
+                <span className={`flex-shrink-0 rounded-[3px] ${isChild ? "h-2.5 w-2.5" : "h-3 w-3"}`} style={{ background: category.color }} aria-hidden="true" />
                 <div className="min-w-0 flex-1 py-3">
-                  <p className="truncate text-[16px] font-semibold text-ink">{category.name}</p>
-                  <p className="num text-[13px] text-ink-2">{countLabel(category)}</p>
+                  <p className={`truncate text-ink ${isChild ? "text-[15px] font-medium" : "text-[16px] font-semibold"}`}>{category.name}</p>
+                  <p className="num text-[13px] text-ink-2">{countLabel(category)}{!isChild && childrenOf(category.id).length > 0 ? ` · ${childrenOf(category.id).length} ${childrenOf(category.id).length === 1 ? "subcategoría" : "subcategorías"}` : ""}</p>
                 </div>
+                {!isChild && (
+                  <button onClick={() => openForm(null, category.id)} aria-label={`Agregar subcategoría a ${category.name}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                  </button>
+                )}
                 <button onClick={() => openForm(category)} aria-label={`Editar categoría ${category.name}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash">
                   <IconPencil size={18} />
                 </button>
@@ -143,7 +159,8 @@ export default function CategoriesScreen({ onBack }: Props) {
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 7h12M9 7V5h6v2M9 10v7M12 10v7M15 10v7M7 7l1 12h8l1-12" /></svg>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
@@ -156,6 +173,14 @@ export default function CategoriesScreen({ onBack }: Props) {
               <span className="flex items-center rounded-md border border-line bg-card px-3 py-3 transition-colors focus-within:border-coral">
                 <input autoFocus value={name} maxLength={MAX_NAME} onChange={(event) => setName(event.target.value)} placeholder="Ej. Universidad" className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
               </span>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[14px] font-semibold text-ink">Dentro de (opcional)</span>
+              <select value={parentId} onChange={(event) => setParentId(event.target.value)} disabled={!!sheet.category && childrenOf(sheet.category.id).length > 0} className="rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
+                <option value="">Ninguna (categoría principal)</option>
+                {roots.filter((root) => root.id !== sheet.category?.id).map((root) => <option key={root.id} value={root.id}>{root.name}</option>)}
+              </select>
+              <span className="text-[13px] text-ink-3">{sheet.category && childrenOf(sheet.category.id).length > 0 ? "Tiene subcategorías, así que no puede quedar dentro de otra." : "Solo un nivel: una subcategoría no puede tener otras dentro."}</span>
             </label>
             <div>
               <p className="mb-1 text-[14px] font-semibold text-ink">Color de la línea</p>
@@ -182,6 +207,7 @@ export default function CategoriesScreen({ onBack }: Props) {
               {(taskCounts.get(sheet.category.id) ?? 0) > 0
                 ? ` Sus ${taskCounts.get(sheet.category.id)} tareas no se borran: quedarán sin categoría.`
                 : " No tiene tareas asociadas."}
+              {childrenOf(sheet.category.id).length > 0 && ` Sus ${childrenOf(sheet.category.id).length === 1 ? "subcategoría pasa" : `${childrenOf(sheet.category.id).length} subcategorías pasan`} a ser categoría principal, con sus tareas.`}
             </p>
             {formError && <p role="alert" className="text-[14px] font-semibold text-danger">{formError}</p>}
             <div className="flex gap-2">
