@@ -66,6 +66,50 @@ export async function fetchAgendaEvaluations(): Promise<AgendaEvaluation[]> {
   return response.json();
 }
 
+/** Una clase concreta (la franja de una materia en una fecha). */
+export interface ClassOccurrence {
+  subjectId: string;
+  subjectName: string;
+  subjectColor: string;
+  /** AAAA-MM-DD. */
+  date: string;
+  /** HH:mm. */
+  start: string;
+  end: string;
+  room: string | null;
+  /** Fecha y hora ISO sin zona (2026-03-02T08:00:00). */
+  startsAt: string;
+  endsAt: string;
+}
+
+/** Clases entre dos fechas (AAAA-MM-DD, ambas incluidas). Solo dentro de las fechas del semestre de cada materia. */
+export async function fetchClasses(from: string, to: string): Promise<ClassOccurrence[]> {
+  const response = await fetch(`${API_BASE_URL}/api/academic/classes?from=${from}&to=${to}`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las clases"));
+  return response.json();
+}
+
+export interface ClassNow {
+  /** En la que está ahora (según la hora local de su cuenta); null si no está en clase. */
+  current: ClassOccurrence | null;
+  /** La siguiente que empieza; null si no hay en los próximos días. */
+  next: ClassOccurrence | null;
+}
+
+export async function fetchClassesNow(): Promise<ClassNow> {
+  const response = await fetch(`${API_BASE_URL}/api/academic/classes/now`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar tu clase"));
+  return response.json();
+}
+
+/** Texto para «estás en clase» y «próxima clase»: Estás en clase hasta las 10:00 / Próxima clase: hoy 10:00. */
+export function describeClassNow(now: ClassNow, today: string, tomorrow: string): string | null {
+  if (now.current) return `Estás en clase hasta las ${now.current.end}`;
+  if (!now.next) return null;
+  const when = now.next.date === today ? "hoy" : now.next.date === tomorrow ? "mañana" : new Date(`${now.next.date}T00:00`).toLocaleDateString("es-CO", { weekday: "long" });
+  return `Próxima clase: ${when} ${now.next.start}`;
+}
+
 export async function fetchAcademicSummary(semester?: string): Promise<AcademicSummary> {
   const query = semester ? `?semester=${encodeURIComponent(semester)}` : "";
   const response = await fetch(`${API_BASE_URL}/api/academic/summary${query}`, { headers: authHeaders() });

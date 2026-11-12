@@ -208,6 +208,28 @@ Calcula la nota actual y la nota que se necesita en lo que falta, contra la **me
 
 Errores: `400` si `target` está fuera de 0–5, `401` sin sesión, `404` si la materia no existe o es de otro usuario.
 
+## Clases (`/api/academic/classes`)
+
+Convierte el horario semanal de las materias (ver «Horario de la materia») en clases concretas por fecha.
+
+- Una franja se repite cada semana **solo mientras dura el semestre** de su materia (fechas de `/api/semesters`, inicio y fin incluidos). **Si el semestre no tiene fechas (o no existe), esa materia no genera clases**: sin ellas no se sabe cuándo empieza ni termina.
+- Cada materia sigue su propio semestre; las franjas de materias distintas pueden coincidir.
+
+| Método | Ruta | Parámetros | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/academic/classes` | `from`, `to` (`AAAA-MM-DD`, obligatorios, ambos incluidos) | `200` lista por fecha y hora de inicio · `400` si falta alguno, `from` > `to` o el rango supera 62 días |
+| `GET` | `/api/academic/classes/now` | | `200` `{ current, next }` |
+
+```json
+{ "subjectId": "6f1c…", "subjectName": "Redes", "subjectColor": "#2E90FA", "date": "2026-03-02",
+  "start": "08:00", "end": "10:00", "room": "Aula 301",
+  "startsAt": "2026-03-02T08:00:00", "endsAt": "2026-03-02T10:00:00" }
+```
+
+`/now` usa la **hora local del usuario** (su zona horaria, #130), no la del servidor:
+- `current`: la clase en la que está ahora (`startsAt` ≤ ahora < `endsAt`; el fin es exclusivo, así que a las 10:00 ya no está en la de 8:00–10:00); `null` si no está en clase.
+- `next`: la primera clase que empieza después de ahora, buscando hasta 14 días adelante; `null` si no hay (por ejemplo, terminó el semestre).
+
 ## Resumen académico (`GET /api/academic/summary`)
 
 Reúne las materias del usuario con su estado de notas, el promedio ponderado por créditos y las materias en riesgo.

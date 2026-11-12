@@ -7,6 +7,7 @@ import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 import { fetchCategories, type Category } from "../services/categoriesApi";
 import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, type Habit } from "../services/habitsApi";
 import { fromTaskDue, isOverdue } from "../services/taskDue";
+import { describeClassNow, fetchClassesNow, type ClassNow } from "../services/academicApi";
 
 interface Props {
   userName: string;
@@ -22,6 +23,8 @@ interface Props {
 }
 
 const MAX_STATIONS = 5;
+
+const dayKeyOf = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 
 function currentDateLabel(): string {
   const formatted = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
@@ -47,6 +50,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [classNow, setClassNow] = useState<ClassNow | null>(null);
   // Estaciones recién completadas: se quedan un instante, tachadas, antes de salir de la línea.
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
 
@@ -76,6 +80,21 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
     fetchHabits().then((data) => { if (!ignore) setHabits(data); }).catch(() => { if (!ignore) setHabits([]); });
     return () => { ignore = true; };
   }, [refreshTick]);
+
+  // «Estás en clase» / próxima clase, según la hora local de la cuenta. Es informativo y se refresca cada minuto.
+  useEffect(() => {
+    let ignore = false;
+    const load = () => fetchClassesNow().then((data) => { if (!ignore) setClassNow(data); }).catch(() => undefined);
+    load();
+    const timer = setInterval(load, 60_000);
+    return () => { ignore = true; clearInterval(timer); };
+  }, [refreshTick]);
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const classBanner = classNow ? describeClassNow(classNow, todayKey(), dayKeyOf(tomorrow)) : null;
+  const classTarget = classNow?.current ?? classNow?.next ?? null;
+  const classDetail = classTarget ? ` · ${classTarget.subjectName}${classTarget.room ? ` · ${classTarget.room}` : ""}` : "";
 
   const stations = useMemo(
     () => tasks.filter((task) => !task.done || leaving.has(task.id)).sort((a, b) => dueTimestamp(a) - dueTimestamp(b)).slice(0, MAX_STATIONS),
@@ -153,6 +172,12 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               ? `${overdueCount} ${overdueCount === 1 ? "vencida" : "vencidas"} · ${pendingTasks - overdueCount} por llegar`
               : `${pendingTasks} por llegar · vas a tiempo`}
         </p>
+        {classBanner && (
+          <button type="button" onClick={onAgenda} className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-[4px] bg-blue-wash px-2 py-1.5 text-left text-[14px] font-semibold leading-snug text-blue-ink">
+            <span aria-hidden="true" className="num flex-shrink-0">{classNow?.current ? "●" : "→"}</span>
+            <span>{classBanner}{classDetail}</span>
+          </button>
+        )}
       </header>
 
       <div className="flex flex-col gap-5 px-4 pb-6 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start lg:gap-10 lg:px-8 lg:pb-12">
