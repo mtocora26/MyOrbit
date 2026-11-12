@@ -21,6 +21,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
   const [credits, setCredits] = useState("3");
   const [semester, setSemester] = useState(currentSemester());
   const [color, setColor] = useState(CATEGORY_PALETTE[0]);
+  const [defaultCuts, setDefaultCuts] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +32,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
     setCredits(String(subject?.credits ?? 3));
     setSemester(subject?.semester ?? defaultSemester ?? currentSemester());
     setColor(subject?.color ?? CATEGORY_PALETTE[0]);
+    setDefaultCuts(true);
     setError(null);
   }, [open, subject, defaultSemester]);
 
@@ -48,7 +50,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
     try {
       setSaving(true);
       setError(null);
-      const input = { name: name.trim(), credits: creditsNumber, semester, color };
+      const input = { name: name.trim(), credits: creditsNumber, semester, color, ...(subject ? {} : { defaultCuts }) };
       const saved = subject ? await updateSubject(subject.id, input) : await createSubject(input);
       onSaved(saved);
       onClose();
@@ -95,6 +97,13 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
             ))}
           </div>
         </div>
+
+        {!subject && (
+          <label className="flex min-h-[44px] items-center gap-3">
+            <input type="checkbox" checked={defaultCuts} onChange={(e) => setDefaultCuts(e.target.checked)} className="h-5 w-5 flex-shrink-0" style={{ accentColor: "var(--color-coral)" }} />
+            <span className="text-[15px] text-ink">Crear 3 cortes (30 / 30 / 40 %)</span>
+          </label>
+        )}
 
         {error && <p role="alert" className="text-[14px] font-semibold text-danger">{error}</p>}
         <div className="flex gap-2">

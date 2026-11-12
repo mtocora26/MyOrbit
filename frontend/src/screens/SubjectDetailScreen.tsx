@@ -5,7 +5,7 @@ import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, type GradeSumma
 import { IconPencil } from "../components/icons";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
-import { fetchEvaluations, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
+import { createEvaluation, DEFAULT_CUTS, fetchEvaluations, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
 import { formatTaskDue } from "../services/taskDue";
 import { deleteSubject, type Subject } from "../services/subjectsApi";
 
@@ -31,6 +31,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [editingEval, setEditingEval] = useState<Evaluation | null>(null);
   const [evalSheetOpen, setEvalSheetOpen] = useState(false);
+  const [creatingCuts, setCreatingCuts] = useState(false);
 
   async function loadEvaluations() {
     try {
@@ -47,7 +48,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   useEffect(() => { loadEvaluations(); }, [subject.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // La nota actual y la necesaria dependen de cada evaluación: se recalculan cuando cambian.
-  const evaluationsKey = evaluations.map((evaluation) => `${evaluation.id}:${evaluation.percentage}:${evaluation.grade ?? ""}`).join("|");
+  const evaluationsKey = evaluations.map((evaluation) => `${evaluation.id}:${evaluation.percentage}:${evaluation.grade ?? ""}:${evaluation.components.map((part) => `${part.percentage}/${part.grade ?? ""}`).join(",")}`).join("|");
   useEffect(() => {
     let cancelled = false;
     fetchGradeSummary(subject.id)
@@ -65,6 +66,23 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   function openEvalSheet(evaluation: Evaluation | null) {
     setEditingEval(evaluation);
     setEvalSheetOpen(true);
+  }
+
+  /** Para una materia sin cortes: crea «Corte 1/2/3» con 30/30/40 %, como al crear una materia nueva. */
+  async function createDefaultCuts() {
+    if (creatingCuts) return;
+    try {
+      setCreatingCuts(true);
+      setEvalsError(null);
+      const created: Evaluation[] = [];
+      for (const cut of DEFAULT_CUTS) created.push(await createEvaluation(subject.id, { name: cut.name, percentage: cut.percentage, grade: null, due: null }));
+      setEvaluations((current) => [...current, ...created]);
+    } catch (err) {
+      setEvalsError(err instanceof Error ? err.message : "No fue posible crear los cortes");
+      loadEvaluations();
+    } finally {
+      setCreatingCuts(false);
+    }
   }
 
   async function remove() {
@@ -140,6 +158,9 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
           ) : evaluations.length === 0 && !evalsError ? (
             <div className="rounded-md border border-dashed border-line-strong">
               <EmptyState title="Aún no hay evaluaciones" sub="Agrega parciales, talleres y finales con su porcentaje para ver cómo va la materia." action="Agregar evaluación" onAction={() => openEvalSheet(null)} />
+              <div className="flex justify-center pb-4">
+                <button onClick={createDefaultCuts} disabled={creatingCuts} className="min-h-[44px] px-3 text-[14px] font-semibold text-coral-ink disabled:opacity-50">{creatingCuts ? "Creando cortes..." : "Usar 3 cortes (30 / 30 / 40 %)"}</button>
+              </div>
             </div>
           ) : evaluations.length > 0 && (
             <>
@@ -153,7 +174,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
               </div>
               <ul className="overflow-hidden rounded-md border border-line bg-card">
                 {sortedEvaluations.map((evaluation, index) => {
-                  const graded = evaluation.grade !== null;
+                  const graded = evaluation.complete;
                   return (
                     <li key={evaluation.id} className={index > 0 ? "border-t border-line" : ""}>
                       <button onClick={() => openEvalSheet(evaluation)} aria-label={`Editar evaluación ${evaluation.name}`} className="flex min-h-[64px] w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-wash">
@@ -161,11 +182,13 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
                         <span className="h-[18px] w-[18px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color, background: graded ? subject.color : "var(--color-card)" }} aria-hidden="true" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[16px] font-semibold text-ink">{evaluation.name}</span>
-                          <span className="num block text-[13px] text-ink-2">{formatNumber(evaluation.percentage)}% de la nota{evaluation.due ? ` · ${formatTaskDue(evaluation.due)}` : ""}</span>
+                          <span className="num block text-[13px] text-ink-2">{formatNumber(evaluation.percentage)}% de la nota{evaluation.components.length > 0 ? ` · ${evaluation.components.length} ${evaluation.components.length === 1 ? "componente" : "componentes"}` : ""}{evaluation.due ? ` · ${formatTaskDue(evaluation.due)}` : ""}</span>
                         </span>
                         {graded
                           ? <span className="num text-[26px] font-semibold leading-none text-ink">{formatNumber(evaluation.grade as number)}</span>
-                          : <span className="rounded-[3px] bg-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-ink-2">Pendiente</span>}
+                          : evaluation.provisionalGrade !== null
+                            ? <span className="num flex flex-col items-end gap-1"><span className="text-[22px] font-semibold leading-none text-ink-2">{formatGrade(evaluation.provisionalGrade)}</span><span className="rounded-[3px] bg-wash px-1.5 py-[3px] text-[12px] font-semibold leading-none text-ink-2">Provisional</span></span>
+                            : <span className="rounded-[3px] bg-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-ink-2">Pendiente</span>}
                       </button>
                     </li>
                   );

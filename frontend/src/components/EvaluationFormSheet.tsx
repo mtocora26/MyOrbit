@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { BottomSheet } from "./shared";
 import { fromTaskDue } from "../services/taskDue";
-import { createEvaluation, deleteEvaluation, formatNumber, parseDecimal, updateEvaluation, type Evaluation } from "../services/evaluationsApi";
+import { componentsAverage, createEvaluation, deleteEvaluation, formatNumber, MAX_PERCENTAGE, parseDecimal, updateEvaluation, type Evaluation } from "../services/evaluationsApi";
+import { formatGrade } from "../services/academicApi";
 
 interface Props {
   open: boolean;
@@ -15,6 +16,8 @@ interface Props {
   onDeleted: (id: string) => void;
 }
 
+interface PartDraft { name: string; percentage: string; grade: string; }
+
 const decimalInput = (value: string) => value.replace(/[^\d.,]/g, "").slice(0, 6);
 
 export default function EvaluationFormSheet({ open, onClose, subjectId, evaluation, availablePercentage, onSaved, onDeleted }: Props) {
@@ -23,6 +26,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
   const [grade, setGrade] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("08:00");
+  const [parts, setParts] = useState<PartDraft[]>([]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +39,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
     const due = evaluation?.due ? fromTaskDue(evaluation.due) : { date: "", time: "" };
     setDate(due.date);
     setTime(due.time || "08:00");
+    setParts((evaluation?.components ?? []).map((part) => ({ name: part.name, percentage: formatNumber(part.percentage), grade: part.grade !== null ? formatNumber(part.grade) : "" })));
     setConfirmingDelete(false);
     setError(null);
   }, [open, evaluation]);
@@ -45,7 +50,20 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
     ? percentageValue !== null && percentageValue > 0 ? `Solo quedan ${formatNumber(availablePercentage)}% por repartir` : "Debe ser mayor que 0"
     : null;
   const gradeError = grade !== "" && (gradeValue === null || gradeValue < 0 || gradeValue > 5) ? "La nota va de 0 a 5" : null;
-  const canSubmit = name.trim() !== "" && percentageValue !== null && !percentageError && !gradeError && !busy;
+  const parsedParts = parts.map((part) => ({ name: part.name.trim(), percentage: parseDecimal(part.percentage), grade: parseDecimal(part.grade), rawGrade: part.grade }));
+  const partsTotal = parsedParts.reduce((sum, part) => sum + (part.percentage ?? 0), 0);
+  const partsInvalid = parsedParts.some((part) => part.name === "" || part.percentage === null || part.percentage <= 0 || (part.rawGrade !== "" && (part.grade === null || part.grade < 0 || part.grade > 5)));
+  const partsOver = partsTotal > MAX_PERCENTAGE + 1e-9;
+  const preview = parts.length > 0 && !partsInvalid ? componentsAverage(parsedParts.map((part) => ({ percentage: part.percentage as number, grade: part.grade }))) : null;
+  const canSubmit = name.trim() !== "" && percentageValue !== null && !percentageError && !gradeError && !partsInvalid && !partsOver && !busy;
+
+  function setPart(index: number, patch: Partial<PartDraft>) {
+    setParts((current) => current.map((part, position) => position === index ? { ...part, ...patch } : part));
+  }
+  function addPart() {
+    const free = Math.max(0, MAX_PERCENTAGE - partsTotal);
+    setParts((current) => [...current, { name: "", percentage: current.length === 0 ? "100" : free > 0 ? formatNumber(free) : "", grade: "" }]);
+  }
 
   function close() {
     if (!busy) onClose();
@@ -57,7 +75,11 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
     try {
       setBusy(true);
       setError(null);
-      const input = { name: name.trim(), percentage: percentageValue, grade: gradeValue, due: date ? `${date}T${time || "08:00"}` : null };
+      const input = {
+        name: name.trim(), percentage: percentageValue, due: date ? `${date}T${time || "08:00"}` : null,
+        grade: parts.length > 0 ? null : gradeValue,
+        components: parsedParts.map((part) => ({ name: part.name, percentage: part.percentage as number, grade: part.grade })),
+      };
       const saved = evaluation ? await updateEvaluation(subjectId, evaluation.id, input) : await createEvaluation(subjectId, input);
       onSaved(saved);
       onClose();
@@ -112,6 +134,15 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
               </span>
               <span className={`text-[13px] ${percentageError ? "font-semibold text-danger" : "text-ink-3"}`}>{percentageError ?? `Disponible: ${formatNumber(availablePercentage)}%`}</span>
             </label>
+            {parts.length > 0 ? (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[14px] font-semibold text-ink">Nota del corte</span>
+                <span className="num flex min-h-[50px] items-center rounded-md border border-line bg-wash px-3 text-[16px] text-ink">
+                  {preview?.average != null ? `${formatGrade(preview.average)}${preview.complete ? "" : " (provisional)"}` : "—"}
+                </span>
+                <span className="text-[13px] text-ink-3">Sale de sus componentes</span>
+              </div>
+            ) : (
             <label className="flex flex-col gap-1.5">
               <span className="text-[14px] font-semibold text-ink">Nota (opcional)</span>
               <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${gradeError ? "border-danger-line" : "border-line"}`}>
@@ -120,7 +151,44 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
               </span>
               <span className={`text-[13px] ${gradeError ? "font-semibold text-danger" : "text-ink-3"}`}>{gradeError ?? "Déjala vacía si aún no la tienes"}</span>
             </label>
+            )}
           </div>
+
+          <section aria-label="Componentes del corte" className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[14px] font-semibold text-ink">Componentes (opcional)</p>
+              <button type="button" onClick={addPart} disabled={parts.length >= 20} className="-mr-2 min-h-[44px] px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50">+ Componente</button>
+            </div>
+            {parts.length === 0 ? (
+              <p className="text-[13px] text-ink-3">Divide el corte en partes (parcial, actividades…) con su peso dentro del corte.</p>
+            ) : (
+              <>
+                <ul className="flex flex-col gap-2">
+                  {parts.map((part, index) => (
+                    <li key={index} className="flex flex-col gap-2 rounded-md border border-line bg-card p-2">
+                      <div className="flex items-center gap-2">
+                        <input value={part.name} maxLength={100} onChange={(e) => setPart(index, { name: e.target.value })} aria-label={`Nombre del componente ${index + 1}`} placeholder="Ej. Parcial" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+                        <button type="button" onClick={() => setParts((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar componente ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <span className="flex items-center gap-1 rounded-md border border-line bg-card px-3 py-2.5 focus-within:border-coral">
+                          <input value={part.percentage} inputMode="decimal" onChange={(e) => setPart(index, { percentage: decimalInput(e.target.value) })} aria-label={`Porcentaje del componente ${index + 1}`} placeholder="50" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
+                          <span className="text-[14px] text-ink-3">% del corte</span>
+                        </span>
+                        <span className="flex items-center gap-1 rounded-md border border-line bg-card px-3 py-2.5 focus-within:border-coral">
+                          <input value={part.grade} inputMode="decimal" onChange={(e) => setPart(index, { grade: decimalInput(e.target.value) })} aria-label={`Nota del componente ${index + 1}`} placeholder="—" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
+                          <span className="text-[14px] text-ink-3">/5</span>
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <p className={`num text-[13px] ${partsOver || partsInvalid ? "font-semibold text-danger" : "text-ink-3"}`}>
+                  {partsOver ? `Los componentes suman ${formatNumber(partsTotal)}%: no pueden pasar de 100%` : partsInvalid ? "Cada componente necesita nombre, porcentaje mayor que 0 y una nota de 0 a 5 (opcional)" : partsTotal < MAX_PERCENTAGE - 1e-9 ? `Falta repartir ${formatNumber(MAX_PERCENTAGE - partsTotal)}% del corte; hasta completarlo la nota es provisional` : "Componentes completos"}
+                </p>
+              </>
+            )}
+          </section>
 
           <div>
             <p className="mb-1.5 text-[14px] font-semibold text-ink">Fecha (opcional)</p>

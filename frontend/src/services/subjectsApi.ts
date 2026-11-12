@@ -16,6 +16,8 @@ export interface SubjectInput {
   credits: number;
   semester: string;
   color?: string;
+  /** Solo al crear: genera «Corte 1/2/3» con 30/30/40 %. */
+  defaultCuts?: boolean;
 }
 
 const JSON_HEADERS = () => ({ "Content-Type": "application/json", ...authHeaders() });
