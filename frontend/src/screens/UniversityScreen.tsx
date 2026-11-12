@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/shared";
+import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import { fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
+import { fetchSemesters, type Semester } from "../services/semestersApi";
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
 
 interface Props { onSubjectTap: (subject: Subject) => void; }
@@ -12,6 +14,8 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [semester, setSemester] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [semesterRecords, setSemesterRecords] = useState<Semester[]>([]);
+  const [semesterSheet, setSemesterSheet] = useState<{ semester: Semester | null } | null>(null);
   const [summary, setSummary] = useState<AcademicSummary | null>(null);
 
   async function load() {
@@ -26,11 +30,18 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  // Los semestres son informativos: si fallan, la pantalla sigue con los que usan las materias.
+  async function loadSemesters() {
+    try { setSemesterRecords(await fetchSemesters()); } catch { /* se deriva de las materias */ }
+  }
 
-  const semesters = useMemo(() => [...new Set(subjects.map((subject) => subject.semester))].sort().reverse(), [subjects]);
-  // Sin elección (o si la elegida ya no existe) se muestra el semestre más reciente.
-  const activeSemester = semester && semesters.includes(semester) ? semester : semesters[0] ?? null;
+  useEffect(() => { load(); loadSemesters(); }, []);
+
+  const semesters = useMemo(() => [...new Set([...semesterRecords.map((record) => record.name), ...subjects.map((subject) => subject.semester)])].sort().reverse(), [semesterRecords, subjects]);
+  // Sin elección (o si la elegida ya no existe) se muestra el semestre en curso o, si no hay, el más reciente.
+  const currentName = semesterRecords.find((record) => record.current)?.name;
+  const activeSemester = semester && semesters.includes(semester) ? semester : currentName ?? semesters[0] ?? null;
+  const activeRecord = semesterRecords.find((record) => record.name === activeSemester) ?? null;
   const visible = useMemo(() => subjects.filter((subject) => subject.semester === activeSemester), [subjects, activeSemester]);
   const totalCredits = visible.reduce((sum, subject) => sum + subject.credits, 0);
 
@@ -52,7 +63,10 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="font-display text-[34px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Universidad</h1>
-            <p className="mt-1.5 text-[14px] text-ink-2">{activeSemester ? `Semestre ${activeSemester}` : "Tus materias del semestre"}</p>
+            <p className="mt-1.5 text-[14px] text-ink-2">{activeSemester ? `Semestre ${activeSemester}${activeRecord?.current ? " · en curso" : ""}` : "Tus materias del semestre"}</p>
+            {activeRecord?.missingDates && (
+              <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="mt-1 min-h-[44px] text-left text-[14px] font-semibold text-coral-ink">Falta la fecha de inicio o fin · Completar</button>
+            )}
           </div>
           <button onClick={() => setCreating(true)} aria-label="Crear materia" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-coral text-[24px] font-semibold text-night">+</button>
         </div>
@@ -73,11 +87,13 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
           </>
         )}
 
-        {semesters.length > 1 && (
+        {semesters.length > 0 && (
           <div role="radiogroup" aria-label="Semestre" className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
             {semesters.map((option) => (
               <button key={option} type="button" role="radio" aria-checked={option === activeSemester} onClick={() => setSemester(option)} className={`num min-h-[40px] flex-shrink-0 rounded-md border px-3 text-[14px] font-semibold ${option === activeSemester ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}>{option}</button>
             ))}
+            {activeRecord && <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="min-h-[40px] flex-shrink-0 rounded-md border border-line px-3 text-[14px] font-semibold text-ink-2">Editar</button>}
+            <button type="button" onClick={() => setSemesterSheet({ semester: null })} aria-label="Nuevo semestre" className="min-h-[40px] flex-shrink-0 rounded-md border border-dashed border-line px-3 text-[14px] font-semibold text-ink-2">+ Semestre</button>
           </div>
         )}
       </header>
@@ -127,7 +143,16 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         subject={null}
         knownSemesters={semesters}
         defaultSemester={activeSemester ?? undefined}
-        onSaved={(saved) => { setSubjects((current) => [...current, saved]); setSemester(saved.semester); }}
+        onSaved={(saved) => { setSubjects((current) => [...current, saved]); setSemester(saved.semester); loadSemesters(); }}
+      />
+
+      <SemesterFormSheet
+        open={semesterSheet !== null}
+        onClose={() => setSemesterSheet(null)}
+        semester={semesterSheet?.semester ?? null}
+        existingNames={semesterRecords.map((record) => record.name)}
+        onSaved={(saved) => { setSemester(saved.name); load(); loadSemesters(); }}
+        onDeleted={() => { setSemester(null); loadSemesters(); }}
       />
     </div>
   );

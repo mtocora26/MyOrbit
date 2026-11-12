@@ -5,6 +5,51 @@ Los errores responden `ProblemDetail` (RFC 9457) con el mensaje en `detail`.
 
 La lista de rutas de todos los módulos está en el [README](../README.md); la referencia completa llegará con OpenAPI (#31).
 
+## Semestres (`/api/semesters`)
+
+Cada semestre pertenece al usuario de la sesión; los de otro usuario responden 404. Las materias se enlazan al semestre
+**por nombre** (`Subject.semester`), así que la API de materias no cambia. Al crear o editar una materia, si el usuario aún
+no tiene ese semestre se crea solo (sin fechas). Al arrancar, una migración idempotente hace lo mismo con las materias existentes.
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/semesters` | | `200` lista ordenada por nombre (más reciente primero) |
+| `POST` | `/api/semesters` | `SemesterRequest` | `201` semestre creado · `400` |
+| `PUT` | `/api/semesters/{id}` | `SemesterRequest` | `200` semestre actualizado · `400` · `404` |
+| `DELETE` | `/api/semesters/{id}` | | `204` · `400` si tiene materias · `404` |
+
+### `SemesterRequest`
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `name` | string | Obligatorio, formato `AAAA-1` o `AAAA-2`. Único por usuario. Si cambia, las materias del semestre se mueven al nuevo nombre. |
+| `startDate` | fecha `AAAA-MM-DD` | Opcional. |
+| `endDate` | fecha `AAAA-MM-DD` | Opcional; no puede ser anterior a `startDate`. |
+
+```json
+{ "name": "2026-1", "startDate": "2026-02-01", "endDate": "2026-06-15" }
+```
+
+### Respuesta
+
+```json
+{ "id": "b3e0…", "name": "2026-1", "startDate": "2026-02-01", "endDate": "2026-06-15", "current": true, "missingDates": false }
+```
+
+`current` es `true` si hoy, en la zona horaria del usuario (#130), cae entre `startDate` y `endDate` (ambos incluidos).
+`missingDates` es `true` si falta el inicio o el fin; la app avisa para que el usuario los complete.
+
+### Errores
+
+| Caso | HTTP | `detail` |
+|---|---|---|
+| Nombre con formato inválido | 400 | `El semestre debe tener el formato AAAA-1 o AAAA-2` |
+| Nombre repetido | 400 | `Ya tienes el semestre 2026-1` |
+| Fin anterior al inicio | 400 | `La fecha de fin no puede ser anterior a la de inicio` |
+| Borrar un semestre con materias | 400 | `El semestre 2026-1 tiene materias; elimínalas o muévelas antes de borrarlo` |
+| Sin sesión | 401 | |
+| Semestre inexistente o de otro usuario | 404 | `Semestre no encontrado` |
+
 ## Materias (`/api/subjects`)
 
 Cada materia pertenece al usuario de la sesión; las de otro usuario responden 404.
