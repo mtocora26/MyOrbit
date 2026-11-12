@@ -7,7 +7,7 @@ import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
 import { createEvaluation, DEFAULT_CUTS, fetchEvaluations, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
 import { formatTaskDue } from "../services/taskDue";
-import { deleteSubject, type Subject } from "../services/subjectsApi";
+import { DAY_NAMES, deleteSubject, sortSlots, type Subject } from "../services/subjectsApi";
 
 interface Props {
   subject: Subject;
@@ -123,6 +123,21 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
             <div><dt className="text-[13px] text-ink-2">Semestre</dt><dd className="num mt-0.5 text-[26px] font-semibold leading-none text-ink">{subject.semester}</dd></div>
           </dl>
         </div>
+
+        {subject.schedule.length > 0 && (
+          <section aria-labelledby="schedule-title" className="flex flex-col gap-2">
+            <h2 id="schedule-title" className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Horario</h2>
+            <ul className="overflow-hidden rounded-md border border-line bg-card">
+              {sortSlots(subject.schedule).map((slot, index) => (
+                <li key={`${slot.dayOfWeek}-${slot.start}`} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
+                  <span className="w-[88px] flex-shrink-0 text-[15px] font-semibold text-ink">{DAY_NAMES[slot.dayOfWeek - 1]}</span>
+                  <span className="num flex-1 text-[15px] text-ink">{slot.start}–{slot.end}</span>
+                  {slot.room && <span className="min-w-0 truncate text-[14px] text-ink-2">{slot.room}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {summary && status && (
           <section aria-label="Notas de la materia" className="rounded-md border border-line bg-card p-4">

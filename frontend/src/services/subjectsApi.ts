@@ -2,6 +2,27 @@ import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
 
+/** Franja semanal de una materia: se repite cada semana mientras dura el semestre. */
+export interface ClassSlot {
+  /** 1 = lunes ... 7 = domingo. */
+  dayOfWeek: number;
+  /** HH:mm (24 h). */
+  start: string;
+  end: string;
+  room: string | null;
+}
+
+export const DAY_NAMES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+export function formatSlot(slot: ClassSlot): string {
+  return `${DAY_NAMES[slot.dayOfWeek - 1]} ${slot.start}–${slot.end}${slot.room ? ` · ${slot.room}` : ""}`;
+}
+
+/** Por día de la semana y luego por hora de inicio. */
+export function sortSlots<T extends { dayOfWeek: number; start: string }>(slots: T[]): T[] {
+  return [...slots].sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.start.localeCompare(b.start));
+}
+
 export interface Subject {
   id: string;
   name: string;
@@ -13,6 +34,8 @@ export interface Subject {
   targetGrade: number | null;
   /** Nota mínima para aprobar; null = 3,0. */
   passingGrade: number | null;
+  /** Horario semanal; vacío si no tiene. */
+  schedule: ClassSlot[];
 }
 
 export interface SubjectInput {
@@ -23,6 +46,8 @@ export interface SubjectInput {
   /** null quita la meta propia (el PUT reemplaza). */
   targetGrade?: number | null;
   passingGrade?: number | null;
+  /** El PUT reemplaza: omitirlo quita el horario. */
+  schedule?: ClassSlot[];
   /** Solo al crear: genera «Corte 1/2/3» con 30/30/40 %. */
   defaultCuts?: boolean;
 }

@@ -73,6 +73,7 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 | `color` | string | Opcional, hexadecimal `#RRGGBB`. Por defecto `#7A5AF8`. |
 | `targetGrade` | número | Opcional, entre 0 y 5. **Meta** de la materia. Si falta, aplica la del parámetro, el semestre o el Perfil (ver «Resumen de notas»). |
 | `passingGrade` | número | Opcional, entre 0 y 5. **Nota mínima para aprobar**, distinta de la meta. Si falta, 3.0. Si ambas vienen, la meta no puede ser menor (`400`). El `PUT` reemplaza: omitirlas las quita. |
+| `schedule` | lista | Opcional (máximo 14). Horario semanal: franjas `{ dayOfWeek, start, end, room }`. Ver «Horario de la materia». El `PUT` reemplaza: omitirla quita el horario. |
 | `defaultCuts` | booleano | Opcional (por defecto `false`). Solo al crear: genera los cortes «Corte 1», «Corte 2» y «Corte 3» con 30 / 30 / 40 %, sin nota; después se editan como cualquier evaluación. |
 
 ```json
@@ -82,16 +83,36 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 ### Respuesta
 
 ```json
-{ "id": "6f1c…", "name": "Análisis Numérico", "credits": 3, "semester": "2026-1", "color": "#7A5AF8", "targetGrade": 4.5, "passingGrade": 3.0 }
+{ "id": "6f1c…", "name": "Análisis Numérico", "credits": 3, "semester": "2026-1", "color": "#7A5AF8", "targetGrade": 4.5, "passingGrade": 3.0,
+  "schedule": [ { "dayOfWeek": 1, "start": "08:00", "end": "10:00", "room": "Aula 301" } ] }
 ```
 
 `targetGrade` y `passingGrade` son los guardados en la materia; `null` = se usan los por defecto.
+
+### Horario de la materia
+
+Cada franja se repite **cada semana mientras dura el semestre** de la materia (fechas de `/api/semesters`); fuera de esas fechas no hay clase. Con el semestre sin fechas la franja se guarda igual, pero no se puede saber cuándo empieza ni termina.
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `dayOfWeek` | entero | Obligatorio, `1` (lunes) a `7` (domingo). |
+| `start` / `end` | texto `HH:mm` | Obligatorios, formato de 24 h. `end` debe ser posterior a `start`. |
+| `room` | string | Opcional, máximo 50 caracteres. |
+
+- Las franjas de una misma materia no pueden **solaparse** (mismo día y horas que se cruzan); que una termine justo cuando empieza otra sí es válido. Franjas de materias distintas sí pueden coincidir.
+- Las horas son «de pared» sin zona: `08:00` es las 8 de la mañana para el usuario, sea cual sea la zona del servidor.
+
+```json
+{ "dayOfWeek": 1, "start": "08:00", "end": "10:00", "room": "Aula 301" }
+```
 
 ### Errores
 
 | Caso | HTTP | `detail` |
 |---|---|---|
 | Campo inválido | 400 | Mensaje de validación del campo |
+| Franjas que se solapan | 400 | `Las franjas se solapan: lunes 08:00-10:00 y lunes 09:00-11:00` |
+| Hora de fin no posterior al inicio | 400 | `La hora de fin debe ser posterior a la de inicio` |
 | Nombre repetido en el semestre | 400 | `Ya tienes una materia con ese nombre en el semestre 2026-1` |
 | Sin sesión | 401 | |
 | Materia inexistente o de otro usuario | 404 | `Materia no encontrada` |
