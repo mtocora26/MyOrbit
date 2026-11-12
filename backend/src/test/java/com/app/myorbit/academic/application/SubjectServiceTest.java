@@ -24,7 +24,8 @@ import static org.mockito.Mockito.when;
 class SubjectServiceTest {
     private final SubjectRepository repository = mock(SubjectRepository.class);
     private final EvaluationRepository evaluations = mock(EvaluationRepository.class);
-    private final SubjectService service = new SubjectService(repository, evaluations);
+    private final SemesterService semesters = mock(SemesterService.class);
+    private final SubjectService service = new SubjectService(repository, evaluations, semesters);
 
     private Subject subjectOf(String id, String userId, String name, String semester) {
         Subject subject = new Subject();

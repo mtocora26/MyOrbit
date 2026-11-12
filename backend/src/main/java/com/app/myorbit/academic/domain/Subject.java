@@ -26,6 +26,11 @@ public class Subject {
         this.color = color;
     }
 
+    /** Cambia solo el semestre (cuando se renombra el semestre al que pertenece). */
+    public void moveToSemester(String semester) {
+        this.semester = semester;
+    }
+
     public boolean hasName(String other) {
         return name != null && other != null && name.equalsIgnoreCase(other.trim());
     }

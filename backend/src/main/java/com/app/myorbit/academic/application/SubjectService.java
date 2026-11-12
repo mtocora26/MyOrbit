@@ -16,10 +16,12 @@ public class SubjectService {
     static final String DEFAULT_COLOR = "#7A5AF8";
     private final SubjectRepository subjectRepository;
     private final EvaluationRepository evaluationRepository;
+    private final SemesterService semesterService;
 
-    public SubjectService(SubjectRepository subjectRepository, EvaluationRepository evaluationRepository) {
+    public SubjectService(SubjectRepository subjectRepository, EvaluationRepository evaluationRepository, SemesterService semesterService) {
         this.subjectRepository = subjectRepository;
         this.evaluationRepository = evaluationRepository;
+        this.semesterService = semesterService;
     }
 
     public List<Subject> listByUser(String userId) {
@@ -38,6 +40,7 @@ public class SubjectService {
         subject.setId(UUID.randomUUID().toString());
         subject.setUserId(userId);
         apply(subject, request);
+        semesterService.ensureExists(userId, subject.getSemester());
         return subjectRepository.save(subject);
     }
 
@@ -45,6 +48,7 @@ public class SubjectService {
         Subject subject = getOwned(userId, id);
         ensureUniqueName(userId, request, id);
         apply(subject, request);
+        semesterService.ensureExists(userId, subject.getSemester());
         return subjectRepository.save(subject);
     }
 
