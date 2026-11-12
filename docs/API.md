@@ -230,6 +230,63 @@ Convierte el horario semanal de las materias (ver «Horario de la materia») en 
 - `current`: la clase en la que está ahora (`startsAt` ≤ ahora < `endsAt`; el fin es exclusivo, así que a las 10:00 ya no está en la de 8:00–10:00); `null` si no está en clase.
 - `next`: la primera clase que empieza después de ahora, buscando hasta 14 días adelante; `null` si no hay (por ejemplo, terminó el semestre).
 
+## Eventos (`/api/events`)
+
+Un evento es una actividad de **uno o varios días** («semana de parciales», «feria de empleo»): título, rango de fechas y hora opcional. Es distinto de una **clase** (se repite cada semana) y de una **tarea** (tiene una fecha límite). Cada evento pertenece al usuario de la sesión; los de otro usuario responden `404`.
+
+| Método | Ruta | Cuerpo / parámetros | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/events` | `from`, `to` (`AAAA-MM-DD`, opcionales, incluidos) | `200` lista · `400` si `from` > `to` o una fecha no es válida |
+| `GET` | `/api/events/{id}` | | `200` evento · `404` |
+| `POST` | `/api/events` | `CalendarEventRequest` | `201` evento creado · `400` · `404` materia o categoría |
+| `PUT` | `/api/events/{id}` | `CalendarEventRequest` | `200` evento actualizado · `400` · `404` |
+| `DELETE` | `/api/events/{id}` | | `204` · `404` |
+
+`GET` con `from`/`to` devuelve los eventos que **ocupan al menos un día** dentro del rango: un evento de varios días aparece en cualquier semana que toque, no solo en la de su inicio. Van ordenados por fecha de inicio y hora; los que no tienen hora van primero («todo el día»).
+
+### `CalendarEventRequest`
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `title` | string | Obligatorio, máximo 200 caracteres. |
+| `startDate` | fecha `AAAA-MM-DD` | Obligatoria. |
+| `endDate` | fecha `AAAA-MM-DD` | Opcional: último día (incluido). Ausente = un solo día. No puede ser anterior a `startDate`; el evento dura como máximo 366 días. |
+| `startTime` | texto `HH:mm` | Opcional (24 h): la hora del **primer día**. |
+| `endTime` | texto `HH:mm` | Opcional y solo con `startTime`: la hora del **último día**. En un evento de un solo día debe ser posterior a `startTime`; en uno de varios días son de días distintos y no se compara. |
+| `subjectId` | id de materia | Opcional: debe ser una materia del usuario (`404` si no existe o es de otro). |
+| `categoryId` | id de categoría | Opcional: debe ser una categoría del usuario (`404` si no). |
+
+El `PUT` **reemplaza todo**: un campo opcional ausente lo quita (a diferencia de las tareas, donde ausente no cambia). Las horas son «de pared» sin zona, como las del horario.
+
+```json
+{ "title": "Semana de parciales", "startDate": "2026-03-02", "endDate": "2026-03-06", "startTime": null, "endTime": null,
+  "subjectId": null, "categoryId": "uni" }
+```
+
+### Respuesta
+
+```json
+{ "id": "b7e0…", "title": "Semana de parciales", "startDate": "2026-03-02", "endDate": "2026-03-06",
+  "startTime": null, "endTime": null, "subjectId": null, "categoryId": "uni", "multiDay": true }
+```
+
+`multiDay`: dura más de un día. Si no hay fin, `endDate` coincide con `startDate`.
+
+### Errores
+
+| Caso | HTTP | `detail` |
+|---|---|---|
+| Título o fecha de inicio ausentes, hora con formato inválido | 400 | Mensaje de validación del campo |
+| Fin anterior al inicio | 400 | `La fecha de fin no puede ser anterior a la de inicio` |
+| Más de 366 días | 400 | `Un evento no puede durar mas de 366 dias` |
+| Hora de fin sin inicio | 400 | `La hora de fin requiere una hora de inicio` |
+| Hora de fin no posterior (un solo día) | 400 | `La hora de fin debe ser posterior a la de inicio` |
+| Sin sesión | 401 | |
+| Evento inexistente o de otro usuario | 404 | `Evento no encontrado` |
+| Materia o categoría inexistente o de otro usuario | 404 | `Materia no encontrada` / `Categoría no encontrada` |
+
+**Al eliminar la materia o la categoría** asociada, los eventos **no se borran**: solo pierden esa asociación (`subjectId`/`categoryId` pasan a `null`). El módulo de eventos escucha `SubjectDeletedEvent` y `CategoryDeletedEvent`.
+
 ## Resumen académico (`GET /api/academic/summary`)
 
 Reúne las materias del usuario con su estado de notas, el promedio ponderado por créditos y las materias en riesgo.
