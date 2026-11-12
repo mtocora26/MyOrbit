@@ -37,7 +37,9 @@ Backend en **Render** (Docker), frontend en **Cloudflare Pages**, base de datos 
 | `NODE_VERSION` | `22` |
 
 `VITE_API_BASE_URL` se incrusta al compilar: si cambia, hay que redesplegar.
-`frontend/public/_redirects` da el fallback del SPA (recargar en una ruta interna no devuelve 404).
+`frontend/wrangler.jsonc` publica `dist/` con `not_found_handling: single-page-application`, que da el fallback del SPA
+(recargar en una ruta interna no devuelve 404). No uses `public/_redirects` con `/* /index.html 200`: en Workers Cloudflare
+lo rechaza por bucle infinito.
 
 ## 4. Orden
 1. Atlas → 2. Render (CORS puede ir vacío al inicio) → 3. Cloudflare con `VITE_API_BASE_URL` → 4. Volver a Render y poner la URL de Cloudflare en `MYORBIT_CORS_ALLOWED_ORIGINS`.
