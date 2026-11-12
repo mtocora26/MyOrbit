@@ -2,6 +2,7 @@ package com.app.myorbit.academic.application;
 
 import com.app.myorbit.academic.api.EvaluationRequest;
 import com.app.myorbit.academic.domain.Evaluation;
+import com.app.myorbit.academic.domain.EvaluationComponent;
 import com.app.myorbit.academic.infrastructure.EvaluationRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.time.DueDate;
@@ -73,7 +74,10 @@ public class EvaluationService {
 
     private void apply(Evaluation evaluation, EvaluationRequest request) {
         try {
-            evaluation.update(request.name(), request.percentage(), request.grade(), DueDate.parse(request.due()));
+            List<EvaluationComponent> components = request.components() == null ? List.of() : request.components().stream()
+                    .map(component -> EvaluationComponent.of(component.name(), component.percentage(), component.grade()))
+                    .toList();
+            evaluation.update(request.name(), request.percentage(), request.grade(), DueDate.parse(request.due()), components);
         } catch (IllegalArgumentException invalid) {
             throw new BusinessRuleException(invalid.getMessage());
         }

@@ -70,6 +70,7 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 | `credits` | entero | Obligatorio, entre 1 y 20. |
 | `semester` | string | Obligatorio, formato `AAAA-1` o `AAAA-2` (ej. `2026-1`). |
 | `color` | string | Opcional, hexadecimal `#RRGGBB`. Por defecto `#7A5AF8`. |
+| `defaultCuts` | booleano | Opcional (por defecto `false`). Solo al crear: genera los cortes «Corte 1», «Corte 2» y «Corte 3» con 30 / 30 / 40 %, sin nota; después se editan como cualquier evaluación. |
 
 ```json
 { "name": "Análisis Numérico", "credits": 3, "semester": "2026-1", "color": "#7A5AF8" }
@@ -92,7 +93,7 @@ Cada materia pertenece al usuario de la sesión; las de otro usuario responden 4
 
 ## Evaluaciones (`/api/subjects/{subjectId}/evaluations`)
 
-Cada evaluación pertenece a una materia del usuario de la sesión. Si la materia o la evaluación no son del usuario, responden 404. Al eliminar una materia se eliminan sus evaluaciones.
+Una evaluación es un **corte** de la materia. Un corte tiene nota directa o se divide en **componentes** (p. ej. «Parcial» 70 % y «Actividades» 30 %) con peso sobre el corte. Cada evaluación pertenece a una materia del usuario de la sesión. Si la materia o la evaluación no son del usuario, responden 404. Al eliminar una materia se eliminan sus evaluaciones.
 
 | Método | Ruta | Cuerpo | Respuesta |
 |---|---|---|---|
@@ -109,17 +110,40 @@ Cada evaluación pertenece a una materia del usuario de la sesión. Si la materi
 | `name` | string | Obligatorio, máximo 100 caracteres. |
 | `percentage` | número | Obligatorio, mayor que 0 y máximo 100. La suma de la materia no puede superar 100. |
 | `grade` | número | Opcional (`null` hasta conocer la nota), entre 0 y 5. |
+| `components` | lista | Opcional (máximo 20). Componentes del corte: `{ name, percentage, grade }`. Ver abajo. Ausente o vacía = el corte usa `grade` directa (el `PUT` reemplaza, así que omitirla quita los componentes). |
 | `due` | texto ISO | Opcional: fecha y hora de la evaluación (`2026-11-20T08:00`). Ausente, `null` o vacío = sin fecha (el `PUT` reemplaza, así que omitirla la quita). Otro formato responde `400` (`La fecha debe tener el formato AAAA-MM-DDTHH:mm`). |
 
 ```json
 { "name": "Parcial 1", "percentage": 30, "grade": 4.5, "due": "2026-11-20T08:00" }
 ```
 
+### Componentes de un corte
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `name` | string | Obligatorio, máximo 100 caracteres. |
+| `percentage` | número | Obligatorio, mayor que 0 y máximo 100. Es **sobre el corte**; los de un corte no pueden sumar más de 100. |
+| `grade` | número | Opcional, entre 0 y 5. |
+
+Un corte con componentes **no lleva `grade` directa** (la nota sale de ellos; enviar ambas responde `400`).
+
+```json
+{ "name": "Corte 1", "percentage": 30, "components": [
+  { "name": "Parcial", "percentage": 70, "grade": 4.0 },
+  { "name": "Actividades", "percentage": 30, "grade": 3.0 } ] }
+```
+
 ### Respuesta
 
 ```json
-{ "id": "a91d…", "subjectId": "6f1c…", "name": "Parcial 1", "percentage": 30.0, "grade": 4.5, "due": "2026-11-20T08:00:00" }
+{ "id": "a91d…", "subjectId": "6f1c…", "name": "Parcial 1", "percentage": 30.0, "grade": 4.5, "due": "2026-11-20T08:00:00",
+  "provisionalGrade": 4.5, "complete": true, "components": [] }
 ```
+
+- `grade`: nota **definitiva** del corte. Directa, o el promedio ponderado de sus componentes **solo cuando el corte está completo** (todos con nota y sumando 100 %); si no, `null`.
+- `provisionalGrade`: promedio de los componentes ya calificados (normalizado por su peso), aunque falten otros; igual a `grade` en un corte sin componentes.
+- `complete`: el corte cuenta como calificado.
+- El resumen de notas (nota actual y necesaria) trata un corte incompleto como **pendiente**: no usa su nota provisional.
 
 ### Errores
 
