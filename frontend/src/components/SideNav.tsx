@@ -2,6 +2,7 @@ import type { MainTab } from "../App";
 import { TABS } from "./BottomNav";
 import ThemeToggle from "./ThemeToggle";
 import { IconBell } from "./icons";
+import LogoMark from "./Logo";
 
 interface Props {
   active: MainTab;
@@ -18,9 +19,7 @@ export default function SideNav({ active, userName, onChange, onFab, onProfile, 
   return (
     <nav aria-label="Principal" className="hidden w-[232px] flex-shrink-0 flex-col border-r border-line bg-card px-3 py-5 lg:flex">
       <div className="flex items-center gap-2.5 px-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-coral text-night" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"><circle cx="7" cy="16" r="3.2" /><circle cx="25" cy="16" r="3.2" /><path d="M10.2 16h11.6" /></svg>
-        </span>
+        <LogoMark size={36} />
         <span className="font-display text-[26px] font-semibold leading-none tracking-tight text-ink">MyOrbit</span>
       </div>
 
