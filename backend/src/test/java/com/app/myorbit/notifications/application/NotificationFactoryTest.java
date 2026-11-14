@@ -66,6 +66,15 @@ class NotificationFactoryTest {
     }
 
     @Test
+    void quitHabitAsksWhetherTheUserAvoidedItToday() {
+        Notification n = new HabitNotificationFactory().create(
+                new NotificationRequest(NotificationType.HABIT, "u1", "ref1", "No fumar", LocalDateTime.of(2026, 11, 7, 0, 0), true), NOW);
+
+        assertEquals("Hábito para dejar", n.getTitle());
+        assertEquals("¿Hoy lo evitaste? Marca \"No fumar\" si lo lograste", n.getMessage());
+    }
+
+    @Test
     void habitRemindsThePendingHabitOfTheDay() {
         Notification n = build(new HabitNotificationFactory(), LocalDateTime.of(2026, 11, 7, 0, 0));
 

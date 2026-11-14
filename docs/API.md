@@ -402,18 +402,33 @@ Reglas (`400` si se incumplen, `404` si el padre no existe o es de otro usuario)
 
 ## Editar hábitos (`PUT /api/habits/{id}`)
 
-Body: `{ title, frequency?, daysOfWeek?, color?, icon?, monthlyGoal? }`
+Body: `{ title, frequency?, daysOfWeek?, color?, icon?, monthlyGoal?, type? }`
 
 | Respuesta | Cuándo |
 |---|---|
 | `200` | hábito actualizado (misma forma que `GET /api/habits`) |
-| `400` | `title` vacío o > 100 caracteres, `frequency` distinta de `diaria`/`personalizada`, `color` no `#RRGGBB`, `monthlyGoal` fuera de 0–100 |
+| `400` | `title` vacío o > 100 caracteres, `frequency` distinta de `diaria`/`personalizada`, `color` no `#RRGGBB`, `monthlyGoal` fuera de 0–100, `type` distinto de `BUILD`/`QUIT` |
 | `404` | el hábito no existe o es de otro usuario |
 
-- `title` es obligatorio. `frequency`, `color`, `icon` y `monthlyGoal` ausentes conservan el valor actual.
+- `title` es obligatorio. `frequency`, `color`, `icon`, `monthlyGoal` y `type` ausentes conservan el valor actual.
 - `monthlyGoal` (entero 1–100) fija la meta de cumplimiento mensual; **`0` la quita** (ver «Meta mensual» abajo).
 - `daysOfWeek` (1 = lunes … 7 = domingo) solo aplica a `personalizada`: se descartan valores fuera de rango y duplicados; si queda vacío o la frecuencia es `diaria`, se usa toda la semana. Si se omite en un hábito personalizado se conservan los días actuales.
 - El historial `completedDates` **no cambia** al editar.
+
+## Hábitos para dejar (`type`)
+
+Un hábito tiene un `type` (también en `POST /api/habits`, por defecto `BUILD`, y en la respuesta de `GET /api/habits`):
+
+| `type` | Significa | Marcar el día quiere decir |
+|---|---|---|
+| `BUILD` | Hábito por construir (leer, ejercicio) | «lo hice» |
+| `QUIT` | Hábito para dejar (no fumar, menos redes) | «hoy lo evité» |
+
+Es el mismo motor: rachas, estadísticas, `PATCH .../completion` y la meta mensual (`monthlyGoal`, p. ej. 90 %) funcionan igual en ambos tipos, y el tipo se puede cambiar al editar. Los hábitos guardados antes de este campo se tratan como `BUILD`.
+
+La diferencia está en el **recordatorio** (`HABIT`): en un `QUIT` el aviso es «Hábito para dejar — ¿Hoy lo evitaste? Marca "No fumar" si lo lograste», en lugar de «Aún no has cumplido el hábito…».
+
+Pendiente de decidir: un botón explícito de recaída que distinga un olvido (día sin marcar) de una recaída; por ahora un día sin marcar cuenta igual que cualquier día no cumplido.
 
 ## Meta mensual de un hábito (`GET /api/habits/{id}/monthly-goal?months=6`)
 

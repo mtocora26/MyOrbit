@@ -130,4 +130,12 @@ class NotificationEventListenerTest {
         verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.CLASS, "u1", "ev1|2026-11-09",
                 "el evento \"Feria\"", startsAt), NotificationEventListener.CLASS_DEDUP);
     }
+
+    @Test
+    void quitHabitReminderKeepsTheQuitFlag() {
+        listener.onHabitPending(new HabitPendingEvent("u1", "h1", "No fumar", LocalDate.of(2026, 11, 7), true));
+
+        verify(service).notifyOncePerDay(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "No fumar",
+                LocalDate.of(2026, 11, 7).atStartOfDay(), true));
+    }
 }

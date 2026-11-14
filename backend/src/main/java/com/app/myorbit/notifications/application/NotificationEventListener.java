@@ -87,7 +87,7 @@ public class NotificationEventListener {
     /** Recordatorio de hábito: una sola vez por día y hábito. */
     @EventListener
     public void onHabitPending(HabitPendingEvent event) {
-        send(new NotificationRequest(NotificationType.HABIT, event.userId(), event.habitId(), event.title(), event.date().atStartOfDay()), Window.TODAY);
+        send(new NotificationRequest(NotificationType.HABIT, event.userId(), event.habitId(), event.title(), event.date().atStartOfDay(), event.quit()), Window.TODAY);
     }
 
     private void send(NotificationRequest request) {

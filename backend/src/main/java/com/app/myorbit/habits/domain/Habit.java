@@ -24,6 +24,13 @@ public class Habit {
     /** Meta de cumplimiento mensual en % (1-100) de los días programados; null = sin meta. */
     private Integer monthlyGoal;
 
+    /** Por construir o para dejar; null en hábitos anteriores a #144 (se tratan como {@link HabitType#BUILD}). */
+    private HabitType type;
+
+    public HabitType getType() { return type == null ? HabitType.BUILD : type; }
+    public void setType(HabitType type) { this.type = type; }
+    public boolean isQuit() { return getType() == HabitType.QUIT; }
+
     public Integer getMonthlyGoal() { return monthlyGoal; }
     public void setMonthlyGoal(Integer monthlyGoal) { this.monthlyGoal = monthlyGoal; }
 

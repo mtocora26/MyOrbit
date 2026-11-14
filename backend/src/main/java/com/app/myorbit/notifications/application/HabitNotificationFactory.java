@@ -13,11 +13,14 @@ class HabitNotificationFactory extends AbstractNotificationFactory {
 
     @Override
     protected String title(NotificationRequest request) {
-        return "Hábito pendiente";
+        return request.quit() ? "Hábito para dejar" : "Hábito pendiente";
     }
 
     @Override
     protected String message(NotificationRequest request) {
+        if (request.quit()) {
+            return "¿Hoy lo evitaste? Marca \"" + request.subject() + "\" si lo lograste";
+        }
         return request.when() == null
                 ? "Aún no has cumplido el hábito \"" + request.subject() + "\""
                 : "Aún no has cumplido el hábito \"" + request.subject() + "\" de hoy (" + format(request.when()) + ")";
