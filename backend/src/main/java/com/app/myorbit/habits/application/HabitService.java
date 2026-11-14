@@ -116,9 +116,7 @@ public class HabitService {
 
     /** Racha actual, mejor racha y % de cumplimiento de los últimos {@code days} días (1-365). */
     public HabitStats stats(String userId, String id, int days) {
-        if (days < 1 || days > MAX_STATS_DAYS) {
-            throw new BusinessRuleException("El parametro days debe estar entre 1 y " + MAX_STATS_DAYS);
-        }
+        requireValidDays(days);
         return HabitStats.calculate(getOwned(userId, id), userZone.today(userId), days);
     }
 
@@ -126,18 +124,51 @@ public class HabitService {
 
     /** Cumplimiento del mes en curso frente a la meta del hábito, más los meses anteriores (hasta {@code months}). */
     public MonthlyGoalReport monthlyGoal(String userId, String id, int months) {
-        if (months < 0 || months > MAX_HISTORY_MONTHS) {
-            throw new BusinessRuleException("El parametro months debe estar entre 0 y " + MAX_HISTORY_MONTHS);
-        }
+        requireValidMonths(months);
         Habit habit = getOwned(userId, id);
         if (habit.getMonthlyGoal() == null) throw new BusinessRuleException("El habito no tiene una meta mensual");
-        LocalDate today = userZone.today(userId);
-        MonthlyProgress current = MonthlyProgress.calculate(habit, YearMonth.from(today), habit.getMonthlyGoal(), today);
-        return new MonthlyGoalReport(habit.getMonthlyGoal(), current, MonthlyProgress.history(habit, habit.getMonthlyGoal(), today, months));
+        return buildMonthlyReport(habit, userZone.today(userId), months);
     }
 
     /** Meta mensual, avance del mes en curso e historial de meses ya terminados (más reciente primero). */
     public record MonthlyGoalReport(int goal, MonthlyProgress current, List<MonthlyProgress> history) {
+    }
+
+    /**
+     * Estadísticas y meta mensual de todos los hábitos del usuario en una sola consulta, para que la pantalla de
+     * Hábitos no haga una petición por hábito. {@code monthlyGoal} es null si el hábito no tiene meta.
+     */
+    public List<HabitSummary> summaries(String userId, int days, int months) {
+        requireValidDays(days);
+        requireValidMonths(months);
+        LocalDate today = userZone.today(userId);
+        return listByUser(userId).stream()
+                .map(habit -> new HabitSummary(
+                        habit.getId(),
+                        HabitStats.calculate(habit, today, days),
+                        habit.getMonthlyGoal() == null ? null : buildMonthlyReport(habit, today, months)))
+                .toList();
+    }
+
+    /** Resumen de un hábito: sus estadísticas y, si tiene meta mensual, su avance. */
+    public record HabitSummary(String habitId, HabitStats stats, MonthlyGoalReport monthlyGoal) {
+    }
+
+    private MonthlyGoalReport buildMonthlyReport(Habit habit, LocalDate today, int months) {
+        MonthlyProgress current = MonthlyProgress.calculate(habit, YearMonth.from(today), habit.getMonthlyGoal(), today);
+        return new MonthlyGoalReport(habit.getMonthlyGoal(), current, MonthlyProgress.history(habit, habit.getMonthlyGoal(), today, months));
+    }
+
+    private static void requireValidDays(int days) {
+        if (days < 1 || days > MAX_STATS_DAYS) {
+            throw new BusinessRuleException("El parametro days debe estar entre 1 y " + MAX_STATS_DAYS);
+        }
+    }
+
+    private static void requireValidMonths(int months) {
+        if (months < 0 || months > MAX_HISTORY_MONTHS) {
+            throw new BusinessRuleException("El parametro months debe estar entre 0 y " + MAX_HISTORY_MONTHS);
+        }
     }
 
     public boolean delete(String userId, String id) {

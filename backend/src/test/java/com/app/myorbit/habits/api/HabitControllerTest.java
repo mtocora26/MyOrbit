@@ -126,6 +126,36 @@ class HabitControllerTest {
     }
 
     @Test
+    void summaryReturnsStatsAndTheGoalOfEveryHabitInOneRequest() throws Exception {
+        when(habitService.summaries("u1", 30, 6)).thenReturn(List.of(
+                new HabitService.HabitSummary("h1", new HabitStats(3, 10, 83.3, 30, 25, 30),
+                        new HabitService.MonthlyGoalReport(80, new MonthlyProgress("2026-10", 20, 12, 16, 4, 11, 60.0, false, true), List.of())),
+                new HabitService.HabitSummary("h2", new HabitStats(0, 1, 10.0, 30, 3, 30), null)));
+
+        mockMvc.perform(get("/api/habits/summary").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].habitId").value("h1"))
+                .andExpect(jsonPath("$[0].stats.currentStreak").value(3))
+                .andExpect(jsonPath("$[0].monthlyGoal.goal").value(80))
+                .andExpect(jsonPath("$[1].habitId").value("h2"))
+                .andExpect(jsonPath("$[1].monthlyGoal").doesNotExist());
+    }
+
+    @Test
+    void summaryAcceptsCustomWindowsAndRejectsInvalidOnes() throws Exception {
+        when(habitService.summaries("u1", 7, 3)).thenReturn(List.of());
+        when(habitService.summaries("u1", 500, 6)).thenThrow(new BusinessRuleException("El parametro days debe estar entre 1 y 365"));
+
+        mockMvc.perform(get("/api/habits/summary?days=7&months=3").header("Authorization", AUTH))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/habits/summary?days=500").header("Authorization", AUTH))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/habits/summary?days=abc").header("Authorization", AUTH))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void statsWithInvalidWindowIsBadRequest() throws Exception {
         when(habitService.stats("u1", "h1", 500)).thenThrow(new BusinessRuleException("El parametro days debe estar entre 1 y 365"));
 

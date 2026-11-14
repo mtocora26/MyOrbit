@@ -479,6 +479,18 @@ Las notificaciones las genera el sistema a partir de eventos (tarea con fecha �
 
 Notificación: `{ id, type: "DEADLINE"|"HABIT"|"OVERDUE"|"EXAM"|"AT_RISK"|"CLASS", title, message, referenceId, createdAt (ISO-8601 UTC), read }`. `referenceId` es el id de la tarea, hábito, evaluación o materia de origen (`"overdue"` en el resumen de vencidas).
 
+## Resumen de hábitos (`GET /api/habits/summary?days=30&months=6`)
+
+Estadísticas y meta mensual de **todos** los hábitos del usuario en una sola petición, para no hacer una por hábito. `days` (1–365, por defecto 30) y `months` (0–24, por defecto 6) siguen las mismas reglas que `/stats` y `/monthly-goal`; fuera de rango responde `400`. `monthlyGoal` es `null` si el hábito no tiene meta.
+
+```json
+[
+  { "habitId": "h1", "stats": { "currentStreak": 3, "bestStreak": 10, "completionRate": 83.3, "scheduledDays": 30, "completedDays": 25, "windowDays": 30 },
+    "monthlyGoal": { "goal": 80, "current": { "month": "2026-10", "...": "..." }, "history": [] } },
+  { "habitId": "h2", "stats": { "currentStreak": 0, "bestStreak": 1, "completionRate": 10.0, "scheduledDays": 30, "completedDays": 3, "windowDays": 30 }, "monthlyGoal": null }
+]
+```
+
 ## Rachas y estadísticas (`GET /api/habits/{id}/stats?days=30`)
 
 `days` es la ventana en días terminando hoy (1–365, por defecto 30); fuera de rango responde `400`. `404` si el hábito no existe o es de otro usuario.
