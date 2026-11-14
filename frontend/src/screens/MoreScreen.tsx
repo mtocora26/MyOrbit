@@ -37,7 +37,7 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
         <h1 className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Más</h1>
       </header>
 
-      <div className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-3 lg:mx-0 lg:max-w-[640px] lg:px-8">
+      <div className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-3 lg:mx-0 lg:max-w-[640px] lg:px-8 [&>*]:shrink-0">
         <button onClick={onProfile} className="flex min-h-[64px] items-center gap-3 rounded-md border border-line bg-card p-3 text-left active:bg-wash">
           <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-coral font-display text-[20px] font-semibold text-night" aria-hidden="true">{initials(userName)}</span>
           <span className="min-w-0 flex-1">

@@ -171,7 +171,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
     <div className="h-full min-h-0 flex flex-col bg-paper">
       <ScreenHeader title="Hábitos" subtitle="Tu constancia, un día a la vez" onBack={onBack} right={<button onClick={startCreate} aria-label="Crear hábito" className="flex h-11 w-11 items-center justify-center rounded-md bg-coral text-[24px] font-semibold text-night">+</button>} />
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-8 flex flex-col gap-4 lg:px-8 lg:pt-6 lg:max-w-[760px]">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-8 flex flex-col gap-4 lg:px-8 lg:pt-6 lg:max-w-[760px] [&>*]:shrink-0">
         <div className="rounded-md border border-line bg-card p-4">
           <p className="num text-[44px] font-semibold leading-none text-ink">{doneToday}<span className="text-[24px] text-ink-3">/{habits.length}</span> <span className="text-[16px] font-medium text-ink-2">hábitos hoy</span></p>
           <div className="mt-3"><ProgressBar value={completion} height={4} /></div>

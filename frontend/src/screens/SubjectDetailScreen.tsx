@@ -126,7 +126,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
         }
       />
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6">
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
         <div className="flex items-center gap-3 rounded-md border border-line bg-card p-4">
           <span className="h-10 w-3 flex-shrink-0 rounded-[3px]" style={{ background: subject.color }} aria-hidden="true" />
           <dl className="grid flex-1 grid-cols-2 gap-3">
