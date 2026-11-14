@@ -21,3 +21,4 @@
 
 # Skills de Claude Code instaladas con `npx skills` (se reproducen con skills-lock.json)
 /.claude/skills/
+/.claude/settings.local.json
