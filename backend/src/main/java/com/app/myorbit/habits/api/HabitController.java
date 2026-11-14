@@ -33,6 +33,14 @@ public class HabitController {
         return habitService.listByUser(user.getId()).stream().map(HabitResponse::from).toList();
     }
 
+    /** Estadísticas y meta mensual de todos los hábitos en una sola petición (evita una por hábito). */
+    @GetMapping("/summary")
+    public List<HabitSummaryResponse> summary(@CurrentUser User user,
+                                              @RequestParam(required = false, defaultValue = "30") int days,
+                                              @RequestParam(required = false, defaultValue = "6") int months) {
+        return habitService.summaries(user.getId(), days, months).stream().map(HabitSummaryResponse::from).toList();
+    }
+
     @GetMapping("/{id}/stats")
     public HabitStatsResponse stats(@PathVariable String id, @CurrentUser User user,
                                     @RequestParam(required = false, defaultValue = "30") int days) {

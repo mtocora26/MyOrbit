@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from "../services/notificationsApi";
-import { ScreenHeader, Toggle } from "../components/shared";
+import { ScreenHeader, Toggle, ListSkeleton } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
 import { IconCalendar, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
 import type { AuthSession } from "../services/authApi";
@@ -248,7 +248,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
             <div className="px-4 py-3 min-h-[60px] flex items-center">
               {prefsError
                 ? <div role="alert" className="flex w-full items-center justify-between gap-3"><p className="text-[14px] font-semibold text-danger">{prefsError}</p><button onClick={loadPrefs} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button></div>
-                : <p className="text-[14px] text-ink-2">Cargando preferencias...</p>}
+                : <ListSkeleton rows={3} label="Cargando preferencias" />}
             </div>
           )}
           {prefs && prefsError && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{prefsError}</p>}

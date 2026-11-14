@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "../components/ThemeToggle";
 import NotificationBell from "../components/NotificationBell";
-import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station } from "../components/shared";
+import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner, Skeleton } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
@@ -46,6 +46,7 @@ function dueTimestamp(task: UiTask): number {
 export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onViewTasks, onConfigureProfile, unreadCount, onNotifications, onAgenda, refreshTick }: Props) {
   const [tasks, setTasks] = useState<UiTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retryTick, setRetryTick] = useState(0);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -79,7 +80,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
     fetchUserProfile().then((data) => { if (!ignore) setProfile(data); }).catch(() => { if (!ignore) setProfile(null); });
     fetchHabits().then((data) => { if (!ignore) setHabits(data); }).catch(() => { if (!ignore) setHabits([]); });
     return () => { ignore = true; };
-  }, [refreshTick]);
+  }, [refreshTick, retryTick]);
 
   // «Estás en clase» / próxima clase, según la hora local de la cuenta. Es informativo y se refresca cada minuto.
   useEffect(() => {
@@ -104,6 +105,8 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
 
   const completedTasks = tasks.filter((task) => task.done).length;
   const pendingTasks = tasks.length - completedTasks;
+  // Hasta tener las tareas reales no se afirma nada del día (ni «0/0», ni «sin tareas», ni «vas a tiempo»).
+  const tasksKnown = !loading && !taskError;
   const taskProgress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
   const weekday = (new Date().getDay() + 6) % 7 + 1;
@@ -166,10 +169,14 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
         </div>
         <div className="mt-3 flex items-center gap-3">
           <div className="flex-1"><ProgressBar value={taskProgress} height={4} /></div>
-          <p className="num whitespace-nowrap text-[15px] font-medium text-ink-2">{completedTasks}/{tasks.length}</p>
+          {tasksKnown
+            ? <p className="num whitespace-nowrap text-[15px] font-medium text-ink-2">{completedTasks}/{tasks.length}</p>
+            : <Skeleton className="h-[22px] w-9" />}
         </div>
         <p className="mt-1.5 text-[14px] text-ink-2">
-          {tasks.length === 0
+          {!tasksKnown
+            ? (taskError ? "No se pudieron cargar tus tareas." : <Skeleton className="h-[20px] w-44" />)
+            : tasks.length === 0
             ? "Sin tareas todavía."
             : overdueCount > 0
               ? `${overdueCount} ${overdueCount === 1 ? "vencida" : "vencidas"} · ${pendingTasks - overdueCount} por llegar`
@@ -188,7 +195,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
         <section aria-label="Próximas entregas">
           <SectionTitle label="Próximas estaciones" action="Ver todas" onAction={onViewTasks} />
 
-          {taskError && <p role="alert" className="rounded-md border border-danger-line bg-danger-wash px-3 py-2 text-[14px] font-medium text-danger">{taskError}</p>}
+          {taskError && <ErrorBanner message={taskError} onRetry={() => { setLoading(true); setTaskError(null); setRetryTick((tick) => tick + 1); }} />}
 
           {loading && !taskError ? (
             <div className="flex flex-col gap-2" aria-busy="true">

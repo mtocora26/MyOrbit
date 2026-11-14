@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { EmptyState, ScreenHeader } from "../components/shared";
+import { EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
 import { IconCalendar, IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification, type NotificationType } from "../services/notificationsApi";
 
@@ -116,15 +116,10 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
           ))}
         </div>
 
-        {error && (
-          <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2">
-            <p className="text-[14px] font-semibold text-danger">{error}</p>
-            <button onClick={load} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button>
-          </div>
-        )}
+        {error && <ErrorBanner message={error} onRetry={load} />}
 
         {loading ? (
-          <p className="text-[14px] text-ink-2">Cargando notificaciones...</p>
+          <ListSkeleton rows={5} label="Cargando notificaciones" />
         ) : visible.length === 0 && !error ? (
           filter === "sin-leer" && items.length > 0
             ? <EmptyState title="Todo leído" sub="No tienes notificaciones pendientes de leer." action="Ver todas" onAction={() => setFilter("todas")} />

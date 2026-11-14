@@ -3,7 +3,7 @@ import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { fromTaskDue } from "../services/taskDue";
 import { describeClassNow, fetchAgendaEvaluations, fetchClasses, fetchClassesNow, formatGrade, type AgendaEvaluation, type ClassNow, type ClassOccurrence } from "../services/academicApi";
-import { CategoryBadge, EmptyState, PriorityDot, Station } from "../components/shared";
+import { CategoryBadge, EmptyState, PriorityDot, Station, ErrorBanner } from "../components/shared";
 import EventFormSheet from "../components/EventFormSheet";
 import { coversDay, dayOfEvent, daysBetween, fetchEvents, type CalendarEvent } from "../services/eventsApi";
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
@@ -36,6 +36,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [eventSheetOpen, setEventSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [retryTick, setRetryTick] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [selected, setSelected] = useState(() => dayKey(new Date()));
@@ -50,7 +51,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     // Las evaluaciones son informativas: si no cargan, la agenda sigue mostrando las tareas.
     fetchAgendaEvaluations().then((data) => { if (!ignore) setEvaluations(data); }).catch(() => undefined);
     return () => { ignore = true; };
-  }, [refreshTick]);
+  }, [refreshTick, retryTick]);
 
   // Las clases de la semana que se ve. Son informativas: si no cargan, la agenda sigue mostrando lo demás.
   useEffect(() => {
@@ -251,12 +252,12 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
             </p>
           )}
 
-          {error && <p role="alert" className="mb-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2 text-[14px] font-medium text-danger">{error}</p>}
+          {error && <ErrorBanner message={error} onRetry={() => { setLoading(true); setRetryTick((tick) => tick + 1); }} className="mb-3" />}
 
           {loading ? (
             <div className="flex flex-col gap-2" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-[60px] animate-pulse rounded-md bg-wash" />)}</div>
           ) : dayItems.length === 0 ? (
-            <EmptyState title="Día libre" sub="No hay clases, eventos, entregas ni evaluaciones para esta fecha." />
+            error ? null : <EmptyState title="Día libre" sub="No hay clases, eventos, entregas ni evaluaciones para esta fecha." />
           ) : (
             <ol>
               {dayItems.map((item, index) => {

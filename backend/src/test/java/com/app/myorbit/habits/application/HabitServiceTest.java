@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
@@ -301,6 +302,43 @@ class HabitServiceTest {
         habit.setMonthlyGoal(80);
         assertThrows(BusinessRuleException.class, () -> service.monthlyGoal("u1", "h1", 25));
         assertThrows(BusinessRuleException.class, () -> service.monthlyGoal("u1", "h1", -1));
+    }
+
+    @Test
+    void summariesCoverEveryHabitWithOneQueryAndOnlyIncludeTheGoalWhenThereIsOne() {
+        Habit withGoal = habitOf("u1");
+        withGoal.setId("h1");
+        withGoal.setFrequency(HabitFrequency.DAILY);
+        withGoal.setMonthlyGoal(80);
+        withGoal.setCreatedDate("2026-09-01");
+        Habit withoutGoal = habitOf("u1");
+        withoutGoal.setId("h2");
+        withoutGoal.setFrequency(HabitFrequency.DAILY);
+        when(repository.findByUserIdOrderByTitleAsc("u1")).thenReturn(List.of(withGoal, withoutGoal));
+
+        List<HabitService.HabitSummary> summaries = service.summaries("u1", 30, 6);
+
+        assertEquals(List.of("h1", "h2"), summaries.stream().map(HabitService.HabitSummary::habitId).toList());
+        assertEquals(30, summaries.get(0).stats().windowDays());
+        assertEquals(80, summaries.get(0).monthlyGoal().goal());
+        assertEquals("2026-10", summaries.get(0).monthlyGoal().current().month());
+        assertNull(summaries.get(1).monthlyGoal());
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).findById(any());
+    }
+
+    @Test
+    void summariesRejectOutOfRangeParameters() {
+        assertThrows(BusinessRuleException.class, () -> service.summaries("u1", 0, 6));
+        assertThrows(BusinessRuleException.class, () -> service.summaries("u1", 366, 6));
+        assertThrows(BusinessRuleException.class, () -> service.summaries("u1", 30, 25));
+        assertThrows(BusinessRuleException.class, () -> service.summaries("u1", 30, -1));
+    }
+
+    @Test
+    void summariesOfAUserWithoutHabitsAreEmpty() {
+        when(repository.findByUserIdOrderByTitleAsc("u9")).thenReturn(List.of());
+
+        assertEquals(List.of(), service.summaries("u9", 30, 6));
     }
 
     @Test

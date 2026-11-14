@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../components/shared";
+import { EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
 import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import { fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
@@ -99,15 +99,10 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
       </header>
 
       <div className="no-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4 pb-6 lg:px-8 [&>*]:shrink-0">
-        {error && (
-          <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2">
-            <p className="text-[14px] font-semibold text-danger">{error}</p>
-            <button onClick={load} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button>
-          </div>
-        )}
+        {error && <ErrorBanner message={error} onRetry={load} />}
 
         {loading ? (
-          <p className="text-[14px] text-ink-2">Cargando materias...</p>
+          <ListSkeleton rows={5} label="Cargando materias" />
         ) : visible.length === 0 && !error ? (
           <EmptyState title="Aún no tienes materias" sub="Agrega las materias del semestre para seguir tus evaluaciones y notas." action="Crear materia" onAction={() => setCreating(true)} />
         ) : (

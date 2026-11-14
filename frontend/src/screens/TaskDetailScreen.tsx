@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar } from "../components/shared";
+import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar, ListSkeleton, ErrorBanner } from "../components/shared";
 import { IconCalendar } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
@@ -19,6 +19,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   const [task, setTask] = useState<UiTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
@@ -96,7 +97,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
     return () => {
       ignore = true;
     };
-  }, [taskId]);
+  }, [taskId, retryTick]);
 
   const progress = useMemo(() => {
     if (!task) return 0;
@@ -306,8 +307,8 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
       />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-1 pb-28 flex flex-col gap-3">
-        {loading && <p className="text-[13px] text-ink-2">Cargando detalle...</p>}
-        {error && <p className="text-[13px] font-semibold text-danger">{error}</p>}
+        {loading && <ListSkeleton rows={2} label="Cargando detalle" />}
+        {error && <ErrorBanner message={error} onRetry={() => setRetryTick((tick) => tick + 1)} />}
 
         {!loading && !task && !error && (
           <div className="bg-card rounded-lg p-4">
