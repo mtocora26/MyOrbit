@@ -1,11 +1,13 @@
 package com.app.myorbit.notifications.application;
 
+import com.app.myorbit.academic.domain.ExamSoonEvent;
+import com.app.myorbit.academic.domain.SubjectAtRiskEvent;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
-import com.app.myorbit.tasks.domain.TaskCompletedEvent;
 import com.app.myorbit.tasks.domain.TaskCreatedEvent;
 import com.app.myorbit.tasks.domain.TaskDueSoonEvent;
+import com.app.myorbit.tasks.domain.TaskOverdueEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -38,13 +40,6 @@ class NotificationEventListenerTest {
     }
 
     @Test
-    void taskCompletedBecomesAnEventNotification() {
-        listener.onTaskCompleted(new TaskCompletedEvent("u1", "t1", "Informe"));
-
-        verify(service).notify(new NotificationRequest(NotificationType.EVENT, "u1", "t1", "Informe", null));
-    }
-
-    @Test
     void habitPendingBecomesAHabitNotification() {
         listener.onHabitPending(new HabitPendingEvent("u1", "h1", "Leer", LocalDate.of(2026, 11, 7)));
 
@@ -55,16 +50,52 @@ class NotificationEventListenerTest {
     void aFailureWhileNotifyingDoesNotPropagate() {
         doThrow(new IllegalStateException("mongo caído")).when(service).notify(any());
 
-        listener.onTaskCompleted(new TaskCompletedEvent("u1", "t1", "Informe"));
+        listener.onTaskCreated(new TaskCreatedEvent("u1", "t1", "Informe", LocalDateTime.of(2026, 11, 10, 9, 0)));
     }
 
     @Test
-    void taskDueSoonBecomesADeadlineReminderOncePerDay() {
+    void taskDueInADayBecomesADeadlineReminderOncePerDay() {
         LocalDateTime due = LocalDateTime.of(2026, 11, 8, 9, 0);
 
-        listener.onTaskDueSoon(new TaskDueSoonEvent("u1", "t1", "Informe", due));
+        listener.onTaskDueSoon(new TaskDueSoonEvent("u1", "t1", "Informe", due, false));
 
         verify(service).notifyOncePerDay(new NotificationRequest(NotificationType.DEADLINE, "u1", "t1", "Informe", due));
         verify(service, never()).notify(any());
+    }
+
+    @Test
+    void taskDueInAnHourUsesItsOwnShortDedupWindow() {
+        LocalDateTime due = LocalDateTime.of(2026, 11, 8, 9, 0);
+
+        listener.onTaskDueSoon(new TaskDueSoonEvent("u1", "t1", "Informe", due, true));
+
+        verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.DEADLINE, "u1", "t1", "Informe", due),
+                NotificationEventListener.IMMINENT_DEDUP);
+        verify(service, never()).notifyOncePerDay(any());
+    }
+
+    @Test
+    void overdueSummaryIsOncePerDayWithTheCountAsSubject() {
+        listener.onTaskOverdue(new TaskOverdueEvent("u1", 3));
+
+        verify(service).notifyOncePerDay(new NotificationRequest(NotificationType.OVERDUE, "u1", "overdue", "3", null));
+    }
+
+    @Test
+    void examSoonNotifiesOncePerEvaluationWithinItsWindow() {
+        LocalDateTime due = LocalDateTime.of(2026, 11, 9, 8, 0);
+
+        listener.onExamSoon(new ExamSoonEvent("u1", "e1", "Parcial 1", "Cálculo", due));
+
+        verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.EXAM, "u1", "e1", "Parcial 1 (Cálculo)", due),
+                NotificationEventListener.EXAM_DEDUP);
+    }
+
+    @Test
+    void subjectAtRiskNotifiesAtMostOncePerWeek() {
+        listener.onSubjectAtRisk(new SubjectAtRiskEvent("u1", "s1", "Cálculo"));
+
+        verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.AT_RISK, "u1", "s1", "Cálculo", null),
+                NotificationEventListener.AT_RISK_DEDUP);
     }
 }

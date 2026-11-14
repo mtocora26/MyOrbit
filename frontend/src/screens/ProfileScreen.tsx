@@ -245,9 +245,11 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         <Section title="Notificaciones">
           {prefs ? (
             <>
-              <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Fechas límite" sub="Al crear una tarea con fecha y 24 h antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
-              <ToggleRow icon={<IconBell size={16} color="var(--color-green)" />} iconBg="var(--color-green-wash)" label="Tareas completadas" sub="Aviso al terminar una tarea" on={prefs.event} onChange={() => changePref("event")} />
-              <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Hábitos pendientes" sub="Recordatorio diario de lo que falta hoy" on={prefs.habit} onChange={() => changePref("habit")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Fechas límite" sub="Al crear una tarea con fecha, 1 día y 1 hora antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Hábitos pendientes" sub="Recordatorio al final del día de lo que falta" on={prefs.habit} onChange={() => changePref("habit")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Tareas vencidas" sub="Resumen cada mañana de lo que se pasó de fecha" on={prefs.overdue} onChange={() => changePref("overdue")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-green)" />} iconBg="var(--color-green-wash)" label="Parciales próximos" sub="Evaluaciones de los próximos 3 días, con su fecha" on={prefs.exam} onChange={() => changePref("exam")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Materias en riesgo" sub="Cuando aprobar una materia se complica" on={prefs.atRisk} onChange={() => changePref("atRisk")} />
             </>
           ) : (
             <div className="px-4 py-3 min-h-[60px] flex items-center">

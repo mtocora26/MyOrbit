@@ -11,6 +11,8 @@ public interface TaskRepository extends MongoRepository<Task, String> {
 
     List<Task> findByUserIdAndDoneFalseAndDueBetween(String userId, LocalDateTime from, LocalDateTime to);
 
+    List<Task> findByUserIdAndDoneFalseAndDueBefore(String userId, LocalDateTime before);
+
     List<Task> findByUserIdAndCategoryId(String userId, String categoryId);
 
     List<Task> findByUserIdAndSubjectId(String userId, String subjectId);

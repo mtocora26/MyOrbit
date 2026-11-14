@@ -15,9 +15,9 @@ import com.app.myorbit.tasks.api.UpdateSubtaskStatusRequest;
 import com.app.myorbit.tasks.api.UpdateTaskRequest;
 import com.app.myorbit.tasks.api.UpdateTaskStatusRequest;
 import com.app.myorbit.tasks.domain.Priority;
-import com.app.myorbit.tasks.domain.TaskCompletedEvent;
 import com.app.myorbit.tasks.domain.TaskCreatedEvent;
 import com.app.myorbit.tasks.domain.TaskDueSoonEvent;
+import com.app.myorbit.tasks.domain.TaskOverdueEvent;
 import com.app.myorbit.tasks.domain.Subtask;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
@@ -80,15 +80,23 @@ public class TaskService {
         if (!affected.isEmpty()) taskRepository.saveAll(affected);
     }
 
+    /** Publica un solo {@link TaskOverdueEvent} con cuántas tareas pendientes ya vencieron (hora local del usuario). */
+    public int publishOverdue(String userId, LocalDateTime now) {
+        int count = taskRepository.findByUserIdAndDoneFalseAndDueBefore(userId, now).size();
+        if (count > 0) events.publishEvent(new TaskOverdueEvent(userId, count));
+        return count;
+    }
+
     /**
      * Publica un {@link TaskDueSoonEvent} por cada tarea pendiente del usuario con vencimiento en
      * [{@code from}, {@code to}] (hora local del usuario, como se guarda {@code due}). Lo invoca el recordatorio programado.
+     * {@code imminent} marca el aviso de la última hora, que se deduplica aparte del de un día antes.
      *
      * @return cantidad de tareas notificadas
      */
-    public int publishDueSoon(String userId, LocalDateTime from, LocalDateTime to) {
+    public int publishDueSoon(String userId, LocalDateTime from, LocalDateTime to, boolean imminent) {
         List<Task> dueSoon = taskRepository.findByUserIdAndDoneFalseAndDueBetween(userId, from, to);
-        dueSoon.forEach(task -> events.publishEvent(new TaskDueSoonEvent(task.getUserId(), task.getId(), task.getTitle(), task.getDue())));
+        dueSoon.forEach(task -> events.publishEvent(new TaskDueSoonEvent(task.getUserId(), task.getId(), task.getTitle(), task.getDue(), imminent)));
         return dueSoon.size();
     }
 
@@ -119,9 +127,8 @@ public class TaskService {
 
     public Task updateStatus(String userId, String id, UpdateTaskStatusRequest request) {
         Task task = getOwned(userId, id);
-        boolean wasDone = task.isDone();
         task.markAll(request.isDone());
-        return saveNotifyingCompletion(task, wasDone);
+        return taskRepository.save(task);
     }
 
     public Task addSubtask(String userId, String taskId, CreateSubtaskRequest request) {
@@ -158,20 +165,18 @@ public class TaskService {
     public Task updateSubtaskStatus(String userId, String taskId, String subtaskId, UpdateSubtaskStatusRequest request) {
         Task task = getOwned(userId, taskId);
         Subtask subtask = requireSubtask(task, subtaskId);
-        boolean wasDone = task.isDone();
         subtask.markTree(request.done());
         task.synchronizeCompletion();
-        return saveNotifyingCompletion(task, wasDone);
+        return taskRepository.save(task);
     }
 
     public Task deleteSubtask(String userId, String taskId, String subtaskId) {
         Task task = getOwned(userId, taskId);
-        boolean wasDone = task.isDone();
         if (!task.removeSubtask(subtaskId)) {
             throw new NotFoundException("Subtarea no encontrada");
         }
         task.synchronizeCompletion();
-        return saveNotifyingCompletion(task, wasDone);
+        return taskRepository.save(task);
     }
 
     public Task update(String userId, String id, UpdateTaskRequest request) {
@@ -195,15 +200,6 @@ public class TaskService {
         getOwned(userId, id);
         taskRepository.deleteById(id);
         return true;
-    }
-
-    /** Guarda la tarea y avisa a los observadores solo si acaba de pasar de pendiente a completada. */
-    private Task saveNotifyingCompletion(Task task, boolean wasDone) {
-        Task saved = taskRepository.save(task);
-        if (!wasDone && saved.isDone()) {
-            events.publishEvent(new TaskCompletedEvent(saved.getUserId(), saved.getId(), saved.getTitle()));
-        }
-        return saved;
     }
 
     private void requireSubtaskTitle(CreateSubtaskRequest request) {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { EmptyState, ScreenHeader } from "../components/shared";
-import { IconCheckCircle, IconClock, IconHabit } from "../components/icons";
+import { IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification, type NotificationType } from "../services/notificationsApi";
 
 interface Props {
@@ -9,15 +9,22 @@ interface Props {
   onUnreadChange: (count: number) => void;
   onOpenTask: (taskId: string) => void;
   onOpenHabits: () => void;
+  onOpenUniversity: () => void;
+  onOpenTasks: () => void;
 }
 
 type Filter = "todas" | "sin-leer";
 
 const TYPE_STYLE: Record<NotificationType, { icon: ReactNode; color: string; bg: string; label: string }> = {
   DEADLINE: { icon: <IconClock size={20} />, color: "var(--color-amber-ink)", bg: "var(--color-amber-wash)", label: "Fecha límite" },
-  EVENT: { icon: <IconCheckCircle size={20} />, color: "var(--color-green-ink)", bg: "var(--color-green-wash)", label: "Tarea" },
+  OVERDUE: { icon: <IconClock size={20} />, color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", label: "Vencidas" },
+  EXAM: { icon: <IconGraduation size={20} />, color: "var(--color-green-ink)", bg: "var(--color-green-wash)", label: "Evaluación" },
+  AT_RISK: { icon: <IconGraduation size={20} />, color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", label: "En riesgo" },
   HABIT: { icon: <IconHabit size={20} />, color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", label: "Hábito" },
 };
+
+/** Avisos antiguos de tipos que ya no existen (p. ej. «tarea completada»). */
+const LEGACY_STYLE = { icon: <IconCheckCircle size={20} />, color: "var(--color-green-ink)", bg: "var(--color-green-wash)", label: "Aviso" };
 
 export function timeAgo(iso: string, now = Date.now()): string {
   const minutes = Math.floor((now - new Date(iso).getTime()) / 60_000);
@@ -31,7 +38,7 @@ export function timeAgo(iso: string, now = Date.now()): string {
   return new Date(iso).toLocaleDateString("es", { day: "2-digit", month: "short" });
 }
 
-export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask, onOpenHabits }: Props) {
+export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask, onOpenHabits, onOpenUniversity, onOpenTasks }: Props) {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +76,8 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
       markNotificationRead(notification.id).catch(() => { apply(previous); setError("No fue posible marcar la notificación"); });
     }
     if (notification.type === "HABIT") onOpenHabits();
+    else if (notification.type === "EXAM" || notification.type === "AT_RISK") onOpenUniversity();
+    else if (notification.type === "OVERDUE") onOpenTasks();
     else onOpenTask(notification.referenceId);
   }
 
@@ -116,11 +125,11 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
         ) : visible.length === 0 && !error ? (
           filter === "sin-leer" && items.length > 0
             ? <EmptyState title="Todo leído" sub="No tienes notificaciones pendientes de leer." action="Ver todas" onAction={() => setFilter("todas")} />
-            : <EmptyState title="Sin notificaciones" sub="Aquí aparecerán los avisos de fechas límite, tareas completadas y hábitos pendientes." />
+            : <EmptyState title="Sin notificaciones" sub="Aquí aparecerán los avisos de fechas límite, hábitos, parciales y materias en riesgo." />
         ) : (
           <ul className="overflow-hidden rounded-md border border-line bg-card">
             {visible.map((notification, index) => {
-              const style = TYPE_STYLE[notification.type];
+              const style = TYPE_STYLE[notification.type] ?? LEGACY_STYLE;
               return (
                 <li key={notification.id} className={index > 0 ? "border-t border-line" : ""}>
                   <button onClick={() => open(notification)} className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors active:bg-wash">

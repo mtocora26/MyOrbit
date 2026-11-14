@@ -26,7 +26,8 @@ class NotificationPreferencesServiceTest {
         for (NotificationType type : NotificationType.values()) {
             assertTrue(service.isEnabled("u1", type), type.name());
         }
-        assertTrue(service.get("u1").isDeadline() && service.get("u1").isEvent() && service.get("u1").isHabit());
+        assertTrue(service.get("u1").isDeadline() && service.get("u1").isHabit() && service.get("u1").isOverdue()
+                && service.get("u1").isExam() && service.get("u1").isAtRisk());
     }
 
     @Test
@@ -34,21 +35,24 @@ class NotificationPreferencesServiceTest {
         when(repository.findById("u1")).thenReturn(Optional.empty());
         when(repository.save(any(NotificationPreferences.class))).then(returnsFirstArg());
 
-        NotificationPreferences saved = service.update("u1", true, false, true);
+        NotificationPreferences saved = service.update("u1", true, true, false, true, false);
 
-        assertFalse(saved.isEvent());
-        assertTrue(saved.isDeadline() && saved.isHabit());
+        assertFalse(saved.isOverdue());
+        assertFalse(saved.isAtRisk());
+        assertTrue(saved.isDeadline() && saved.isHabit() && saved.isExam());
         verify(repository).save(saved);
     }
 
     @Test
     void isEnabledReadsTheSavedChoicePerType() {
         NotificationPreferences stored = NotificationPreferences.defaultsFor("u1");
-        stored.update(false, true, false);
+        stored.update(false, true, false, true, false);
         when(repository.findById("u1")).thenReturn(Optional.of(stored));
 
         assertFalse(service.isEnabled("u1", NotificationType.DEADLINE));
-        assertTrue(service.isEnabled("u1", NotificationType.EVENT));
-        assertFalse(service.isEnabled("u1", NotificationType.HABIT));
+        assertTrue(service.isEnabled("u1", NotificationType.HABIT));
+        assertFalse(service.isEnabled("u1", NotificationType.OVERDUE));
+        assertTrue(service.isEnabled("u1", NotificationType.EXAM));
+        assertFalse(service.isEnabled("u1", NotificationType.AT_RISK));
     }
 }
