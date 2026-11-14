@@ -369,7 +369,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
 
 function WeekButton({ label, onClick, path }: { label: string; onClick: () => void; path: string }) {
   return (
-    <button onClick={onClick} aria-label={label} className="flex h-11 w-11 items-center justify-center rounded-md text-ink-2 active:bg-wash">
+    <button onClick={onClick} aria-label={label} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>
     </button>
   );

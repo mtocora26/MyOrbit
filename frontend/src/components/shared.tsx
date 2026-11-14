@@ -406,7 +406,7 @@ export function Station({ color, done, overdue, onToggle, label }: { color: stri
       role="checkbox"
       aria-checked={done}
       aria-label={label}
-      className="relative z-10 flex h-11 w-11 items-center justify-center self-start"
+      className="relative z-10 flex h-11 w-11 flex-shrink-0 items-center justify-center self-start"
     >
       <span
         className="block h-[20px] w-[20px] rounded-full border-[3px] transition-[background-color] duration-150 ease-out"

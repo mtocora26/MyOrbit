@@ -164,14 +164,6 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
             >
               {user.name.slice(0, 2).toUpperCase()}
             </div>
-            <button
-              className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center"
-              style={{ background: "var(--color-coral)" }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-            </button>
           </div>
           <div className="text-center">
             <p className="text-[18px] font-bold text-ink">{displayName}</p>
