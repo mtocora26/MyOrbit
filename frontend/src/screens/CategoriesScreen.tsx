@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton } from "../components/shared";
+import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
 import { IconPencil } from "../components/icons";
 import { createCategory, deleteCategory, fetchCategories, orderCategories, updateCategory, type Category } from "../services/categoriesApi";
 import { fetchTasks } from "../services/tasksApi";
@@ -125,12 +125,7 @@ export default function CategoriesScreen({ onBack }: Props) {
       />
 
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
-        {loadError && (
-          <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2">
-            <p className="text-[14px] font-semibold text-danger">{loadError}</p>
-            <button onClick={load} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button>
-          </div>
-        )}
+        {loadError && <ErrorBanner message={loadError} onRetry={load} />}
 
         {loading ? (
           <ListSkeleton rows={4} label="Cargando categorías" />

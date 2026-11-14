@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton } from "../components/shared";
+import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
@@ -191,12 +191,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
             {evaluations.length > 0 && <button onClick={() => openEvalSheet(null)} className="-mr-2 flex min-h-[44px] items-center px-2 text-[14px] font-semibold text-coral-ink">Agregar</button>}
           </div>
 
-          {evalsError && (
-            <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2">
-              <p className="text-[14px] font-semibold text-danger">{evalsError}</p>
-              <button onClick={loadEvaluations} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button>
-            </div>
-          )}
+          {evalsError && <ErrorBanner message={evalsError} onRetry={loadEvaluations} />}
 
           {loadingEvals ? (
             <ListSkeleton rows={3} label="Cargando evaluaciones" />

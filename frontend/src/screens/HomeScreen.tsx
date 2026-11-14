@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "../components/ThemeToggle";
 import NotificationBell from "../components/NotificationBell";
-import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station } from "../components/shared";
+import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
@@ -46,6 +46,7 @@ function dueTimestamp(task: UiTask): number {
 export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onViewTasks, onConfigureProfile, unreadCount, onNotifications, onAgenda, refreshTick }: Props) {
   const [tasks, setTasks] = useState<UiTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retryTick, setRetryTick] = useState(0);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -79,7 +80,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
     fetchUserProfile().then((data) => { if (!ignore) setProfile(data); }).catch(() => { if (!ignore) setProfile(null); });
     fetchHabits().then((data) => { if (!ignore) setHabits(data); }).catch(() => { if (!ignore) setHabits([]); });
     return () => { ignore = true; };
-  }, [refreshTick]);
+  }, [refreshTick, retryTick]);
 
   // «Estás en clase» / próxima clase, según la hora local de la cuenta. Es informativo y se refresca cada minuto.
   useEffect(() => {
@@ -188,7 +189,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
         <section aria-label="Próximas entregas">
           <SectionTitle label="Próximas estaciones" action="Ver todas" onAction={onViewTasks} />
 
-          {taskError && <p role="alert" className="rounded-md border border-danger-line bg-danger-wash px-3 py-2 text-[14px] font-medium text-danger">{taskError}</p>}
+          {taskError && <ErrorBanner message={taskError} onRetry={() => { setLoading(true); setTaskError(null); setRetryTick((tick) => tick + 1); }} />}
 
           {loading && !taskError ? (
             <div className="flex flex-col gap-2" aria-busy="true">
