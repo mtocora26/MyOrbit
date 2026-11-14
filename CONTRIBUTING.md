@@ -21,6 +21,7 @@ Este documento fija el flujo de trabajo. Se aplica igual a personas y a asistent
 - Código del backend **y** del frontend si el cambio es visible para el usuario.
 - **Tests** nuevos o actualizados (`./mvnw test` en verde; `pnpm typecheck` en el front).
 - **`docs/API.md`** actualizado si cambia un endpoint, un campo o una regla.
+- **Cambios de interfaz:** siguen [docs/DISENO_MOVIL.md](docs/DISENO_MOVIL.md) (Impeccable + Emil Design Eng, verificación a 360 y 390 px en claro y oscuro, capturas antes/después).
 - Respeto de [ARQUITECTURA_Y_PATRONES.md](ARQUITECTURA_Y_PATRONES.md) y [docs/BUENAS_PRACTICAS.md](docs/BUENAS_PRACTICAS.md).
 - Un cambio incompatible de la API se declara en la descripción del PR.
 - Sin credenciales, `System.out` ni código comentado.
