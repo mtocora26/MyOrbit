@@ -124,7 +124,7 @@ export default function CategoriesScreen({ onBack }: Props) {
         right={<button onClick={() => openForm(null)} aria-label="Crear categoría" className="flex h-11 w-11 items-center justify-center rounded-md bg-coral text-[24px] font-semibold text-night">+</button>}
       />
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6">
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
         {loadError && (
           <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2">
             <p className="text-[14px] font-semibold text-danger">{loadError}</p>

@@ -89,7 +89,7 @@ export default function AdminScreen({ onBack }: Props) {
         </button>}
       />
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-8 flex flex-col gap-4 lg:px-8">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-8 flex flex-col gap-4 lg:px-8 [&>*]:shrink-0">
         <dl className="grid grid-cols-3 divide-x divide-line rounded-md border border-line bg-card">
           {stats.map((stat) => (
             <div key={stat.label} className="px-3 py-3">

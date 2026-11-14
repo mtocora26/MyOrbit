@@ -109,7 +109,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
         right={unread > 0 ? <button onClick={markAll} disabled={busy} className="-mr-2 flex min-h-[44px] items-center px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50">Marcar todas</button> : undefined}
       />
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6">
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
         <div role="radiogroup" aria-label="Filtrar notificaciones" className="flex self-start rounded-md bg-wash p-1">
           {([["todas", "Todas"], ["sin-leer", "Sin leer"]] as const).map(([value, label]) => (
             <button key={value} type="button" role="radio" aria-checked={filter === value} onClick={() => setFilter(value)} className="min-h-[36px] rounded-[4px] px-4 text-[14px] font-semibold" style={{ background: filter === value ? "var(--color-card)" : "transparent", color: filter === value ? "var(--color-ink)" : "var(--color-ink-2)" }}>{label}</button>
