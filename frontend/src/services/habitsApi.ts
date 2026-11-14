@@ -11,6 +11,8 @@ export interface Habit {
   color: string;
   icon: string;
   completedDates: string[];
+  /** Meta de cumplimiento mensual en % (1-100); null = sin meta. */
+  monthlyGoal: number | null;
 }
 
 export interface CreateHabitInput {
@@ -19,8 +21,9 @@ export interface CreateHabitInput {
   daysOfWeek: number[];
   color: string;
   icon: string;
+  /** 1-100 la fija; null en la creación = sin meta. */
+  monthlyGoal?: number | null;
 }
-
 
 export function todayKey(): string {
   return toLocalKey(new Date());
@@ -96,5 +99,32 @@ export interface HabitStats {
 export async function fetchHabitStats(id: string, days = 30): Promise<HabitStats> {
   const response = await fetch(`${API_BASE_URL}/api/habits/${id}/stats?days=${days}`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las estadísticas"));
+  return response.json();
+}
+
+export interface MonthlyProgress {
+  /** AAAA-MM */
+  month: string;
+  scheduledDays: number;
+  completedDays: number;
+  /** Mínimo de días cumplidos para aprobar el mes. */
+  requiredDays: number;
+  remainingToGoal: number;
+  remainingDays: number;
+  rate: number;
+  approved: boolean;
+  reachable: boolean;
+}
+
+export interface MonthlyGoal {
+  goal: number;
+  current: MonthlyProgress;
+  /** Meses ya terminados, el más reciente primero. */
+  history: MonthlyProgress[];
+}
+
+export async function fetchMonthlyGoal(id: string, months = 6): Promise<MonthlyGoal> {
+  const response = await fetch(`${API_BASE_URL}/api/habits/${id}/monthly-goal?months=${months}`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar la meta mensual"));
   return response.json();
 }

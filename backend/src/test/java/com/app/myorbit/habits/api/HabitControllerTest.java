@@ -4,6 +4,7 @@ import com.app.myorbit.habits.application.HabitService;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.domain.HabitStats;
+import com.app.myorbit.habits.domain.MonthlyProgress;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.shared.error.UnauthorizedException;
@@ -140,5 +141,41 @@ class HabitControllerTest {
 
         mockMvc.perform(get("/api/habits/x/stats").header("Authorization", AUTH))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void monthlyGoalReturnsTheCurrentMonthAndHistory() throws Exception {
+        MonthlyProgress current = new MonthlyProgress("2026-10", 31, 8, 25, 17, 22, 25.8, false, true);
+        MonthlyProgress september = new MonthlyProgress("2026-09", 30, 28, 24, 0, 0, 93.3, true, true);
+        when(habitService.monthlyGoal("u1", "h1", 6)).thenReturn(new HabitService.MonthlyGoalReport(80, current, List.of(september)));
+
+        mockMvc.perform(get("/api/habits/h1/monthly-goal").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.goal").value(80))
+                .andExpect(jsonPath("$.current.month").value("2026-10"))
+                .andExpect(jsonPath("$.current.remainingToGoal").value(17))
+                .andExpect(jsonPath("$.current.reachable").value(true))
+                .andExpect(jsonPath("$.history[0].month").value("2026-09"))
+                .andExpect(jsonPath("$.history[0].approved").value(true));
+    }
+
+    @Test
+    void monthlyGoalWithoutGoalIsBadRequest() throws Exception {
+        when(habitService.monthlyGoal("u1", "h1", 6)).thenThrow(new BusinessRuleException("El habito no tiene una meta mensual"));
+
+        mockMvc.perform(get("/api/habits/h1/monthly-goal").header("Authorization", AUTH))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void creatingAHabitRejectsAnOutOfRangeMonthlyGoal() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/habits").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Leer\",\"monthlyGoal\":101}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/habits").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Leer\",\"monthlyGoal\":0}"))
+                .andExpect(status().isBadRequest());
     }
 }

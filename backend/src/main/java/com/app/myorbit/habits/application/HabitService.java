@@ -9,12 +9,14 @@ import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.habits.domain.HabitStats;
+import com.app.myorbit.habits.domain.MonthlyProgress;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
 import com.app.myorbit.users.application.UserZoneService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
@@ -52,6 +54,7 @@ public class HabitService {
         habit.setDaysOfWeek(normalizeDays(request.daysOfWeek(), habit.getFrequency()));
         habit.setColor(request.color() == null || request.color().isBlank() ? "#7A5AF8" : request.color());
         habit.setIcon(request.icon() == null || request.icon().isBlank() ? "target" : request.icon());
+        habit.setMonthlyGoal(request.monthlyGoal());
         return habitRepository.save(habit);
     }
 
@@ -66,6 +69,7 @@ public class HabitService {
         habit.setDaysOfWeek(normalizeDays(days, habit.getFrequency()));
         if (request.color() != null && !request.color().isBlank()) habit.setColor(request.color());
         if (request.icon() != null && !request.icon().isBlank()) habit.setIcon(request.icon());
+        if (request.monthlyGoal() != null) habit.setMonthlyGoal(request.monthlyGoal() == 0 ? null : request.monthlyGoal());
         return habitRepository.save(habit);
     }
 
@@ -113,6 +117,24 @@ public class HabitService {
             throw new BusinessRuleException("El parametro days debe estar entre 1 y " + MAX_STATS_DAYS);
         }
         return HabitStats.calculate(getOwned(userId, id), userZone.today(userId), days);
+    }
+
+    public static final int MAX_HISTORY_MONTHS = 24;
+
+    /** Cumplimiento del mes en curso frente a la meta del hábito, más los meses anteriores (hasta {@code months}). */
+    public MonthlyGoalReport monthlyGoal(String userId, String id, int months) {
+        if (months < 0 || months > MAX_HISTORY_MONTHS) {
+            throw new BusinessRuleException("El parametro months debe estar entre 0 y " + MAX_HISTORY_MONTHS);
+        }
+        Habit habit = getOwned(userId, id);
+        if (habit.getMonthlyGoal() == null) throw new BusinessRuleException("El habito no tiene una meta mensual");
+        LocalDate today = userZone.today(userId);
+        MonthlyProgress current = MonthlyProgress.calculate(habit, YearMonth.from(today), habit.getMonthlyGoal(), today);
+        return new MonthlyGoalReport(habit.getMonthlyGoal(), current, MonthlyProgress.history(habit, habit.getMonthlyGoal(), today, months));
+    }
+
+    /** Meta mensual, avance del mes en curso e historial de meses ya terminados (más reciente primero). */
+    public record MonthlyGoalReport(int goal, MonthlyProgress current, List<MonthlyProgress> history) {
     }
 
     public boolean delete(String userId, String id) {
