@@ -229,6 +229,12 @@ Small, near-square radii like signage: 2px for progress bars and category chips,
 
 ## Components
 
+### Logo
+The **órbita de ruta**: a full orbit (the 3px route line closed into a ring) carrying two stations, filled on the left (done) and hollow on the right (pending). Component `LogoMark` / `LogoGlyph` in `src/components/Logo.tsx`; source SVGs in `docs/brand/`; Capacitor sources in `frontend/assets/`.
+- Plate `logo-coral` (#ff6b4a) with glyph `logo-night` (#0e1626), fixed in both themes (6.5:1). Glyph at 72% of the plate; in-app plate 36px `rounded-md`.
+- Minimum 16px; clear space a quarter of the plate. No glow, gradient, rotation or extra stations. The former planet icon and the two-station bar mark are retired.
+- `theme-color` and the PWA `theme_color`/`background_color` are `night` (#0e1626).
+
 ### Buttons
 - **Shape:** 6px radius, 44px minimum height on touch controls.
 - **Primary:** coral fill, `night` text, 12px 20px padding (empty-state action, FAB, add).

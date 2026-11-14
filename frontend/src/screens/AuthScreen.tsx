@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { login, register, type AuthSession } from "../services/authApi";
+import LogoMark from "../components/Logo";
 
 interface Props {
   onAuthenticated: (session: AuthSession, isNewAccount: boolean) => void;
@@ -37,7 +38,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
         <div className="absolute -top-28 -right-20 w-[440px] h-[440px] rounded-full border border-white/15" />
         <div className="absolute top-16 right-24 w-[280px] h-[280px] rounded-full border border-white/10" />
         <div className="relative max-w-lg">
-          <div className="w-12 h-12 rounded-lg bg-coral flex items-center justify-center text-night"><svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><circle cx="7" cy="16" r="3.2" /><circle cx="25" cy="16" r="3.2" /><path d="M10.2 16h11.6" /></svg></div>
+          <LogoMark size={48} className="rounded-lg" />
           <h1 className="mt-8 font-display text-[56px] leading-none font-semibold text-white">MyOrbit</h1>
           <p className="mt-3 text-[18px] leading-relaxed text-ink-3">Tu espacio personal para organizar lo importante y avanzar a tu ritmo.</p>
         </div>
@@ -46,8 +47,8 @@ export default function AuthScreen({ onAuthenticated }: Props) {
       <section className="flex items-center justify-center px-5 py-10">
         <form onSubmit={handleSubmit} className="w-full max-w-md">
           <div className="lg:hidden mb-10">
-            <div className="w-11 h-11 rounded-lg bg-coral flex items-center justify-center text-night"><svg viewBox="0 0 32 32" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><circle cx="7" cy="16" r="3.2" /><circle cx="25" cy="16" r="3.2" /><path d="M10.2 16h11.6" /></svg></div>
-            <p className="mt-4 text-[28px] font-bold text-ink">MyOrbit</p>
+            <LogoMark size={44} className="rounded-lg" />
+            <p className="mt-4 font-display text-[32px] font-semibold leading-none tracking-tight text-ink">MyOrbit</p>
           </div>
           <p className="font-display text-[34px] font-semibold leading-none text-ink">{mode === "login" ? "Bienvenida de nuevo" : "Crea tu espacio"}</p>
           <p className="mt-2 text-[14px] leading-relaxed text-ink-2">{mode === "login" ? "Ingresa para continuar con tu organización." : "Tu cuenta separa tus tareas y configuración personal."}</p>

@@ -33,6 +33,9 @@
   --color-on-strong: #ffffff;
   --color-night: #0e1626;
   --color-navy: #1d3461;
+  /* Colores del logo: fijos, el tema oscuro no los redefine. */
+  --color-logo-coral: #ff6b4a;
+  --color-logo-night: #0e1626;
 
   --color-coral: #ff6b4a;
   --color-coral-ink: #c23a1d;
