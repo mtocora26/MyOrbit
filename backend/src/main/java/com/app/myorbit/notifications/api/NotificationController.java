@@ -47,7 +47,7 @@ public class NotificationController {
     @PutMapping("/preferences")
     public NotificationPreferencesResponse updatePreferences(@CurrentUser User user, @Valid @RequestBody NotificationPreferencesRequest request) {
         return NotificationPreferencesResponse.from(
-                preferencesService.update(user.getId(), request.deadline(), request.habit(), request.overdue(), request.exam(), request.atRisk()));
+                preferencesService.update(user.getId(), request.deadline(), request.habit(), request.overdue(), request.exam(), request.atRisk(), request.classReminder()));
     }
 
     @PatchMapping("/{id}/read")

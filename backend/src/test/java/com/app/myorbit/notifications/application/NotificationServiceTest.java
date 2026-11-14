@@ -35,7 +35,7 @@ class NotificationServiceTest {
 
     private final List<NotificationFactory> allFactories =
             List.of(new DeadlineNotificationFactory(), new HabitNotificationFactory(), new OverdueNotificationFactory(),
-                    new ExamNotificationFactory(), new AtRiskNotificationFactory());
+                    new ExamNotificationFactory(), new AtRiskNotificationFactory(), new ClassNotificationFactory());
 
     @Test
     void notifyUsesTheFactoryOfTheTypeAndSaves() {
@@ -60,7 +60,7 @@ class NotificationServiceTest {
     @Test
     void failsAtStartupWhenATypeHasTwoFactories() {
         List<NotificationFactory> duplicated = List.of(new DeadlineNotificationFactory(), new DeadlineNotificationFactory(), new HabitNotificationFactory(),
-                new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory());
+                new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory(), new ClassNotificationFactory());
 
         assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, duplicated));
     }

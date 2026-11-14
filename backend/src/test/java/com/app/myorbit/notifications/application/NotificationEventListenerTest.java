@@ -1,7 +1,9 @@
 package com.app.myorbit.notifications.application;
 
+import com.app.myorbit.academic.domain.ClassStartingEvent;
 import com.app.myorbit.academic.domain.ExamSoonEvent;
 import com.app.myorbit.academic.domain.SubjectAtRiskEvent;
+import com.app.myorbit.events.domain.EventStartingEvent;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
@@ -97,5 +99,35 @@ class NotificationEventListenerTest {
 
         verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.AT_RISK, "u1", "s1", "Cálculo", null),
                 NotificationEventListener.AT_RISK_DEDUP);
+    }
+
+    @Test
+    void classStartingNotifiesOncePerOccurrenceWithRoom() {
+        LocalDateTime startsAt = LocalDateTime.of(2026, 11, 9, 8, 0);
+
+        listener.onClassStarting(new ClassStartingEvent("u1", "s1", "Cálculo", "A-101", startsAt));
+
+        verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.CLASS, "u1", "s1|" + startsAt,
+                "clase de Cálculo en A-101", startsAt), NotificationEventListener.CLASS_DEDUP);
+    }
+
+    @Test
+    void classStartingWithoutRoomOmitsIt() {
+        LocalDateTime startsAt = LocalDateTime.of(2026, 11, 9, 8, 0);
+
+        listener.onClassStarting(new ClassStartingEvent("u1", "s1", "Cálculo", null, startsAt));
+
+        verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.CLASS, "u1", "s1|" + startsAt,
+                "clase de Cálculo", startsAt), NotificationEventListener.CLASS_DEDUP);
+    }
+
+    @Test
+    void eventStartingNotifiesOncePerEvent() {
+        LocalDateTime startsAt = LocalDateTime.of(2026, 11, 9, 10, 0);
+
+        listener.onEventStarting(new EventStartingEvent("u1", "ev1", "Feria", startsAt));
+
+        verify(service).notifyUnlessWithin(new NotificationRequest(NotificationType.CLASS, "u1", "ev1|2026-11-09",
+                "el evento \"Feria\"", startsAt), NotificationEventListener.CLASS_DEDUP);
     }
 }

@@ -420,7 +420,7 @@ Body: `{ completed, date? }`. `date` es opcional (por defecto, hoy según el rel
 
 ## Notificaciones (`/api/notifications`)
 
-Las notificaciones las genera el sistema a partir de eventos (tarea con fecha → `DEADLINE`, hábito pendiente → `HABIT`, tareas vencidas → `OVERDUE`, parcial próximo → `EXAM`, materia en riesgo → `AT_RISK`; el aviso «tarea completada» (`EVENT`) se eliminó en #140); el usuario solo las consulta y las marca como leídas. Cada usuario ve únicamente las suyas.
+Las notificaciones las genera el sistema a partir de eventos (tarea con fecha → `DEADLINE`, hábito pendiente → `HABIT`, tareas vencidas → `OVERDUE`, parcial próximo → `EXAM`, materia en riesgo → `AT_RISK`, clase por empezar o evento que empieza → `CLASS`; el aviso «tarea completada» (`EVENT`) se eliminó en #140); el usuario solo las consulta y las marca como leídas. Cada usuario ve únicamente las suyas.
 
 | Método | Ruta | Respuesta |
 |---|---|---|
@@ -429,7 +429,7 @@ Las notificaciones las genera el sistema a partir de eventos (tarea con fecha �
 | `PATCH` | `/api/notifications/{id}/read` | `200` notificación con `read: true` (idempotente) · `404` no existe o es de otro usuario |
 | `PATCH` | `/api/notifications/read-all` | `200` `{ "updated": 2 }` (cuántas pasaron a leídas) |
 
-Notificación: `{ id, type: "DEADLINE"|"HABIT"|"OVERDUE"|"EXAM"|"AT_RISK", title, message, referenceId, createdAt (ISO-8601 UTC), read }`. `referenceId` es el id de la tarea, hábito, evaluación o materia de origen (`"overdue"` en el resumen de vencidas).
+Notificación: `{ id, type: "DEADLINE"|"HABIT"|"OVERDUE"|"EXAM"|"AT_RISK"|"CLASS", title, message, referenceId, createdAt (ISO-8601 UTC), read }`. `referenceId` es el id de la tarea, hábito, evaluación o materia de origen (`"overdue"` en el resumen de vencidas).
 
 ## Rachas y estadísticas (`GET /api/habits/{id}/stats?days=30`)
 
@@ -459,8 +459,8 @@ Cada usuario elige qué tipos de aviso quiere recibir. Sin haber guardado nada, 
 
 | Método | Ruta | Cuerpo | Respuesta |
 |---|---|---|---|
-| `GET` | `/api/notifications/preferences` | | `200` `{ "deadline": true, "habit": true, "overdue": true, "exam": true, "atRisk": true }` |
-| `PUT` | `/api/notifications/preferences` | `{ deadline, habit, overdue, exam, atRisk }` (los cinco obligatorios) | `200` las preferencias guardadas · `400` si falta algún campo · `401` sin sesión |
+| `GET` | `/api/notifications/preferences` | | `200` `{ "deadline": true, "habit": true, "overdue": true, "exam": true, "atRisk": true, "classReminder": true }` |
+| `PUT` | `/api/notifications/preferences` | `{ deadline, habit, overdue, exam, atRisk, classReminder }` (los seis obligatorios) | `200` las preferencias guardadas · `400` si falta algún campo · `401` sin sesión |
 
 | Campo | Controla | Tipo | Cuándo se envía |
 |---|---|---|---|
@@ -469,7 +469,9 @@ Cada usuario elige qué tipos de aviso quiere recibir. Sin haber guardado nada, 
 | `overdue` | Resumen «tienes N tareas vencidas» | `OVERDUE` | Cada mañana, 08:00 local (`myorbit.reminders.hour`), solo si hay vencidas |
 | `exam` | Evaluación sin calificar con fecha en los próximos 3 días | `EXAM` | Mañana de cada día; un solo aviso por evaluación |
 | `atRisk` | Materia del semestre en curso en riesgo de no aprobarse | `AT_RISK` | Mañana; como máximo uno por semana y materia |
+| `classReminder` | Clase del horario y evento con hora | `CLASS` | **30 minutos antes** de cada clase; los eventos con hora, **al empezar** (primer día). Un solo aviso por ocurrencia |
 
+- Los avisos `CLASS` los genera un planificador que corre **cada minuto** con la hora local de cada usuario (zona de #130). Detecta cada clase durante los 30 minutos previos y el aviso se deduplica por ocurrencia (materia + fecha y hora), así que sobrevive a un tick perdido sin repetirse. Solo hay clases en materias cuyo semestre tiene fechas. `myorbit.reminders.class-cron` cambia la frecuencia.
 - Un tipo desactivado **no se genera**: `NotificationService` lo descarta tanto para avisos inmediatos como para los recordatorios programados, sin afectar a los demás tipos ni a otros usuarios. Las notificaciones ya creadas se conservan.
 - No existe un interruptor «push»: hoy los avisos viven solo dentro de la app. Web Push (PWA) sería un cambio aparte.
 
