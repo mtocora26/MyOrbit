@@ -130,15 +130,15 @@ class NotificationControllerTest {
         mockMvc.perform(patch("/api/notifications/read-all")).andExpect(status().isUnauthorized());
     }
 
-    private NotificationPreferences preferences(boolean deadline, boolean habit, boolean overdue, boolean exam, boolean atRisk) {
+    private NotificationPreferences preferences(boolean deadline, boolean habit, boolean overdue, boolean exam, boolean atRisk, boolean classReminder) {
         NotificationPreferences preferences = NotificationPreferences.defaultsFor("u1");
-        preferences.update(deadline, habit, overdue, exam, atRisk);
+        preferences.update(deadline, habit, overdue, exam, atRisk, classReminder);
         return preferences;
     }
 
     @Test
     void preferencesReturnTheCurrentChoices() throws Exception {
-        when(preferencesService.get("u1")).thenReturn(preferences(true, false, true, true, false));
+        when(preferencesService.get("u1")).thenReturn(preferences(true, false, true, true, false, true));
 
         mockMvc.perform(get("/api/notifications/preferences").header("Authorization", AUTH))
                 .andExpect(status().isOk())
@@ -146,20 +146,21 @@ class NotificationControllerTest {
                 .andExpect(jsonPath("$.habit").value(false))
                 .andExpect(jsonPath("$.overdue").value(true))
                 .andExpect(jsonPath("$.exam").value(true))
-                .andExpect(jsonPath("$.atRisk").value(false));
+                .andExpect(jsonPath("$.atRisk").value(false))
+                .andExpect(jsonPath("$.classReminder").value(true));
     }
 
     @Test
     void updatePreferencesSavesAndReturnsThem() throws Exception {
-        when(preferencesService.update("u1", false, true, false, true, false)).thenReturn(preferences(false, true, false, true, false));
+        when(preferencesService.update("u1", false, true, false, true, false, false)).thenReturn(preferences(false, true, false, true, false, false));
 
         mockMvc.perform(put("/api/notifications/preferences").header("Authorization", AUTH)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"deadline\":false,\"habit\":true,\"overdue\":false,\"exam\":true,\"atRisk\":false}"))
+                        .content("{\"deadline\":false,\"habit\":true,\"overdue\":false,\"exam\":true,\"atRisk\":false,\"classReminder\":false}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deadline").value(false))
                 .andExpect(jsonPath("$.overdue").value(false));
-        verify(preferencesService).update("u1", false, true, false, true, false);
+        verify(preferencesService).update("u1", false, true, false, true, false, false);
     }
 
     @Test
@@ -168,7 +169,7 @@ class NotificationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"deadline\":false}"))
                 .andExpect(status().isBadRequest());
-        verify(preferencesService, never()).update(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean());
+        verify(preferencesService, never()).update(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test

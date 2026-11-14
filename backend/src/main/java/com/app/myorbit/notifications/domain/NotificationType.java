@@ -10,5 +10,7 @@ public enum NotificationType {
     /** Parcial o evaluación próxima, con su fecha. */
     EXAM,
     /** Materia del semestre en curso en riesgo de no aprobarse. */
-    AT_RISK
+    AT_RISK,
+    /** Clase que empieza en media hora o evento con hora que empieza ahora. */
+    CLASS
 }

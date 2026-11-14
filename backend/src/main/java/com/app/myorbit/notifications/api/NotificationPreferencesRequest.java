@@ -7,5 +7,6 @@ public record NotificationPreferencesRequest(
         @NotNull(message = "Indica si quieres avisos de habitos pendientes") Boolean habit,
         @NotNull(message = "Indica si quieres avisos de tareas vencidas") Boolean overdue,
         @NotNull(message = "Indica si quieres avisos de parciales proximos") Boolean exam,
-        @NotNull(message = "Indica si quieres avisos de materias en riesgo") Boolean atRisk) {
+        @NotNull(message = "Indica si quieres avisos de materias en riesgo") Boolean atRisk,
+        @NotNull(message = "Indica si quieres avisos de clases y eventos") Boolean classReminder) {
 }

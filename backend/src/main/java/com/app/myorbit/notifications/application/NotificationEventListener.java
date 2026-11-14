@@ -1,7 +1,9 @@
 package com.app.myorbit.notifications.application;
 
+import com.app.myorbit.academic.domain.ClassStartingEvent;
 import com.app.myorbit.academic.domain.ExamSoonEvent;
 import com.app.myorbit.academic.domain.SubjectAtRiskEvent;
+import com.app.myorbit.events.domain.EventStartingEvent;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
@@ -24,6 +26,7 @@ public class NotificationEventListener {
     private static final Logger log = LoggerFactory.getLogger(NotificationEventListener.class);
     static final Duration IMMINENT_DEDUP = Duration.ofHours(2);
     static final Duration EXAM_DEDUP = Duration.ofDays(3);
+    static final Duration CLASS_DEDUP = Duration.ofDays(1);
     static final Duration AT_RISK_DEDUP = Duration.ofDays(7);
 
     private final NotificationService notificationService;
@@ -64,6 +67,21 @@ public class NotificationEventListener {
     @EventListener
     public void onSubjectAtRisk(SubjectAtRiskEvent event) {
         send(new NotificationRequest(NotificationType.AT_RISK, event.userId(), event.subjectId(), event.subjectName(), null), Window.within(AT_RISK_DEDUP));
+    }
+
+    /** Clase por empezar: un solo aviso por ocurrencia (materia + fecha y hora de inicio). */
+    @EventListener
+    public void onClassStarting(ClassStartingEvent event) {
+        String occurrence = event.subjectId() + "|" + event.startsAt();
+        String what = "clase de " + event.subjectName() + (event.room() == null ? "" : " en " + event.room());
+        send(new NotificationRequest(NotificationType.CLASS, event.userId(), occurrence, what, event.startsAt()), Window.within(CLASS_DEDUP));
+    }
+
+    /** Evento con hora que empieza: un solo aviso por evento y día de inicio. */
+    @EventListener
+    public void onEventStarting(EventStartingEvent event) {
+        String occurrence = event.eventId() + "|" + event.startsAt().toLocalDate();
+        send(new NotificationRequest(NotificationType.CLASS, event.userId(), occurrence, "el evento \"" + event.title() + "\"", event.startsAt()), Window.within(CLASS_DEDUP));
     }
 
     /** Recordatorio de hábito: una sola vez por día y hábito. */

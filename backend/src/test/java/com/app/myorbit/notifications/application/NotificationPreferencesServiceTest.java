@@ -27,7 +27,7 @@ class NotificationPreferencesServiceTest {
             assertTrue(service.isEnabled("u1", type), type.name());
         }
         assertTrue(service.get("u1").isDeadline() && service.get("u1").isHabit() && service.get("u1").isOverdue()
-                && service.get("u1").isExam() && service.get("u1").isAtRisk());
+                && service.get("u1").isExam() && service.get("u1").isAtRisk() && service.get("u1").isClassReminder());
     }
 
     @Test
@@ -35,10 +35,11 @@ class NotificationPreferencesServiceTest {
         when(repository.findById("u1")).thenReturn(Optional.empty());
         when(repository.save(any(NotificationPreferences.class))).then(returnsFirstArg());
 
-        NotificationPreferences saved = service.update("u1", true, true, false, true, false);
+        NotificationPreferences saved = service.update("u1", true, true, false, true, false, false);
 
         assertFalse(saved.isOverdue());
         assertFalse(saved.isAtRisk());
+        assertFalse(saved.isClassReminder());
         assertTrue(saved.isDeadline() && saved.isHabit() && saved.isExam());
         verify(repository).save(saved);
     }
@@ -46,7 +47,7 @@ class NotificationPreferencesServiceTest {
     @Test
     void isEnabledReadsTheSavedChoicePerType() {
         NotificationPreferences stored = NotificationPreferences.defaultsFor("u1");
-        stored.update(false, true, false, true, false);
+        stored.update(false, true, false, true, false, true);
         when(repository.findById("u1")).thenReturn(Optional.of(stored));
 
         assertFalse(service.isEnabled("u1", NotificationType.DEADLINE));
@@ -54,5 +55,6 @@ class NotificationPreferencesServiceTest {
         assertFalse(service.isEnabled("u1", NotificationType.OVERDUE));
         assertTrue(service.isEnabled("u1", NotificationType.EXAM));
         assertFalse(service.isEnabled("u1", NotificationType.AT_RISK));
+        assertTrue(service.isEnabled("u1", NotificationType.CLASS));
     }
 }

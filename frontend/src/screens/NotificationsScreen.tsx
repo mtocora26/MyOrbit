@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { EmptyState, ScreenHeader } from "../components/shared";
-import { IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
+import { IconCalendar, IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification, type NotificationType } from "../services/notificationsApi";
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
   onOpenHabits: () => void;
   onOpenUniversity: () => void;
   onOpenTasks: () => void;
+  onOpenAgenda: () => void;
 }
 
 type Filter = "todas" | "sin-leer";
@@ -19,6 +20,7 @@ const TYPE_STYLE: Record<NotificationType, { icon: ReactNode; color: string; bg:
   DEADLINE: { icon: <IconClock size={20} />, color: "var(--color-amber-ink)", bg: "var(--color-amber-wash)", label: "Fecha límite" },
   OVERDUE: { icon: <IconClock size={20} />, color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", label: "Vencidas" },
   EXAM: { icon: <IconGraduation size={20} />, color: "var(--color-green-ink)", bg: "var(--color-green-wash)", label: "Evaluación" },
+  CLASS: { icon: <IconCalendar size={20} />, color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", label: "Agenda" },
   AT_RISK: { icon: <IconGraduation size={20} />, color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", label: "En riesgo" },
   HABIT: { icon: <IconHabit size={20} />, color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", label: "Hábito" },
 };
@@ -38,7 +40,7 @@ export function timeAgo(iso: string, now = Date.now()): string {
   return new Date(iso).toLocaleDateString("es", { day: "2-digit", month: "short" });
 }
 
-export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask, onOpenHabits, onOpenUniversity, onOpenTasks }: Props) {
+export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask, onOpenHabits, onOpenUniversity, onOpenTasks, onOpenAgenda }: Props) {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +80,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
     if (notification.type === "HABIT") onOpenHabits();
     else if (notification.type === "EXAM" || notification.type === "AT_RISK") onOpenUniversity();
     else if (notification.type === "OVERDUE") onOpenTasks();
+    else if (notification.type === "CLASS") onOpenAgenda();
     else onOpenTask(notification.referenceId);
   }
 
@@ -125,7 +128,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
         ) : visible.length === 0 && !error ? (
           filter === "sin-leer" && items.length > 0
             ? <EmptyState title="Todo leído" sub="No tienes notificaciones pendientes de leer." action="Ver todas" onAction={() => setFilter("todas")} />
-            : <EmptyState title="Sin notificaciones" sub="Aquí aparecerán los avisos de fechas límite, hábitos, parciales y materias en riesgo." />
+            : <EmptyState title="Sin notificaciones" sub="Aquí aparecerán los avisos de fechas límite, hábitos, parciales, materias en riesgo y clases." />
         ) : (
           <ul className="overflow-hidden rounded-md border border-line bg-card">
             {visible.map((notification, index) => {

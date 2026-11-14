@@ -250,6 +250,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
               <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Tareas vencidas" sub="Resumen cada mañana de lo que se pasó de fecha" on={prefs.overdue} onChange={() => changePref("overdue")} />
               <ToggleRow icon={<IconBell size={16} color="var(--color-green)" />} iconBg="var(--color-green-wash)" label="Parciales próximos" sub="Evaluaciones de los próximos 3 días, con su fecha" on={prefs.exam} onChange={() => changePref("exam")} />
               <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Materias en riesgo" sub="Cuando aprobar una materia se complica" on={prefs.atRisk} onChange={() => changePref("atRisk")} />
+              <ToggleRow icon={<IconBell size={16} color="var(--color-green)" />} iconBg="var(--color-green-wash)" label="Clases y eventos" sub="Clase 30 min antes; evento a su hora de inicio" on={prefs.classReminder} onChange={() => changePref("classReminder")} />
             </>
           ) : (
             <div className="px-4 py-3 min-h-[60px] flex items-center">

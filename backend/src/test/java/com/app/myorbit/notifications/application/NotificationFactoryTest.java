@@ -54,6 +54,13 @@ class NotificationFactoryTest {
         assertTrue(message(new AtRiskNotificationFactory(), "Cálculo", null).contains("\"Cálculo\""));
     }
 
+    @Test
+    void classMessageSaysWhatStartsAndWhen() {
+        assertEquals("Tienes clase de Cálculo en A-101 a las 08:00",
+                message(new ClassNotificationFactory(), "clase de Cálculo en A-101", LocalDateTime.of(2026, 11, 9, 8, 0)));
+        assertEquals(NotificationType.CLASS, new ClassNotificationFactory().type());
+    }
+
     private static String message(NotificationFactory factory, String subject, LocalDateTime when) {
         return factory.create(new NotificationRequest(factory.type(), "u1", "ref1", subject, when), NOW).getMessage();
     }
@@ -69,7 +76,7 @@ class NotificationFactoryTest {
     @Test
     void everyNotificationStartsUnreadWithCommonFields() {
         for (NotificationFactory factory : new NotificationFactory[]{
-                new DeadlineNotificationFactory(), new HabitNotificationFactory(), new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory()}) {
+                new DeadlineNotificationFactory(), new HabitNotificationFactory(), new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory(), new ClassNotificationFactory()}) {
             Notification n = build(factory, null);
 
             assertNotNull(n.getId());

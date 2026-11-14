@@ -93,7 +93,7 @@ export default function App() {
             {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onUserUpdated={(next) => setSession(next)} />}
             {subScreen === "admin"         && <AdminScreen onBack={goBack} />}
             {subScreen === "categories"    && <CategoriesScreen onBack={goBack} />}
-            {subScreen === "notifications" && <NotificationsScreen onBack={goBack} onUnreadChange={unread.setCount} onOpenTask={openTaskDetail} onOpenHabits={() => setSubScreen("habits")} onOpenUniversity={() => navigate("university")} onOpenTasks={() => navigate("tasks")} />}
+            {subScreen === "notifications" && <NotificationsScreen onBack={goBack} onUnreadChange={unread.setCount} onOpenTask={openTaskDetail} onOpenHabits={() => setSubScreen("habits")} onOpenUniversity={() => navigate("university")} onOpenTasks={() => navigate("tasks")} onOpenAgenda={() => navigate("agenda")} />}
 
             {subScreen === null && (
               <>

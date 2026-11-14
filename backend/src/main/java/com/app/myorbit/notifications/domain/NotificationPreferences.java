@@ -13,6 +13,7 @@ public class NotificationPreferences {
     private boolean overdue = true;
     private boolean exam = true;
     private boolean atRisk = true;
+    private boolean classReminder = true;
 
     public static NotificationPreferences defaultsFor(String userId) {
         NotificationPreferences preferences = new NotificationPreferences();
@@ -27,15 +28,17 @@ public class NotificationPreferences {
             case OVERDUE -> overdue;
             case EXAM -> exam;
             case AT_RISK -> atRisk;
+            case CLASS -> classReminder;
         };
     }
 
-    public void update(boolean deadline, boolean habit, boolean overdue, boolean exam, boolean atRisk) {
+    public void update(boolean deadline, boolean habit, boolean overdue, boolean exam, boolean atRisk, boolean classReminder) {
         this.deadline = deadline;
         this.habit = habit;
         this.overdue = overdue;
         this.exam = exam;
         this.atRisk = atRisk;
+        this.classReminder = classReminder;
     }
 
     public String getUserId() { return userId; }
@@ -45,4 +48,5 @@ public class NotificationPreferences {
     public boolean isOverdue() { return overdue; }
     public boolean isExam() { return exam; }
     public boolean isAtRisk() { return atRisk; }
+    public boolean isClassReminder() { return classReminder; }
 }
