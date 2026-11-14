@@ -39,6 +39,12 @@ public class HabitController {
         return HabitStatsResponse.from(habitService.stats(user.getId(), id, days));
     }
 
+    @GetMapping("/{id}/monthly-goal")
+    public MonthlyGoalResponse monthlyGoal(@PathVariable String id, @CurrentUser User user,
+                                           @RequestParam(required = false, defaultValue = "6") int months) {
+        return MonthlyGoalResponse.from(habitService.monthlyGoal(user.getId(), id, months));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public HabitResponse create(@Valid @RequestBody CreateHabitRequest request, @CurrentUser User user) {

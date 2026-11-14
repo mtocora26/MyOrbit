@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ProgressBar, ScreenHeader } from "../components/shared";
 import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
-import { createHabit, currentStreak, deleteHabit, fetchHabitStats, fetchHabits, toLocalKey, todayKey, updateHabit, updateHabitCompletion, type Habit, type HabitStats } from "../services/habitsApi";
+import { createHabit, currentStreak, deleteHabit, fetchHabitStats, fetchHabits, fetchMonthlyGoal, toLocalKey, todayKey, updateHabit, updateHabitCompletion, type Habit, type HabitStats, type MonthlyGoal } from "../services/habitsApi";
 
 interface Props { onBack: () => void; refreshTick: number; }
 
@@ -21,6 +21,8 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [statsWindow, setStatsWindow] = useState<(typeof STATS_WINDOWS)[number]>(30);
   const [stats, setStats] = useState<Record<string, HabitStats>>({});
+  const [monthly, setMonthly] = useState<Record<string, MonthlyGoal>>({});
+  const [monthlyGoal, setMonthlyGoal] = useState("");
   const [title, setTitle] = useState("");
   const [frequency, setFrequency] = useState<"diaria" | "personalizada">("diaria");
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>([1, 2, 3, 4, 5, 6, 7]);
@@ -53,6 +55,18 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statsKey, statsWindow]);
 
+  // La meta mensual solo existe en los hábitos que la definieron; se recalcula cuando cambia el historial o la meta.
+  const goalKey = habits.map((habit) => `${habit.id}:${habit.monthlyGoal ?? ""}:${habit.frequency}:${habit.daysOfWeek.join("")}:${habit.completedDates.length}:${habit.completedDates.at(-1) ?? ""}`).join("|");
+  useEffect(() => {
+    let cancelled = false;
+    Promise.allSettled(habits.filter((habit) => habit.monthlyGoal).map((habit) => fetchMonthlyGoal(habit.id).then((value) => [habit.id, value] as const))).then((results) => {
+      if (cancelled) return;
+      setMonthly(Object.fromEntries(results.flatMap((result) => result.status === "fulfilled" ? [result.value] : [])));
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goalKey]);
+
   const doneToday = habits.filter((habit) => habit.completedDates.includes(todayKey())).length;
   const completion = habits.length ? Math.round((doneToday / habits.length) * 100) : 0;
   const weekDates = useMemo(() => {
@@ -83,7 +97,9 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
     try {
       setSaving(true);
       setError(null);
-      const input = { title: title.trim(), frequency, daysOfWeek: frequency === "diaria" ? [1, 2, 3, 4, 5, 6, 7] : daysOfWeek, color, icon };
+      const goal = Number.parseInt(monthlyGoal, 10);
+      // Al editar, 0 quita la meta; al crear, null = sin meta.
+      const input = { title: title.trim(), frequency, daysOfWeek: frequency === "diaria" ? [1, 2, 3, 4, 5, 6, 7] : daysOfWeek, color, icon, monthlyGoal: Number.isFinite(goal) && goal > 0 ? goal : editingId ? 0 : null };
       if (editingId) {
         const updated = await updateHabit(editingId, input);
         setHabits(habits.map((item) => item.id === updated.id ? updated : item));
@@ -118,6 +134,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
     setDaysOfWeek([1, 2, 3, 4, 5, 6, 7]);
     setColor(COLORS[0]);
     setIcon("target");
+    setMonthlyGoal("");
     setEditingId(null);
     setCreating(false);
   }
@@ -137,6 +154,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
     setDaysOfWeek(habit.daysOfWeek);
     setColor(habit.color);
     setIcon(habit.icon in ICONS ? (habit.icon as keyof typeof ICONS) : "target");
+    setMonthlyGoal(habit.monthlyGoal ? String(habit.monthlyGoal) : "");
     setCreating(true);
     // El formulario vive arriba de la lista: se lleva a la vista al editar un hábito lejano.
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -166,16 +184,16 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
           )}
         </div>
 
-        {creating && <form onSubmit={submitHabit} className="rounded-lg bg-card p-4 flex flex-col gap-3">{editingId && <p className="text-[13px] font-semibold text-ink-2">Editando hábito · tu historial de cumplimiento se conserva</p>}<input autoFocus aria-label="Nombre del hábito" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ej. Leer 20 minutos" className="rounded-md border border-line bg-paper px-3 py-2.5 text-[14px] outline-none focus:border-violet" /><div className="flex rounded-md bg-wash p-1"><button type="button" onClick={() => { setFrequency("diaria"); setDaysOfWeek([1, 2, 3, 4, 5, 6, 7]); }} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "diaria" ? "var(--color-card)" : "transparent" }}>Diario</button><button type="button" onClick={() => setFrequency("personalizada")} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "personalizada" ? "var(--color-card)" : "transparent" }}>Días</button></div>{frequency === "personalizada" && <div className="flex justify-between">{DAYS.map((day, index) => <button key={day} type="button" onClick={() => toggleDay(index + 1)} className="h-8 w-8 rounded-full text-[13px] font-bold" style={{ background: daysOfWeek.includes(index + 1) ? color : "var(--color-wash)", color: daysOfWeek.includes(index + 1) ? "white" : "var(--color-ink-2)" }}>{day}</button>)}</div>}<div className="flex items-center justify-between"><div className="flex gap-2">{(COLORS.includes(color) ? COLORS : [...COLORS, color]).map((option) => <button key={option} type="button" aria-label={`Color ${option}`} onClick={() => setColor(option)} className="h-6 w-6 rounded-full border-2" style={{ background: option, borderColor: color === option ? "var(--color-night)" : "transparent" }} />)}</div><select value={icon} onChange={(event) => setIcon(event.target.value as keyof typeof ICONS)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-[13px]"><option value="target">Meta</option><option value="book">Estudio</option><option value="run">Ejercicio</option><option value="reading">Lectura</option><option value="meditate">Calma</option><option value="phone">Sin redes</option></select></div><div className="flex gap-2"><button type="button" onClick={resetForm} className="rounded-md bg-wash px-3 py-2 text-[13px] font-bold text-ink-2">Cancelar</button><button disabled={!title.trim() || saving} className="rounded-md bg-violet px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50">{saving ? (editingId ? "Guardando..." : "Creando...") : editingId ? "Guardar cambios" : "Crear hábito"}</button></div></form>}
+        {creating && <form onSubmit={submitHabit} className="rounded-lg bg-card p-4 flex flex-col gap-3">{editingId && <p className="text-[13px] font-semibold text-ink-2">Editando hábito · tu historial de cumplimiento se conserva</p>}<input autoFocus aria-label="Nombre del hábito" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ej. Leer 20 minutos" className="rounded-md border border-line bg-paper px-3 py-2.5 text-[14px] outline-none focus:border-violet" /><div className="flex rounded-md bg-wash p-1"><button type="button" onClick={() => { setFrequency("diaria"); setDaysOfWeek([1, 2, 3, 4, 5, 6, 7]); }} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "diaria" ? "var(--color-card)" : "transparent" }}>Diario</button><button type="button" onClick={() => setFrequency("personalizada")} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "personalizada" ? "var(--color-card)" : "transparent" }}>Días</button></div>{frequency === "personalizada" && <div className="flex justify-between">{DAYS.map((day, index) => <button key={day} type="button" onClick={() => toggleDay(index + 1)} className="h-8 w-8 rounded-full text-[13px] font-bold" style={{ background: daysOfWeek.includes(index + 1) ? color : "var(--color-wash)", color: daysOfWeek.includes(index + 1) ? "white" : "var(--color-ink-2)" }}>{day}</button>)}</div>}<label className="flex items-center justify-between gap-3 text-[13px] font-semibold text-ink-2">Meta mensual (opcional)<span className="flex items-center gap-1"><input type="number" inputMode="numeric" min={1} max={100} aria-label="Meta mensual en porcentaje" value={monthlyGoal} onChange={(event) => setMonthlyGoal(event.target.value)} placeholder="80" className="num w-16 rounded-md border border-line bg-paper px-2 py-1.5 text-right text-[14px] outline-none focus:border-violet" /><span>%</span></span></label><div className="flex items-center justify-between"><div className="flex gap-2">{(COLORS.includes(color) ? COLORS : [...COLORS, color]).map((option) => <button key={option} type="button" aria-label={`Color ${option}`} onClick={() => setColor(option)} className="h-6 w-6 rounded-full border-2" style={{ background: option, borderColor: color === option ? "var(--color-night)" : "transparent" }} />)}</div><select value={icon} onChange={(event) => setIcon(event.target.value as keyof typeof ICONS)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-[13px]"><option value="target">Meta</option><option value="book">Estudio</option><option value="run">Ejercicio</option><option value="reading">Lectura</option><option value="meditate">Calma</option><option value="phone">Sin redes</option></select></div><div className="flex gap-2"><button type="button" onClick={resetForm} className="rounded-md bg-wash px-3 py-2 text-[13px] font-bold text-ink-2">Cancelar</button><button disabled={!title.trim() || saving} className="rounded-md bg-violet px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50">{saving ? (editingId ? "Guardando..." : "Creando...") : editingId ? "Guardar cambios" : "Crear hábito"}</button></div></form>}
 
         {error && <p className="text-[13px] font-semibold text-danger">{error}</p>}
-        {loading ? <p className="text-[13px] text-ink-2">Cargando hábitos...</p> : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : habits.map((habit) => <HabitCard key={habit.id} habit={habit} weekDates={weekDates} saving={saving} stats={stats[habit.id]} windowDays={statsWindow} onToggle={() => toggleHabit(habit)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}
+        {loading ? <p className="text-[13px] text-ink-2">Cargando hábitos...</p> : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : habits.map((habit) => <HabitCard key={habit.id} habit={habit} weekDates={weekDates} saving={saving} stats={stats[habit.id]} monthly={monthly[habit.id]} windowDays={statsWindow} onToggle={() => toggleHabit(habit)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}
       </div>
     </div>
   );
 }
 
-function HabitCard({ habit, weekDates, saving, stats, windowDays, onToggle, onEdit, onDelete }: { habit: Habit; weekDates: Date[]; saving: boolean; stats?: HabitStats; windowDays: number; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
+function HabitCard({ habit, weekDates, saving, stats, monthly, windowDays, onToggle, onEdit, onDelete }: { habit: Habit; weekDates: Date[]; saving: boolean; stats?: HabitStats; monthly?: MonthlyGoal; windowDays: number; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
   const doneToday = habit.completedDates.includes(todayKey());
   const streak = stats?.currentStreak ?? currentStreak(habit.completedDates);
   return (
@@ -206,6 +224,7 @@ function HabitCard({ habit, weekDates, saving, stats, windowDays, onToggle, onEd
         <span>{habit.frequency === "diaria" ? "Diario" : "Personalizado"}</span>
       </p>
       <HabitStatsRow stats={stats} streak={streak} windowDays={windowDays} />
+      {monthly && <MonthlyGoalRow monthly={monthly} color={habit.color} />}
       {/* La semana como una línea: una estación por día */}
       <div className="relative mt-3">
         <span className="absolute left-3 right-3 top-[11px] h-[3px] bg-line-strong" />
@@ -225,6 +244,42 @@ function HabitCard({ habit, weekDates, saving, stats, windowDays, onToggle, onEd
           })}
         </ul>
       </div>
+    </div>
+  );
+}
+
+const monthName = (month: string) => new Date(`${month}-01T12:00:00`).toLocaleDateString("es", { month: "long" });
+
+/** Avance del mes frente a la meta: barra con el mínimo marcado, lo que falta y los meses anteriores aprobados o no. */
+function MonthlyGoalRow({ monthly, color }: { monthly: MonthlyGoal; color: string }) {
+  const { current, history, goal } = monthly;
+  const fill = current.scheduledDays > 0 ? Math.min(100, (current.completedDays / current.scheduledDays) * 100) : 0;
+  const marker = current.scheduledDays > 0 ? (current.requiredDays / current.scheduledDays) * 100 : goal;
+  const status = current.approved
+    ? "Meta del mes lograda"
+    : current.reachable
+      ? `Faltan ${current.remainingToGoal} ${current.remainingToGoal === 1 ? "día" : "días"} para llegar a la meta`
+      : "La meta de este mes ya no es alcanzable";
+  return (
+    <div className="mt-3 border-t border-line pt-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[13px] text-ink-2">Meta de {monthName(current.month)} · {goal}%</p>
+        <p className="num text-[13px] font-semibold text-ink">{current.completedDays}/{current.requiredDays} días</p>
+      </div>
+      <div className="relative mt-1.5 h-2 rounded-full bg-wash" role="progressbar" aria-valuemin={0} aria-valuemax={current.requiredDays} aria-valuenow={Math.min(current.completedDays, current.requiredDays)} aria-label={`Meta mensual del hábito: ${current.completedDays} de ${current.requiredDays} días`}>
+        <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${fill}%`, background: color }} />
+        <span className="absolute -top-0.5 h-3 w-[2px] bg-ink" style={{ left: `${marker}%` }} aria-hidden="true" />
+      </div>
+      <p className="mt-1.5 text-[13px] font-medium" style={{ color: current.approved ? "var(--color-green-ink)" : current.reachable ? "var(--color-ink-2)" : "var(--color-danger)" }}>{status}</p>
+      {history.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Meses anteriores">
+          {history.map((month) => (
+            <li key={month.month} className="rounded-md px-2 py-1 text-[13px] font-medium" style={{ background: month.approved ? "var(--color-green-wash)" : "var(--color-wash)", color: month.approved ? "var(--color-green-ink)" : "var(--color-ink-2)" }}>
+              {monthName(month.month)} {month.approved ? "✓" : `${Math.round(month.rate)}%`}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

@@ -21,6 +21,12 @@ public class Habit {
     /** Día de creación (AAAA-MM-DD); null en hábitos anteriores a las estadísticas. */
     private String createdDate;
 
+    /** Meta de cumplimiento mensual en % (1-100) de los días programados; null = sin meta. */
+    private Integer monthlyGoal;
+
+    public Integer getMonthlyGoal() { return monthlyGoal; }
+    public void setMonthlyGoal(Integer monthlyGoal) { this.monthlyGoal = monthlyGoal; }
+
     public String getCreatedDate() { return createdDate; }
     public void setCreatedDate(String createdDate) { this.createdDate = createdDate; }
 

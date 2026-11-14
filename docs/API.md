@@ -402,17 +402,50 @@ Reglas (`400` si se incumplen, `404` si el padre no existe o es de otro usuario)
 
 ## Editar hábitos (`PUT /api/habits/{id}`)
 
-Body: `{ title, frequency?, daysOfWeek?, color?, icon? }`
+Body: `{ title, frequency?, daysOfWeek?, color?, icon?, monthlyGoal? }`
 
 | Respuesta | Cuándo |
 |---|---|
 | `200` | hábito actualizado (misma forma que `GET /api/habits`) |
-| `400` | `title` vacío o > 100 caracteres, `frequency` distinta de `diaria`/`personalizada`, `color` no `#RRGGBB` |
+| `400` | `title` vacío o > 100 caracteres, `frequency` distinta de `diaria`/`personalizada`, `color` no `#RRGGBB`, `monthlyGoal` fuera de 0–100 |
 | `404` | el hábito no existe o es de otro usuario |
 
-- `title` es obligatorio. `frequency`, `color` e `icon` ausentes conservan el valor actual.
+- `title` es obligatorio. `frequency`, `color`, `icon` y `monthlyGoal` ausentes conservan el valor actual.
+- `monthlyGoal` (entero 1–100) fija la meta de cumplimiento mensual; **`0` la quita** (ver «Meta mensual» abajo).
 - `daysOfWeek` (1 = lunes … 7 = domingo) solo aplica a `personalizada`: se descartan valores fuera de rango y duplicados; si queda vacío o la frecuencia es `diaria`, se usa toda la semana. Si se omite en un hábito personalizado se conservan los días actuales.
 - El historial `completedDates` **no cambia** al editar.
+
+## Meta mensual de un hábito (`GET /api/habits/{id}/monthly-goal?months=6`)
+
+Cada hábito puede tener una meta de cumplimiento mensual, `monthlyGoal` (entero 1–100, opcional, también en `POST /api/habits` y en la respuesta de `GET /api/habits`). El mes se considera **aprobado** si los días cumplidos llegan al `monthlyGoal` % de los días programados del mes **completo**; no se exige el 100 %.
+
+`months` (0–24, por defecto 6) es cuántos meses ya terminados se devuelven en el historial.
+
+```json
+{
+  "goal": 80,
+  "current": { "month": "2026-10", "scheduledDays": 31, "completedDays": 8, "requiredDays": 25, "remainingToGoal": 17,
+               "remainingDays": 22, "rate": 25.8, "approved": false, "reachable": true },
+  "history": [ { "month": "2026-09", "scheduledDays": 30, "completedDays": 28, "requiredDays": 24, "remainingToGoal": 0,
+                 "remainingDays": 0, "rate": 93.3, "approved": true, "reachable": true } ]
+}
+```
+
+| Campo | Significado |
+|---|---|
+| `scheduledDays` / `completedDays` | Días programados del mes y cuántos se cumplieron. |
+| `requiredDays` | Mínimo para aprobar: ⌈`monthlyGoal` % de `scheduledDays`⌉. |
+| `remainingToGoal` | Cumplimientos que faltan para aprobar (0 si ya se llegó). |
+| `remainingDays` | Días programados que quedan por cumplir en el mes (hoy cuenta si falta); 0 en meses pasados. |
+| `approved` / `reachable` | El mes ya llegó a la meta / aún se puede llegar (lo que falta cabe en los días que quedan). |
+
+| Respuesta | Cuándo |
+|---|---|
+| `200` | meta, mes en curso e historial (más reciente primero) |
+| `400` | el hábito no tiene `monthlyGoal`, o `months` fuera de 0–24 |
+| `404` | el hábito no existe o es de otro usuario |
+
+Reglas: solo cuentan los **días programados** (como en las rachas); el primer mes cuenta desde el día de creación del hábito, y el historial no retrocede antes de ese mes ni incluye meses sin días programados. «Hoy» y los límites del mes usan la zona horaria del usuario. El historial se evalúa con la meta **actual** del hábito.
 
 ## Marcar hábito (`PATCH /api/habits/{id}/completion`)
 

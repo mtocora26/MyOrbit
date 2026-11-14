@@ -252,4 +252,60 @@ class HabitServiceTest {
 
         assertEquals("2026-10-10", created.getCreatedDate());
     }
+
+    @Test
+    void createStoresTheMonthlyGoal() {
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        Habit created = service.create("u1", new com.app.myorbit.habits.api.CreateHabitRequest("Leer", null, null, null, null, 80));
+
+        assertEquals(80, created.getMonthlyGoal());
+    }
+
+    @Test
+    void updateSetsKeepsAndClearsTheMonthlyGoal() {
+        Habit habit = habitOf("u1");
+        habit.setTitle("Leer");
+        habit.setFrequency(HabitFrequency.DAILY);
+        habit.setMonthlyGoal(70);
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        assertEquals(70, service.update("u1", "h1", new UpdateHabitRequest("Leer", null, null, null, null, null)).getMonthlyGoal());
+        assertEquals(90, service.update("u1", "h1", new UpdateHabitRequest("Leer", null, null, null, null, 90)).getMonthlyGoal());
+        assertEquals(null, service.update("u1", "h1", new UpdateHabitRequest("Leer", null, null, null, null, 0)).getMonthlyGoal());
+    }
+
+    @Test
+    void monthlyGoalReportsTheCurrentMonthAndHistory() {
+        Habit habit = habitOf("u1");
+        habit.setFrequency(HabitFrequency.DAILY);
+        habit.setMonthlyGoal(80);
+        habit.setCreatedDate("2026-09-01");
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+
+        HabitService.MonthlyGoalReport report = service.monthlyGoal("u1", "h1", 6);
+
+        assertEquals(80, report.goal());
+        assertEquals("2026-10", report.current().month());
+        assertEquals(List.of("2026-09"), report.history().stream().map(m -> m.month()).toList());
+    }
+
+    @Test
+    void monthlyGoalRequiresAGoalAndAValidMonthsParameter() {
+        Habit habit = habitOf("u1");
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+
+        assertThrows(BusinessRuleException.class, () -> service.monthlyGoal("u1", "h1", 6));
+        habit.setMonthlyGoal(80);
+        assertThrows(BusinessRuleException.class, () -> service.monthlyGoal("u1", "h1", 25));
+        assertThrows(BusinessRuleException.class, () -> service.monthlyGoal("u1", "h1", -1));
+    }
+
+    @Test
+    void monthlyGoalHidesHabitsOfOtherUsers() {
+        when(repository.findById("h1")).thenReturn(Optional.of(habitOf("u2")));
+
+        assertThrows(NotFoundException.class, () -> service.monthlyGoal("u1", "h1", 6));
+    }
 }
