@@ -4,28 +4,30 @@ MyOrbit se usa en el celular, con una mano y en sesiones cortas entre clases. Es
 
 ## Herramientas
 
-Se usan dos skills de Claude Code. Se instalan en el proyecto (`.claude/skills/`, ignorado por git; `skills-lock.json` sí se versiona para reproducir la instalación):
+Se usan tres skills de Claude Code. Se instalan en el proyecto (`.claude/skills/`, ignorado por git; `skills-lock.json` sí se versiona para reproducir la instalación):
 
 ```bash
 npx -y skills add pbakaus/impeccable --skill impeccable --agent claude-code -y
 npx -y skills add emilkowalski/skill --skill emil-design-eng --agent claude-code -y
+npx -y skills add sleekdotdesign/agent-skills -s sleek-design-mobile-apps --agent claude-code -y
 ```
 
-Reinicia Claude Code después de instalarlas. Las skills se cargan con los permisos del agente: revisa su `SKILL.md` antes de actualizarlas.
+Sleek además necesita la variable de entorno `SLEEK_API_KEY` (cuenta Pro o superior en sleek.design); no se guarda en el repo. Reinicia Claude Code después de instalarlas. Las skills se cargan con los permisos del agente: revisa su `SKILL.md` antes de actualizarlas.
 
 | Skill | Para qué se usa aquí |
 |---|---|
 | **Impeccable** (`/impeccable`) | Estructura, jerarquía, layout, tipografía, color, copy, accesibilidad y responsive. Comandos: `critique`, `audit`, `layout`, `adapt`, `distill`, `clarify`, `harden`, `polish`. Respeta `PRODUCT.md` y `DESIGN.md` (modo **Operate**: la app es una herramienta, manda la claridad sobre la expresión). |
+| **Sleek** (`sleek-design-mobile-apps`) | Genera propuestas de pantalla móvil a partir de un brief, para comparar alternativas antes de tocar código. Su salida es una **referencia visual**: se reimplementa en React con los tokens de `DESIGN.md`, nunca se pega tal cual. Solo para pantallas con cambio de estructura; los arreglos puntuales (tamaños, texto, scroll) no la necesitan. |
 | **Emil Design Eng** (`emil-design-eng`) | Los detalles que hacen que la app se sienta bien: transiciones y gestos, estados táctiles, tiempos y curvas de animación, microinteracciones. |
 
-Regla: **Impeccable decide qué se ve y dónde; Emil decide cómo se mueve y responde.** Ninguna de las dos sustituye a `DESIGN.md`: si una recomendación lo contradice, se discute y, si se adopta, se actualiza `DESIGN.md` en el mismo PR.
+Regla: **Sleek propone, Impeccable decide qué se ve y dónde; Emil decide cómo se mueve y responde.** Ninguna de las dos sustituye a `DESIGN.md`: si una recomendación lo contradice, se discute y, si se adopta, se actualiza `DESIGN.md` en el mismo PR.
 
 ## El ciclo por pantalla
 
 Una pantalla (o un flujo corto) por issue y por PR. Cada una pasa por los mismos pasos:
 
 1. **Critique y audit** (`/impeccable critique <pantalla>`, `/impeccable audit <pantalla>`): hallazgos con severidad. Se pegan en el issue.
-2. **Plan** (`/impeccable shape` si cambia la estructura): qué queda a la vista, qué pasa a «bajo demanda», qué acciones suben al encabezado o a un menú.
+2. **Plan** (`/impeccable shape` si cambia la estructura): qué queda a la vista, qué pasa a «bajo demanda», qué acciones suben al encabezado o a un menú. Si hay varias formas razonables de resolverlo, se piden alternativas a Sleek y se elige con Impeccable.
 3. **Implementación** con `layout` / `adapt` / `clarify`, y con Emil para movimiento y estados táctiles.
 4. **Verificación** en el navegador, no solo con `tsc`: 360 px y 390 px de ancho, claro y oscuro, con datos reales y con datos vacíos o largos (4 y 12 materias, títulos largos, sin conexión).
 5. **Polish** (`/impeccable polish`) como última pasada antes del PR.
