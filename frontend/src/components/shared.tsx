@@ -334,6 +334,21 @@ export function Skeleton({ className = "" }: { className?: string; }) {
   return <div className={`bg-wash rounded-sm animate-pulse ${className}`} />;
 }
 
+// Filas con la forma de una fila real (barra de color, dos líneas y un dato): evita el salto de layout al cargar.
+export function ListSkeleton({ rows = 4, label = "Cargando" }: { rows?: number; label?: string; }) {
+  return (
+    <div role="status" aria-busy="true" aria-label={label} className="flex flex-col divide-y divide-line">
+      {Array.from({ length: rows }, (_, index) => (
+        <div key={index} className="flex min-h-[64px] items-center gap-3 px-4 py-3" aria-hidden="true">
+          <Skeleton className="h-10 w-1.5 flex-shrink-0" />
+          <div className="min-w-0 flex-1"><Skeleton className="h-[16px] w-3/5" /><Skeleton className="mt-2 h-[13px] w-2/5" /></div>
+          <Skeleton className="h-[22px] w-10 flex-shrink-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Section Header ───────────────────────────────────────────────────────────
 export function SectionTitle({ label, action, onAction }: { label: string; action?: string; onAction?: () => void; }) {
   return (

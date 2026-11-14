@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader } from "../components/shared";
+import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton } from "../components/shared";
 import { IconPencil } from "../components/icons";
 import { createCategory, deleteCategory, fetchCategories, orderCategories, updateCategory, type Category } from "../services/categoriesApi";
 import { fetchTasks } from "../services/tasksApi";
@@ -133,7 +133,7 @@ export default function CategoriesScreen({ onBack }: Props) {
         )}
 
         {loading ? (
-          <p className="text-[14px] text-ink-2">Cargando categorías...</p>
+          <ListSkeleton rows={4} label="Cargando categorías" />
         ) : sorted.length === 0 && !loadError ? (
           <EmptyState title="Aún no tienes categorías" sub="Agrupa tus tareas por materia, proyecto o ámbito de tu vida." action="Crear categoría" onAction={() => openForm(null)} />
         ) : (

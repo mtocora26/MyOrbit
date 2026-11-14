@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, Checkbox, PriorityDot, ProgressBar, EmptyState, Station } from "../components/shared";
+import { CategoryBadge, Checkbox, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton } from "../components/shared";
 import { IconCalendar, IconChecklist } from "../components/icons";
 import { deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
 import { isOverdue } from "../services/taskDue";
@@ -199,7 +199,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
       </div>
 
       {loading ? (
-        <p className="px-4 pt-4 text-[13px] text-ink-2">Cargando tareas...</p>
+        <ListSkeleton rows={5} label="Cargando tareas" />
       ) : filteredTasks.length === 0 ? (
         <div className="px-4 pt-4">
           <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" onAction={onFab} />

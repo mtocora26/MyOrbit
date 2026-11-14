@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { EmptyState, ScreenHeader } from "../components/shared";
+import { EmptyState, ScreenHeader, ListSkeleton } from "../components/shared";
 import { IconCalendar, IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification, type NotificationType } from "../services/notificationsApi";
 
@@ -124,7 +124,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
         )}
 
         {loading ? (
-          <p className="text-[14px] text-ink-2">Cargando notificaciones...</p>
+          <ListSkeleton rows={5} label="Cargando notificaciones" />
         ) : visible.length === 0 && !error ? (
           filter === "sin-leer" && items.length > 0
             ? <EmptyState title="Todo leído" sub="No tienes notificaciones pendientes de leer." action="Ver todas" onAction={() => setFilter("todas")} />

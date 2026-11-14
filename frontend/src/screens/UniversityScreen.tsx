@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState } from "../components/shared";
+import { EmptyState, ListSkeleton } from "../components/shared";
 import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import { fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
@@ -107,7 +107,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         )}
 
         {loading ? (
-          <p className="text-[14px] text-ink-2">Cargando materias...</p>
+          <ListSkeleton rows={5} label="Cargando materias" />
         ) : visible.length === 0 && !error ? (
           <EmptyState title="Aún no tienes materias" sub="Agrega las materias del semestre para seguir tus evaluaciones y notas." action="Crear materia" onAction={() => setCreating(true)} />
         ) : (

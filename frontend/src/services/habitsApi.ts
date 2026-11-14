@@ -139,3 +139,17 @@ export async function fetchMonthlyGoal(id: string, months = 6): Promise<MonthlyG
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar la meta mensual"));
   return response.json();
 }
+
+export interface HabitSummary {
+  habitId: string;
+  stats: HabitStats;
+  /** null si el hábito no tiene meta mensual. */
+  monthlyGoal: MonthlyGoal | null;
+}
+
+/** Estadísticas y meta mensual de todos los hábitos en una sola petición. */
+export async function fetchHabitSummaries(days = 30, months = 6): Promise<HabitSummary[]> {
+  const response = await fetch(`${API_BASE_URL}/api/habits/summary?days=${days}&months=${months}`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las estadísticas"));
+  return response.json();
+}

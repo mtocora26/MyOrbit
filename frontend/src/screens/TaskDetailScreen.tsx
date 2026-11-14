@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar } from "../components/shared";
+import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar, ListSkeleton } from "../components/shared";
 import { IconCalendar } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
@@ -306,7 +306,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
       />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-1 pb-28 flex flex-col gap-3">
-        {loading && <p className="text-[13px] text-ink-2">Cargando detalle...</p>}
+        {loading && <ListSkeleton rows={2} label="Cargando detalle" />}
         {error && <p className="text-[13px] font-semibold text-danger">{error}</p>}
 
         {!loading && !task && !error && (

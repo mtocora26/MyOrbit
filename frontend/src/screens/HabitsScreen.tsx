@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ProgressBar, ScreenHeader } from "../components/shared";
+import { ProgressBar, ScreenHeader, Skeleton } from "../components/shared";
 import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
-import { createHabit, currentStreak, deleteHabit, fetchHabitStats, fetchHabits, fetchMonthlyGoal, toLocalKey, todayKey, updateHabit, updateHabitCompletion, completeLabel, type Habit, type HabitType, type HabitStats, type MonthlyGoal } from "../services/habitsApi";
+import { createHabit, deleteHabit, fetchHabitSummaries, fetchHabits, toLocalKey, todayKey, updateHabit, updateHabitCompletion, completeLabel, type Habit, type HabitType, type HabitStats, type HabitSummary, type MonthlyGoal } from "../services/habitsApi";
 
 interface Props { onBack: () => void; refreshTick: number; }
 
@@ -20,8 +20,11 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [statsWindow, setStatsWindow] = useState<(typeof STATS_WINDOWS)[number]>(30);
-  const [stats, setStats] = useState<Record<string, HabitStats>>({});
-  const [monthly, setMonthly] = useState<Record<string, MonthlyGoal>>({});
+  // Estadísticas y meta mensual de todos los hábitos, de una sola petición. Mientras no llegan, las tarjetas
+  // muestran esqueletos (nunca «0 días» ni «–» inventados); al recalcular se conservan los valores anteriores.
+  const [summaries, setSummaries] = useState<Record<string, HabitSummary>>({});
+  const [summaryFailed, setSummaryFailed] = useState(false);
+  const [summaryTick, setSummaryTick] = useState(0);
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [type, setType] = useState<HabitType>("BUILD");
   const [title, setTitle] = useState("");
@@ -44,29 +47,20 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
 
   useEffect(() => { loadHabits(); }, [refreshTick]);
 
-  // Las estadísticas dependen del historial y del horario de cada hábito: se recalculan cuando cambian o cambia la ventana.
-  const statsKey = habits.map((habit) => `${habit.id}:${habit.frequency}:${habit.daysOfWeek.join("")}:${habit.completedDates.length}:${habit.completedDates.at(-1) ?? ""}`).join("|");
+  // Las estadísticas y la meta dependen del historial, del horario y de la meta de cada hábito: se recalculan
+  // cuando cambian, cuando cambia la ventana o cuando el usuario pulsa «Reintentar».
+  const summaryKey = habits.map((habit) => `${habit.id}:${habit.frequency}:${habit.daysOfWeek.join("")}:${habit.monthlyGoal ?? ""}:${habit.completedDates.length}:${habit.completedDates.at(-1) ?? ""}`).join("|");
   useEffect(() => {
+    if (habits.length === 0) return;
     let cancelled = false;
-    Promise.allSettled(habits.map((habit) => fetchHabitStats(habit.id, statsWindow).then((value) => [habit.id, value] as const))).then((results) => {
+    fetchHabitSummaries(statsWindow).then((list) => {
       if (cancelled) return;
-      setStats(Object.fromEntries(results.flatMap((result) => result.status === "fulfilled" ? [result.value] : [])));
-    });
+      setSummaries(Object.fromEntries(list.map((summary) => [summary.habitId, summary])));
+      setSummaryFailed(false);
+    }).catch(() => { if (!cancelled) setSummaryFailed(true); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statsKey, statsWindow]);
-
-  // La meta mensual solo existe en los hábitos que la definieron; se recalcula cuando cambia el historial o la meta.
-  const goalKey = habits.map((habit) => `${habit.id}:${habit.monthlyGoal ?? ""}:${habit.frequency}:${habit.daysOfWeek.join("")}:${habit.completedDates.length}:${habit.completedDates.at(-1) ?? ""}`).join("|");
-  useEffect(() => {
-    let cancelled = false;
-    Promise.allSettled(habits.filter((habit) => habit.monthlyGoal).map((habit) => fetchMonthlyGoal(habit.id).then((value) => [habit.id, value] as const))).then((results) => {
-      if (cancelled) return;
-      setMonthly(Object.fromEntries(results.flatMap((result) => result.status === "fulfilled" ? [result.value] : [])));
-    });
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [goalKey]);
+  }, [summaryKey, statsWindow, summaryTick]);
 
   const doneToday = habits.filter((habit) => habit.completedDates.includes(todayKey())).length;
   const completion = habits.length ? Math.round((doneToday / habits.length) * 100) : 0;
@@ -190,15 +184,14 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
         {creating && <form onSubmit={submitHabit} className="rounded-lg bg-card p-4 flex flex-col gap-3">{editingId && <p className="text-[13px] font-semibold text-ink-2">Editando hábito · tu historial de cumplimiento se conserva</p>}<div role="radiogroup" aria-label="Tipo de hábito" className="flex rounded-md bg-wash p-1">{(["BUILD", "QUIT"] as const).map((option) => <button key={option} type="button" role="radio" aria-checked={type === option} onClick={() => setType(option)} className="min-h-[44px] flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: type === option ? "var(--color-card)" : "transparent" }}>{option === "BUILD" ? "Por construir" : "Para dejar"}</button>)}</div><input autoFocus aria-label="Nombre del hábito" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={type === "QUIT" ? "Ej. No fumar" : "Ej. Leer 20 minutos"} className="rounded-md border border-line bg-paper px-3 py-2.5 text-[14px] outline-none focus:border-violet" /><div className="flex rounded-md bg-wash p-1"><button type="button" onClick={() => { setFrequency("diaria"); setDaysOfWeek([1, 2, 3, 4, 5, 6, 7]); }} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "diaria" ? "var(--color-card)" : "transparent" }}>Diario</button><button type="button" onClick={() => setFrequency("personalizada")} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "personalizada" ? "var(--color-card)" : "transparent" }}>Días</button></div>{frequency === "personalizada" && <div className="flex justify-between">{DAYS.map((day, index) => <button key={day} type="button" onClick={() => toggleDay(index + 1)} className="h-11 min-w-0 max-w-11 flex-1 rounded-full text-[13px] font-bold" style={{ background: daysOfWeek.includes(index + 1) ? color : "var(--color-wash)", color: daysOfWeek.includes(index + 1) ? "white" : "var(--color-ink-2)" }}>{day}</button>)}</div>}<label className="flex items-center justify-between gap-3 text-[13px] font-semibold text-ink-2">Meta mensual (opcional)<span className="flex items-center gap-1"><input type="number" inputMode="numeric" min={1} max={100} aria-label="Meta mensual en porcentaje" value={monthlyGoal} onChange={(event) => setMonthlyGoal(event.target.value)} placeholder="80" className="num w-16 rounded-md border border-line bg-paper px-2 py-1.5 text-right text-[14px] outline-none focus:border-violet" /><span>%</span></span></label><div className="flex items-center justify-between"><div className="flex gap-2">{(COLORS.includes(color) ? COLORS : [...COLORS, color]).map((option) => <button key={option} type="button" aria-label={`Color ${option}`} onClick={() => setColor(option)} className="h-6 w-6 rounded-full border-2" style={{ background: option, borderColor: color === option ? "var(--color-night)" : "transparent" }} />)}</div><select value={icon} onChange={(event) => setIcon(event.target.value as keyof typeof ICONS)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-[13px]"><option value="target">Meta</option><option value="book">Estudio</option><option value="run">Ejercicio</option><option value="reading">Lectura</option><option value="meditate">Calma</option><option value="phone">Sin redes</option></select></div><div className="flex gap-2"><button type="button" onClick={resetForm} className="rounded-md bg-wash px-3 py-2 text-[13px] font-bold text-ink-2">Cancelar</button><button disabled={!title.trim() || saving} className="rounded-md bg-violet px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50">{saving ? (editingId ? "Guardando..." : "Creando...") : editingId ? "Guardar cambios" : "Crear hábito"}</button></div></form>}
 
         {error && <p className="text-[13px] font-semibold text-danger">{error}</p>}
-        {loading ? <p className="text-[13px] text-ink-2">Cargando hábitos...</p> : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : habits.map((habit) => <HabitCard key={habit.id} habit={habit} weekDates={weekDates} saving={saving} stats={stats[habit.id]} monthly={monthly[habit.id]} windowDays={statsWindow} onToggle={() => toggleHabit(habit)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}
+        {loading ? <HabitListSkeleton /> : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : habits.map((habit) => <HabitCard key={habit.id} habit={habit} weekDates={weekDates} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}
       </div>
     </div>
   );
 }
 
-function HabitCard({ habit, weekDates, saving, stats, monthly, windowDays, onToggle, onEdit, onDelete }: { habit: Habit; weekDates: Date[]; saving: boolean; stats?: HabitStats; monthly?: MonthlyGoal; windowDays: number; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
+function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySummary, onToggle, onEdit, onDelete }: { habit: Habit; weekDates: Date[]; saving: boolean; summary?: HabitSummary; summaryFailed: boolean; onRetrySummary: () => void; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
   const doneToday = habit.completedDates.includes(todayKey());
-  const streak = stats?.currentStreak ?? currentStreak(habit.completedDates);
   return (
     <div className="rounded-md border border-line bg-card px-4 pt-3 pb-4">
       <div className="flex items-center gap-2">
@@ -227,8 +220,9 @@ function HabitCard({ habit, weekDates, saving, stats, monthly, windowDays, onTog
         <span>{habit.frequency === "diaria" ? "Diario" : "Personalizado"}</span>
         {habit.type === "QUIT" && <span className="font-semibold text-coral-ink">Para dejar · marca los días que lo evitas</span>}
       </p>
-      <HabitStatsRow stats={stats} streak={streak} windowDays={windowDays} />
-      {monthly && <MonthlyGoalRow monthly={monthly} color={habit.color} />}
+      <HabitStatsRow stats={summary?.stats} failed={summaryFailed && !summary} onRetry={onRetrySummary} />
+      {summary?.monthlyGoal && <MonthlyGoalRow monthly={summary.monthlyGoal} color={habit.color} />}
+      {habit.monthlyGoal && !summary && !summaryFailed && <Skeleton className="mt-3 h-[56px] w-full" />}
       {/* La semana como una línea: una estación por día */}
       <div className="relative mt-3">
         <span className="absolute left-3 right-3 top-[11px] h-[3px] bg-line-strong" />
@@ -291,13 +285,31 @@ function MonthlyGoalRow({ monthly, color }: { monthly: MonthlyGoal; color: strin
 const percent = (value: number) => `${value.toLocaleString("es", { maximumFractionDigits: 1 })}%`;
 
 /** Racha actual, mejor racha y cumplimiento: tablero de salidas, cifras condensadas sobre etiquetas pequeñas. */
-function HabitStatsRow({ stats, streak, windowDays }: { stats?: HabitStats; streak: number; windowDays: number }) {
+function HabitStatsRow({ stats, failed, onRetry }: { stats?: HabitStats; failed: boolean; onRetry: () => void }) {
+  // Sin datos reales no se pinta ninguna cifra: esqueleto con la forma final (sin saltos) o error con reintento.
+  if (!stats) {
+    return (
+      <div className="mt-3 border-t border-line pt-3" aria-busy={!failed}>
+        {failed ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] text-ink-2">No se pudieron calcular las estadísticas.</p>
+            <button type="button" onClick={onRetry} className="-mr-3 min-h-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink">Reintentar</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2" aria-hidden="true">
+            {[0, 1, 2].map((index) => <div key={index}><Skeleton className="h-[13px] w-16" /><Skeleton className="mt-1.5 h-[26px] w-14" /></div>)}
+          </div>
+        )}
+      </div>
+    );
+  }
+  const days = (value: number) => (value === 1 ? "día" : "días");
   const cells = [
-    { label: "Racha", value: String(streak), unit: streak === 1 ? "día" : "días" },
-    { label: "Mejor racha", value: stats ? String(stats.bestStreak) : "–", unit: stats ? (stats.bestStreak === 1 ? "día" : "días") : "" },
-    { label: `Cumplimiento ${windowDays} d`, value: stats && stats.scheduledDays > 0 ? percent(stats.completionRate) : "–", unit: stats && stats.scheduledDays > 0 ? `${stats.completedDays}/${stats.scheduledDays}` : "" },
+    { label: "Racha", value: String(stats.currentStreak), unit: days(stats.currentStreak) },
+    { label: "Mejor racha", value: String(stats.bestStreak), unit: days(stats.bestStreak) },
+    { label: `Cumplimiento ${stats.windowDays} d`, value: stats.scheduledDays > 0 ? percent(stats.completionRate) : "–", unit: stats.scheduledDays > 0 ? `${stats.completedDays}/${stats.scheduledDays}` : "" },
   ];
-  const empty = stats && stats.bestStreak === 0 && stats.completedDays === 0;
+  const empty = stats.bestStreak === 0 && stats.completedDays === 0;
   return (
     <div className="mt-3 border-t border-line pt-3">
       <dl className="grid grid-cols-3 gap-2">
@@ -309,6 +321,24 @@ function HabitStatsRow({ stats, streak, windowDays }: { stats?: HabitStats; stre
         ))}
       </dl>
       {empty && <p className="mt-2 text-[13px] text-ink-2">Marca tu primer día para empezar la racha.</p>}
+    </div>
+  );
+}
+
+/** Tres tarjetas con la forma de una tarjeta de hábito: título, cifras y la línea de la semana. */
+function HabitListSkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Cargando hábitos">
+      {[0, 1, 2].map((index) => (
+        <div key={index} className="rounded-md border border-line bg-card px-4 pt-3 pb-4" aria-hidden="true">
+          <div className="flex h-11 items-center gap-2"><Skeleton className="h-3 w-3" /><Skeleton className="h-[17px] w-40" /></div>
+          <Skeleton className="mt-1 h-[14px] w-16" />
+          <div className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3">
+            {[0, 1, 2].map((cell) => <div key={cell}><Skeleton className="h-[13px] w-16" /><Skeleton className="mt-1.5 h-[26px] w-14" /></div>)}
+          </div>
+          <div className="mt-4 flex justify-between">{[0, 1, 2, 3, 4, 5, 6].map((day) => <Skeleton key={day} className="h-[26px] w-[26px] rounded-full" />)}</div>
+        </div>
+      ))}
     </div>
   );
 }

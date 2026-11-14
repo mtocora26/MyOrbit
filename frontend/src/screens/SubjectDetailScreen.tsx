@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader } from "../components/shared";
+import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
@@ -199,7 +199,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
           )}
 
           {loadingEvals ? (
-            <p className="text-[14px] text-ink-2">Cargando evaluaciones...</p>
+            <ListSkeleton rows={3} label="Cargando evaluaciones" />
           ) : evaluations.length === 0 && !evalsError ? (
             <div className="rounded-md border border-dashed border-line-strong">
               <EmptyState title="Aún no hay evaluaciones" sub="Agrega parciales, talleres y finales con su porcentaje para ver cómo va la materia." action="Agregar evaluación" onAction={() => openEvalSheet(null)} />
