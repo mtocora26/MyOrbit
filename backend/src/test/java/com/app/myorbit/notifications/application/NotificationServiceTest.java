@@ -34,7 +34,8 @@ class NotificationServiceTest {
     }
 
     private final List<NotificationFactory> allFactories =
-            List.of(new DeadlineNotificationFactory(), new EventNotificationFactory(), new HabitNotificationFactory());
+            List.of(new DeadlineNotificationFactory(), new HabitNotificationFactory(), new OverdueNotificationFactory(),
+                    new ExamNotificationFactory(), new AtRiskNotificationFactory());
 
     @Test
     void notifyUsesTheFactoryOfTheTypeAndSaves() {
@@ -51,15 +52,15 @@ class NotificationServiceTest {
 
     @Test
     void failsAtStartupWhenATypeHasNoFactory() {
-        List<NotificationFactory> incomplete = List.of(new DeadlineNotificationFactory(), new EventNotificationFactory());
+        List<NotificationFactory> incomplete = List.of(new DeadlineNotificationFactory(), new HabitNotificationFactory());
 
         assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, incomplete));
     }
 
     @Test
     void failsAtStartupWhenATypeHasTwoFactories() {
-        List<NotificationFactory> duplicated = List.of(new DeadlineNotificationFactory(), new DeadlineNotificationFactory(),
-                new EventNotificationFactory(), new HabitNotificationFactory());
+        List<NotificationFactory> duplicated = List.of(new DeadlineNotificationFactory(), new DeadlineNotificationFactory(), new HabitNotificationFactory(),
+                new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory());
 
         assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, duplicated));
     }

@@ -17,7 +17,6 @@ import com.app.myorbit.tasks.infrastructure.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
-import com.app.myorbit.tasks.domain.TaskCompletedEvent;
 import com.app.myorbit.tasks.domain.TaskCreatedEvent;
 import com.app.myorbit.tasks.domain.TaskDueSoonEvent;
 import com.app.myorbit.tasks.api.UpdateTaskStatusRequest;
@@ -371,43 +370,14 @@ class TaskServiceTest {
     }
 
     @Test
-    void completingATaskPublishesTaskCompletedEventOnce() {
+    void completingATaskDoesNotPublishAnyNotificationEvent() {
         Task task = taskOf("u1");
-        task.setTitle("Entregar");
         when(repository.findById("t1")).thenReturn(Optional.of(task));
         when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service.updateStatus("u1", "t1", statusRequest(true));
-        service.updateStatus("u1", "t1", statusRequest(true));
-
-        verify(events, org.mockito.Mockito.times(1)).publishEvent(new TaskCompletedEvent("u1", "t1", "Entregar"));
-    }
-
-    @Test
-    void reopeningATaskDoesNotPublishCompletion() {
-        Task task = taskOf("u1");
-        task.setDone(true);
-        when(repository.findById("t1")).thenReturn(Optional.of(task));
-        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        service.updateStatus("u1", "t1", statusRequest(false));
 
         verify(events, never()).publishEvent(org.mockito.ArgumentMatchers.any(Object.class));
-    }
-
-    @Test
-    void completingTheLastSubtaskCompletesTheTaskAndPublishes() {
-        Task task = taskOf("u1");
-        task.setTitle("Proyecto");
-        Subtask only = new Subtask();
-        only.setId("s1");
-        task.getSubtasks().add(only);
-        when(repository.findById("t1")).thenReturn(Optional.of(task));
-        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        service.updateSubtaskStatus("u1", "t1", "s1", new UpdateSubtaskStatusRequest(true));
-
-        verify(events).publishEvent(new TaskCompletedEvent("u1", "t1", "Proyecto"));
     }
 
     @Test
@@ -423,8 +393,38 @@ class TaskServiceTest {
         b.setDue(from.plusHours(20));
         when(repository.findByUserIdAndDoneFalseAndDueBetween("u1", from, to)).thenReturn(List.of(a, b));
 
-        assertEquals(2, service.publishDueSoon("u1", from, to));
-        verify(events).publishEvent(new TaskDueSoonEvent("u1", "t1", "Informe", from.plusHours(5)));
-        verify(events).publishEvent(new TaskDueSoonEvent("u1", "t2", "Parcial", from.plusHours(20)));
+        assertEquals(2, service.publishDueSoon("u1", from, to, false));
+        verify(events).publishEvent(new TaskDueSoonEvent("u1", "t1", "Informe", from.plusHours(5), false));
+        verify(events).publishEvent(new TaskDueSoonEvent("u1", "t2", "Parcial", from.plusHours(20), false));
+    }
+
+    @Test
+    void publishDueSoonMarksImminentRemindersApart() {
+        java.time.LocalDateTime from = java.time.LocalDateTime.of(2026, 11, 7, 8, 0);
+        Task a = taskOf("u1");
+        a.setTitle("Informe");
+        a.setDue(from.plusMinutes(30));
+        when(repository.findByUserIdAndDoneFalseAndDueBetween("u1", from, from.plusHours(1))).thenReturn(List.of(a));
+
+        assertEquals(1, service.publishDueSoon("u1", from, from.plusHours(1), true));
+        verify(events).publishEvent(new TaskDueSoonEvent("u1", "t1", "Informe", from.plusMinutes(30), true));
+    }
+
+    @Test
+    void publishOverduePublishesASingleSummaryWithTheCount() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.of(2026, 11, 7, 8, 0);
+        when(repository.findByUserIdAndDoneFalseAndDueBefore("u1", now)).thenReturn(List.of(taskOf("u1"), taskOf("u1"), taskOf("u1")));
+
+        assertEquals(3, service.publishOverdue("u1", now));
+        verify(events).publishEvent(new com.app.myorbit.tasks.domain.TaskOverdueEvent("u1", 3));
+    }
+
+    @Test
+    void publishOverdueStaysSilentWhenNothingIsOverdue() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.of(2026, 11, 7, 8, 0);
+        when(repository.findByUserIdAndDoneFalseAndDueBefore("u1", now)).thenReturn(List.of());
+
+        assertEquals(0, service.publishOverdue("u1", now));
+        verify(events, never()).publishEvent(org.mockito.ArgumentMatchers.any(Object.class));
     }
 }

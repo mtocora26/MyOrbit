@@ -56,12 +56,26 @@ public class NotificationService {
      * @return la notificación creada, o {@code null} si ya existía una de hoy
      */
     public Notification notifyOncePerDay(NotificationRequest request) {
-        Instant startOfDay = userZone.startOfToday(request.userId());
+        return notifyUnlessSince(request, userZone.startOfToday(request.userId()));
+    }
+
+    /**
+     * Como {@link #notify} pero omite la notificación si ya hay una igual (mismo usuario, tipo y referencia)
+     * creada desde {@code since}: sirve para avisos con una ventana propia (una hora, varios días).
+     *
+     * @return la notificación creada, o {@code null} si ya existía una dentro de la ventana
+     */
+    public Notification notifyUnlessSince(NotificationRequest request, Instant since) {
         if (repository.existsByUserIdAndTypeAndReferenceIdAndCreatedAtGreaterThanEqual(
-                request.userId(), request.type(), request.referenceId(), startOfDay)) {
+                request.userId(), request.type(), request.referenceId(), since)) {
             return null;
         }
         return notify(request);
+    }
+
+    /** Como {@link #notifyUnlessSince} con una ventana que termina ahora y dura {@code window}. */
+    public Notification notifyUnlessWithin(NotificationRequest request, java.time.Duration window) {
+        return notifyUnlessSince(request, Instant.now(clock).minus(window));
     }
 
     /** Más recientes primero; con {@code unreadOnly} solo las no leídas. */

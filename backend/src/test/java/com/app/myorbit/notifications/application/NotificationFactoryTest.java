@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NotificationFactoryTest {
     private static final Instant NOW = Instant.parse("2026-11-07T12:00:00Z");
@@ -36,12 +37,25 @@ class NotificationFactoryTest {
     }
 
     @Test
-    void eventCongratulatesTheCompletion() {
-        Notification n = build(new EventNotificationFactory(), null);
+    void overduePluralizesTheCount() {
+        assertEquals("Tienes 1 tarea vencida sin completar", message(new OverdueNotificationFactory(), "1", null));
+        assertEquals("Tienes 3 tareas vencidas sin completar", message(new OverdueNotificationFactory(), "3", null));
+        assertEquals(NotificationType.OVERDUE, new OverdueNotificationFactory().type());
+    }
 
-        assertEquals(NotificationType.EVENT, n.getType());
-        assertEquals("Tarea completada", n.getTitle());
-        assertEquals("Completaste \"Estudiar\". ¡Buen trabajo!", n.getMessage());
+    @Test
+    void examShowsTheDate() {
+        assertEquals("\"Parcial 1 (Cálculo)\" es el 10/11/2026 08:00",
+                message(new ExamNotificationFactory(), "Parcial 1 (Cálculo)", LocalDateTime.of(2026, 11, 10, 8, 0)));
+    }
+
+    @Test
+    void atRiskNamesTheSubject() {
+        assertTrue(message(new AtRiskNotificationFactory(), "Cálculo", null).contains("\"Cálculo\""));
+    }
+
+    private static String message(NotificationFactory factory, String subject, LocalDateTime when) {
+        return factory.create(new NotificationRequest(factory.type(), "u1", "ref1", subject, when), NOW).getMessage();
     }
 
     @Test
@@ -55,7 +69,7 @@ class NotificationFactoryTest {
     @Test
     void everyNotificationStartsUnreadWithCommonFields() {
         for (NotificationFactory factory : new NotificationFactory[]{
-                new DeadlineNotificationFactory(), new EventNotificationFactory(), new HabitNotificationFactory()}) {
+                new DeadlineNotificationFactory(), new HabitNotificationFactory(), new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory()}) {
             Notification n = build(factory, null);
 
             assertNotNull(n.getId());

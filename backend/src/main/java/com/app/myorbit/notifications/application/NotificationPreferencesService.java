@@ -18,9 +18,9 @@ public class NotificationPreferencesService {
         return repository.findById(userId).orElseGet(() -> NotificationPreferences.defaultsFor(userId));
     }
 
-    public NotificationPreferences update(String userId, boolean deadline, boolean event, boolean habit) {
+    public NotificationPreferences update(String userId, boolean deadline, boolean habit, boolean overdue, boolean exam, boolean atRisk) {
         NotificationPreferences preferences = get(userId);
-        preferences.update(deadline, event, habit);
+        preferences.update(deadline, habit, overdue, exam, atRisk);
         return repository.save(preferences);
     }
 

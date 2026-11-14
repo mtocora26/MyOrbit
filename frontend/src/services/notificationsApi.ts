@@ -2,7 +2,7 @@ import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
 
-export type NotificationType = "DEADLINE" | "EVENT" | "HABIT";
+export type NotificationType = "DEADLINE" | "HABIT" | "OVERDUE" | "EXAM" | "AT_RISK";
 
 export interface AppNotification {
   id: string;
@@ -40,12 +40,16 @@ export async function markAllNotificationsRead(): Promise<number> {
 }
 
 export interface NotificationPreferences {
-  /** Fechas límite: al crear una tarea con fecha y el recordatorio de 24 h. */
+  /** Fechas límite: al crear una tarea con fecha, un día antes y una hora antes. */
   deadline: boolean;
-  /** Tareas completadas. */
-  event: boolean;
-  /** Hábitos pendientes del día. */
+  /** Hábitos pendientes del día (al final de la tarde). */
   habit: boolean;
+  /** Resumen de tareas vencidas. */
+  overdue: boolean;
+  /** Parciales y evaluaciones próximas. */
+  exam: boolean;
+  /** Materias en riesgo de no aprobarse. */
+  atRisk: boolean;
 }
 
 export async function fetchNotificationPreferences(): Promise<NotificationPreferences> {
