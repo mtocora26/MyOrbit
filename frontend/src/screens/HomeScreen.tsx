@@ -199,8 +199,8 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               <p className="font-display text-[22px] font-semibold leading-none text-ink">Línea despejada</p>
               <p className="mt-2 text-[14px] text-ink-2">No hay entregas pendientes. Planea tu semana o agrega algo nuevo.</p>
               <div className="mt-4 flex justify-center gap-2">
-                <button onClick={onFab} className="rounded-md bg-coral px-4 py-2.5 text-[14px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]">Nueva tarea</button>
-                <button onClick={onAgenda} className="rounded-md border border-line-strong px-4 py-2.5 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Abrir agenda</button>
+                <button onClick={onFab} className="rounded-md bg-coral min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]">Nueva tarea</button>
+                <button onClick={onAgenda} className="rounded-md border border-line-strong min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Abrir agenda</button>
               </div>
             </div>
           ) : (

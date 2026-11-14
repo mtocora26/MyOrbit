@@ -112,7 +112,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
         </div>
         <div className="flex gap-1" role="radiogroup" aria-label="Color de la línea">
           {CATEGORY_PALETTE.map((option) => (
-            <button key={option} type="button" role="radio" aria-checked={color === option} aria-label={option} onClick={() => setColor(option)} className="flex h-9 w-9 items-center justify-center">
+            <button key={option} type="button" role="radio" aria-checked={color === option} aria-label={option} onClick={() => setColor(option)} className="flex h-11 w-11 items-center justify-center">
               <span className="h-6 w-6 rounded-[3px] border-2" style={{ background: option, borderColor: color === option ? "var(--color-ink)" : "transparent" }} />
             </button>
           ))}
@@ -138,14 +138,14 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(category.id)}
-              className={`flex h-10 flex-shrink-0 items-center gap-2 rounded-md border px-3 text-[14px] font-semibold ${selected ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}
+              className={`flex h-11 flex-shrink-0 items-center gap-2 rounded-md border px-3 text-[14px] font-semibold ${selected ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}
             >
               <span className="h-2.5 w-2.5 flex-shrink-0 rounded-[2px]" style={{ background: category.color }} aria-hidden="true" />
               {labelOf(category)}
             </button>
           );
         })}
-        <button type="button" onClick={() => setCreating(true)} aria-label="Nueva categoría" className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-line-strong text-ink-2">
+        <button type="button" onClick={() => setCreating(true)} aria-label="Nueva categoría" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-line-strong text-ink-2">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         </button>
       </div>
@@ -238,13 +238,17 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: () => v
       role="switch"
       aria-checked={on}
       aria-label={label}
-      className="relative h-7 w-12 flex-shrink-0 rounded-[6px] transition-colors duration-200"
-      style={{ background: on ? "var(--color-coral)" : "var(--color-line-strong)" }}
+      className="-my-2 flex h-11 w-12 flex-shrink-0 items-center"
     >
       <span
-        className="absolute top-[3px] h-[22px] w-[22px] rounded-[4px] bg-white transition-[left] duration-200 ease-out"
-        style={{ left: on ? "calc(100% - 25px)" : "3px" }}
-      />
+        className="relative block h-7 w-12 rounded-[6px] transition-colors duration-200"
+        style={{ background: on ? "var(--color-coral)" : "var(--color-line-strong)" }}
+      >
+        <span
+          className="absolute top-[3px] h-[22px] w-[22px] rounded-[4px] bg-white transition-[left] duration-200 ease-out"
+          style={{ left: on ? "calc(100% - 25px)" : "3px" }}
+        />
+      </span>
     </button>
   );
 }

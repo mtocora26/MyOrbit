@@ -184,18 +184,18 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           {editingAccount ? (
             <div className="p-4 flex flex-col gap-3">
               <ProfileInput label="Nombre" value={draftName} onChange={setDraftName} placeholder="Tu nombre" />
-              <p className="text-[12px] text-ink-3">Correo: {user.email} (no se puede cambiar)</p>
+              <p className="text-[13px] text-ink-3">Correo: {user.email} (no se puede cambiar)</p>
               <div className="border-t border-line pt-3 flex flex-col gap-3">
                 <p className="text-[13px] font-bold text-ink">Cambiar contraseña <span className="font-normal text-ink-3">(opcional)</span></p>
                 <ProfileInput label="Contraseña actual" value={currentPassword} onChange={setCurrentPassword} placeholder="La que usas ahora" />
                 <ProfileInput label="Contraseña nueva" value={newPassword} onChange={setNewPassword} placeholder="Mínimo 8 caracteres" />
                 <ProfileInput label="Confirmar contraseña nueva" value={confirmPassword} onChange={setConfirmPassword} placeholder="Repítela" />
-                <p className="text-[12px] text-ink-3">Al cambiarla se cierran tus otras sesiones; esta permanece activa.</p>
+                <p className="text-[13px] text-ink-3">Al cambiarla se cierran tus otras sesiones; esta permanece activa.</p>
               </div>
               {accountError && <p role="alert" className="text-[13px] font-semibold text-danger">{accountError}</p>}
               <div className="flex gap-2">
-                <button onClick={saveAccount} disabled={savingAccount} className="rounded-md bg-coral px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50">{savingAccount ? "Guardando..." : "Guardar cambios"}</button>
-                <button onClick={() => setEditingAccount(false)} disabled={savingAccount} className="rounded-md bg-wash px-3 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
+                <button onClick={saveAccount} disabled={savingAccount} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50">{savingAccount ? "Guardando..." : "Guardar cambios"}</button>
+                <button onClick={() => setEditingAccount(false)} disabled={savingAccount} className="rounded-md bg-wash min-h-[44px] px-4 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
               </div>
             </div>
           ) : (
@@ -205,7 +205,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
                 <span className="text-[13px] text-ink-2">Contraseña</span>
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] text-ink-3">••••••••</span>
-                  <button onClick={beginEditAccount} className="text-[13px] font-bold text-blue-ink">Editar cuenta</button>
+                  <button onClick={beginEditAccount} className="min-h-[44px] px-2 -mr-2 text-[13px] font-bold text-blue-ink">Editar cuenta</button>
                 </div>
               </div>
               {accountMessage && <p role="status" className="px-4 py-2 text-[13px] font-semibold text-green-ink">{accountMessage}</p>}
@@ -222,8 +222,8 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
               <ProfileInput label="Meta de promedio" value={draft.gradeTarget} onChange={(value) => setDraft({ ...draft, gradeTarget: value })} placeholder="Ej. 4.5" />
               {profileError && <p className="text-[13px] font-semibold text-danger">{profileError}</p>}
               <div className="flex gap-2">
-                <button onClick={saveProfile} disabled={savingProfile} className="rounded-md bg-coral px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50">{savingProfile ? "Guardando..." : "Guardar"}</button>
-                <button onClick={() => setEditingProfile(false)} disabled={savingProfile} className="rounded-md bg-wash px-3 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
+                <button onClick={saveProfile} disabled={savingProfile} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50">{savingProfile ? "Guardando..." : "Guardar"}</button>
+                <button onClick={() => setEditingProfile(false)} disabled={savingProfile} className="rounded-md bg-wash min-h-[44px] px-4 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
               </div>
             </div>
           ) : (
@@ -234,7 +234,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
                 <span className="text-[13px] text-ink-2">Meta de promedio</span>
                 <div className="flex items-center gap-2">
                   <span className="text-[14px] font-bold text-coral-ink">{profile?.gradeTarget || "Sin configurar"}</span>
-                  <button onClick={beginEdit} className="text-[13px] font-bold text-blue-ink">{profile ? "Editar" : "Configurar"}</button>
+                  <button onClick={beginEdit} className="min-h-[44px] px-2 -mr-2 text-[13px] font-bold text-blue-ink">{profile ? "Editar" : "Configurar"}</button>
                 </div>
               </div>
             </>

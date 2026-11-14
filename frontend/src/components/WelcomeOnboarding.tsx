@@ -31,7 +31,7 @@ export default function WelcomeOnboarding({ name, onClose, onCreateTask, onConfi
             <StartOption icon={<IconHabit size={20} />} color="var(--color-violet)" background="var(--color-violet-wash)" title="Mis hábitos" description="Crea una rutina." onClick={onConfigureHabits} />
             <StartOption icon={<IconUser size={20} />} color="var(--color-blue)" background="var(--color-blue-wash)" title="Mi perfil" description="Añade tu contexto." onClick={onConfigureProfile} />
           </div>
-          <button onClick={onClose} className="mt-5 w-full py-2.5 text-[13px] font-bold text-ink-2 transition-colors hover:text-ink">Explorar MyOrbit por ahora</button>
+          <button onClick={onClose} className="mt-5 w-full min-h-[44px] py-2.5 text-[13px] font-bold text-ink-2 transition-colors hover:text-ink">Explorar MyOrbit por ahora</button>
         </div>
       </section>
     </div>

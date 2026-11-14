@@ -112,7 +112,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6">
         <div role="radiogroup" aria-label="Filtrar notificaciones" className="flex self-start rounded-md bg-wash p-1">
           {([["todas", "Todas"], ["sin-leer", "Sin leer"]] as const).map(([value, label]) => (
-            <button key={value} type="button" role="radio" aria-checked={filter === value} onClick={() => setFilter(value)} className="min-h-[36px] rounded-[4px] px-4 text-[14px] font-semibold" style={{ background: filter === value ? "var(--color-card)" : "transparent", color: filter === value ? "var(--color-ink)" : "var(--color-ink-2)" }}>{label}</button>
+            <button key={value} type="button" role="radio" aria-checked={filter === value} onClick={() => setFilter(value)} className="min-h-[44px] rounded-[4px] px-4 text-[14px] font-semibold" style={{ background: filter === value ? "var(--color-card)" : "transparent", color: filter === value ? "var(--color-ink)" : "var(--color-ink-2)" }}>{label}</button>
           ))}
         </div>
 
@@ -140,7 +140,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className={`truncate text-[16px] text-ink ${notification.read ? "font-medium" : "font-semibold"}`}>{notification.title}</span>
-                        {!notification.read && <span className="flex-shrink-0 rounded-[3px] bg-coral px-1.5 py-[3px] text-[12px] font-semibold leading-none text-night">Nueva</span>}
+                        {!notification.read && <span className="flex-shrink-0 rounded-[3px] bg-coral px-1.5 py-[3px] text-[13px] font-semibold leading-none text-night">Nueva</span>}
                       </span>
                       <span className={`mt-0.5 block text-[14px] leading-snug ${notification.read ? "text-ink-2" : "text-ink"}`}>{notification.message}</span>
                       <span className="mt-1 block text-[13px] text-ink-3">{style.label} · {timeAgo(notification.createdAt)}</span>

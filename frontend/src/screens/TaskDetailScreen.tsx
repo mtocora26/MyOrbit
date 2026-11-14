@@ -295,7 +295,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
         right={
           <button
             onClick={editing ? cancelEditMode : openEditMode}
-            className="w-9 h-9 rounded-full bg-wash flex items-center justify-center"
+            className="w-11 h-11 rounded-full bg-wash flex items-center justify-center"
             title={editing ? "Cancelar edicion" : "Editar tarea"}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-2)" strokeWidth="2" strokeLinecap="round">
@@ -543,7 +543,7 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
               {subtask.title}
             </p>
           )}
-          <button onClick={() => setAddingChild(!addingChild)} disabled={saving} title="Añadir subpaso" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold text-blue-ink hover:bg-blue-wash">+</button>
+          <button onClick={() => setAddingChild(!addingChild)} disabled={saving} title="Añadir subpaso" className="flex h-11 w-11 -m-2 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold text-blue-ink hover:bg-blue-wash">+</button>
           <button onClick={() => onDelete(subtask.id)} disabled={saving} title="Eliminar subtarea" aria-label="Eliminar subtarea" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-danger hover:bg-danger-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
         </div>
         <button onClick={openDueEditor} disabled={saving} className={`ml-8 flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-bold ${overdue ? "bg-danger-wash text-danger" : subtask.due ? "bg-blue-wash text-blue-ink" : "bg-wash text-ink-3"}`}>

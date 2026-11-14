@@ -303,7 +303,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
                           <p className="text-[16px] font-semibold leading-snug text-ink">{occurrence.subjectName}</p>
                           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1"><CategoryBadge name="Clase" color={occurrence.subjectColor} /><span className="num text-[13px] text-ink-2">{occurrence.start}–{occurrence.end}{occurrence.room ? ` · ${occurrence.room}` : ""}</span></div>
                         </div>
-                        {inProgress && <span className="rounded-[3px] bg-blue-wash px-1.5 py-[3px] text-[12px] font-semibold leading-none text-blue-ink">En curso</span>}
+                        {inProgress && <span className="rounded-[3px] bg-blue-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-blue-ink">En curso</span>}
                       </div>
                     </li>
                   );

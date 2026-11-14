@@ -26,7 +26,7 @@ const PRIORITIES: { id: TaskPriority; label: string }[] = [
   { id: "baja", label: "Baja" },
 ];
 
-const chip = "flex h-10 flex-shrink-0 items-center gap-1.5 rounded-md border px-3 text-[14px] font-semibold";
+const chip = "flex h-11 flex-shrink-0 items-center gap-1.5 rounded-md border px-3 text-[14px] font-semibold";
 const chipOn = "border-ink bg-wash text-ink";
 const chipOff = "border-line text-ink-2";
 
