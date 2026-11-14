@@ -144,3 +144,10 @@
 *.stl                filter=lfs diff=lfs merge=lfs -text
 *.nc                 filter=lfs diff=lfs merge=lfs -text
 *.mat                filter=lfs diff=lfs merge=lfs -text
+
+# ---------------------------------------------------------------------------
+# Excepciones: íconos y fuentes de ícono pequeños que el build necesita como archivo real.
+# Un build sin LFS (Cloudflare, CI) vería un puntero de 130 bytes y no una imagen.
+# ---------------------------------------------------------------------------
+public/*.png         -filter -diff -merge -text
+assets/*.png         -filter -diff -merge -text
