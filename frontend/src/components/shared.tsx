@@ -335,13 +335,10 @@ export function Skeleton({ className = "" }: { className?: string; }) {
 }
 
 // Error de carga o de acción: mensaje corto y, si se puede, un «Reintentar» de 44 px.
-// El navegador reporta los fallos de red en inglés («Failed to fetch»); al estudiante se le dice en español qué hacer.
-const NETWORK_ERROR = /failed to fetch|networkerror|load failed|network request failed/i;
 export function ErrorBanner({ message, onRetry, className = "" }: { message: string; onRetry?: () => void; className?: string; }) {
-  const text = NETWORK_ERROR.test(message) ? "No se pudo conectar con el servidor. Revisa tu conexión." : message;
   return (
     <div role="alert" className={`flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2 ${className}`}>
-      <p className="text-[14px] font-semibold text-danger">{text}</p>
+      <p className="text-[14px] font-semibold text-danger">{message}</p>
       {onRetry && <button type="button" onClick={onRetry} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button>}
     </div>
   );
