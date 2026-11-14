@@ -114,7 +114,7 @@ export default function GradesScreen({ subject, onBack }: Props) {
                         </span>
                         {graded
                           ? <span className="num text-[26px] font-semibold leading-none text-ink">{formatGrade(evaluation.grade as number)}</span>
-                          : <span className="num text-right text-[13px] font-semibold text-ink-2">{provisional !== null && <span className="mb-0.5 block text-[20px] leading-none text-ink">{formatGrade(provisional)} <span className="text-[12px] font-semibold text-ink-3">prov.</span></span>}{summary.requiredGrade !== null && summary.requiredGrade > 0 ? `Necesitas ${formatGrade(summary.requiredGrade)}` : "Pendiente"}</span>}
+                          : <span className="num text-right text-[13px] font-semibold text-ink-2">{provisional !== null && <span className="mb-0.5 block text-[20px] leading-none text-ink">{formatGrade(provisional)} <span className="text-[13px] font-semibold text-ink-3">prov.</span></span>}{summary.requiredGrade !== null && summary.requiredGrade > 0 ? `Necesitas ${formatGrade(summary.requiredGrade)}` : "Pendiente"}</span>}
                       </li>
                     );
                   })}

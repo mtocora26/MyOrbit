@@ -162,24 +162,24 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
               key={f}
               onClick={() => setDatePreset(f)}
               aria-pressed={datePreset === f}
-              className="flex-shrink-0 min-h-[40px] rounded-md px-4 text-[14px] font-semibold transition-colors duration-150"
+              className="flex-shrink-0 min-h-[44px] rounded-md px-4 text-[14px] font-semibold transition-colors duration-150"
               style={{ background: datePreset === f ? "var(--color-strong)" : "var(--color-wash)", color: datePreset === f ? "var(--color-on-strong)" : "var(--color-ink-2)" }}
             >
               {f === "todas" ? "Todas" : f === "hoy" ? "Hoy" : "Esta semana"}
             </button>
           ))}
-          <select value={doneFilter} onChange={(e) => setDoneFilter(e.target.value as DoneFilter)} aria-label="Filtrar por estado" className="flex-shrink-0 min-h-[40px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
+          <select value={doneFilter} onChange={(e) => setDoneFilter(e.target.value as DoneFilter)} aria-label="Filtrar por estado" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
             <option value="todas">Estado: todas</option>
             <option value="pendientes">Pendientes</option>
             <option value="completadas">Completadas</option>
           </select>
-          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)} aria-label="Filtrar por prioridad" className="flex-shrink-0 min-h-[40px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
+          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)} aria-label="Filtrar por prioridad" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
             <option value="todas">Prioridad: todas</option>
             <option value="alta">Alta</option>
             <option value="media">Media</option>
             <option value="baja">Baja</option>
           </select>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filtrar por categoría" className="flex-shrink-0 min-h-[40px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filtrar por categoría" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
             <option value="todas">Categoría: todas</option>
             <option value="none">Sin categoría</option>
             {orderCategories(categories).map((category) => <option key={category.id} value={category.id}>{nameByCategoryId.get(category.id) ?? category.name}</option>)}
@@ -187,7 +187,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
           {view === "tablero" && (
             <button
               onClick={() => setGroupBy(groupBy === "estado" ? "categoria" : "estado")}
-              className="ml-auto flex-shrink-0 min-h-[40px] rounded-md bg-wash px-4 text-[14px] font-semibold text-ink-2"
+              className="ml-auto flex-shrink-0 min-h-[44px] rounded-md bg-wash px-4 text-[14px] font-semibold text-ink-2"
             >
               {groupBy === "estado" ? "Por estado" : "Por línea"}
             </button>

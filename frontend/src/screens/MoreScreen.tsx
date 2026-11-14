@@ -53,7 +53,7 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
               <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: tile.bg, color: tile.color }}>{tile.icon}</span>
               <span className="flex w-full items-center justify-between gap-2">
                 <span className="text-[16px] font-semibold text-ink">{tile.label}</span>
-                {(tile.badge ?? 0) > 0 && <span aria-label={`${tile.badge} sin leer`} className="num flex h-[20px] min-w-[20px] items-center justify-center rounded-[4px] bg-coral px-1.5 text-[12px] font-semibold leading-none text-night">{(tile.badge ?? 0) > 99 ? "99+" : tile.badge}</span>}
+                {(tile.badge ?? 0) > 0 && <span aria-label={`${tile.badge} sin leer`} className="num flex h-[20px] min-w-[20px] items-center justify-center rounded-[4px] bg-coral px-1.5 text-[13px] font-semibold leading-none text-night">{(tile.badge ?? 0) > 99 ? "99+" : tile.badge}</span>}
               </span>
             </button>
           ))}

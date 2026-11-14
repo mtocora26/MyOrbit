@@ -54,7 +54,7 @@ export default function SideNav({ active, userName, onChange, onFab, onProfile, 
       <button onClick={onNotifications} className="mt-auto flex min-h-[44px] w-full items-center gap-3 rounded-md px-3 text-left text-[16px] font-semibold text-ink-2 transition-colors duration-150 hover:bg-wash hover:text-ink">
         <IconBell size={20} />
         <span className="flex-1">Notificaciones</span>
-        {unreadCount > 0 && <span aria-label={`${unreadCount} sin leer`} className="num flex h-[20px] min-w-[20px] items-center justify-center rounded-[4px] bg-coral px-1.5 text-[12px] font-semibold leading-none text-night">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+        {unreadCount > 0 && <span aria-label={`${unreadCount} sin leer`} className="num flex h-[20px] min-w-[20px] items-center justify-center rounded-[4px] bg-coral px-1.5 text-[13px] font-semibold leading-none text-night">{unreadCount > 99 ? "99+" : unreadCount}</span>}
       </button>
       <ThemeToggle withLabel className="mt-1 w-full justify-start px-3" />
       <button onClick={onProfile} className="mt-1 flex min-h-[48px] items-center gap-3 rounded-md px-3 text-left transition-colors duration-150 hover:bg-wash">

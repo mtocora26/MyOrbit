@@ -17,7 +17,7 @@ export default function NotificationBell({ count, onClick, className = "" }: Pro
     >
       <IconBell size={22} />
       {count > 0 && (
-        <span aria-hidden="true" className="num absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] bg-coral px-1 text-[12px] font-semibold leading-none text-night">
+        <span aria-hidden="true" className="num absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] bg-coral px-1 text-[13px] font-semibold leading-none text-night">
           {count > 9 ? "9+" : count}
         </span>
       )}

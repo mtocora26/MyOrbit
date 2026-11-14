@@ -232,7 +232,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
                         {graded
                           ? <span className="num text-[26px] font-semibold leading-none text-ink">{formatNumber(evaluation.grade as number)}</span>
                           : evaluation.provisionalGrade !== null
-                            ? <span className="num flex flex-col items-end gap-1"><span className="text-[22px] font-semibold leading-none text-ink-2">{formatGrade(evaluation.provisionalGrade)}</span><span className="rounded-[3px] bg-wash px-1.5 py-[3px] text-[12px] font-semibold leading-none text-ink-2">Provisional</span></span>
+                            ? <span className="num flex flex-col items-end gap-1"><span className="text-[22px] font-semibold leading-none text-ink-2">{formatGrade(evaluation.provisionalGrade)}</span><span className="rounded-[3px] bg-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-ink-2">Provisional</span></span>
                             : <span className="rounded-[3px] bg-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-ink-2">Pendiente</span>}
                       </button>
                     </li>

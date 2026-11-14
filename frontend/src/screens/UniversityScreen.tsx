@@ -90,10 +90,10 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         {semesters.length > 0 && (
           <div role="radiogroup" aria-label="Semestre" className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
             {semesters.map((option) => (
-              <button key={option} type="button" role="radio" aria-checked={option === activeSemester} onClick={() => setSemester(option)} className={`num min-h-[40px] flex-shrink-0 rounded-md border px-3 text-[14px] font-semibold ${option === activeSemester ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}>{option}</button>
+              <button key={option} type="button" role="radio" aria-checked={option === activeSemester} onClick={() => setSemester(option)} className={`num min-h-[44px] flex-shrink-0 rounded-md border px-3 text-[14px] font-semibold ${option === activeSemester ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}>{option}</button>
             ))}
-            {activeRecord && <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="min-h-[40px] flex-shrink-0 rounded-md border border-line px-3 text-[14px] font-semibold text-ink-2">Editar</button>}
-            <button type="button" onClick={() => setSemesterSheet({ semester: null })} aria-label="Nuevo semestre" className="min-h-[40px] flex-shrink-0 rounded-md border border-dashed border-line px-3 text-[14px] font-semibold text-ink-2">+ Semestre</button>
+            {activeRecord && <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="min-h-[44px] flex-shrink-0 rounded-md border border-line px-3 text-[14px] font-semibold text-ink-2">Editar</button>}
+            <button type="button" onClick={() => setSemesterSheet({ semester: null })} aria-label="Nuevo semestre" className="min-h-[44px] flex-shrink-0 rounded-md border border-dashed border-line px-3 text-[14px] font-semibold text-ink-2">+ Semestre</button>
           </div>
         )}
       </header>
@@ -125,7 +125,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
                     {standingById.get(subject.id) && (
                       <span className="flex flex-shrink-0 flex-col items-end gap-1">
                         <span className="num text-[26px] font-semibold leading-none text-ink">{standingById.get(subject.id)!.grades.currentGrade === null ? "–" : formatGrade(standingById.get(subject.id)!.grades.currentGrade as number)}</span>
-                        {standingById.get(subject.id)!.atRisk && <span className="rounded-[3px] bg-danger-wash px-1.5 py-[3px] text-[12px] font-semibold leading-none text-danger">En riesgo</span>}
+                        {standingById.get(subject.id)!.atRisk && <span className="rounded-[3px] bg-danger-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-danger">En riesgo</span>}
                       </span>
                     )}
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>

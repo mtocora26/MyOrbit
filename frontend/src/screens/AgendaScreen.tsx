@@ -303,7 +303,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
                           <p className="text-[16px] font-semibold leading-snug text-ink">{occurrence.subjectName}</p>
                           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1"><CategoryBadge name="Clase" color={occurrence.subjectColor} /><span className="num text-[13px] text-ink-2">{occurrence.start}–{occurrence.end}{occurrence.room ? ` · ${occurrence.room}` : ""}</span></div>
                         </div>
-                        {inProgress && <span className="rounded-[3px] bg-blue-wash px-1.5 py-[3px] text-[12px] font-semibold leading-none text-blue-ink">En curso</span>}
+                        {inProgress && <span className="rounded-[3px] bg-blue-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-blue-ink">En curso</span>}
                       </div>
                     </li>
                   );
@@ -369,7 +369,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
 
 function WeekButton({ label, onClick, path }: { label: string; onClick: () => void; path: string }) {
   return (
-    <button onClick={onClick} aria-label={label} className="flex h-11 w-11 items-center justify-center rounded-md text-ink-2 active:bg-wash">
+    <button onClick={onClick} aria-label={label} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>
     </button>
   );
