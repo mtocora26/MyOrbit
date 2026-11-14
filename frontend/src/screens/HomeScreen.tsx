@@ -5,7 +5,7 @@ import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station }
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
-import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, type Habit } from "../services/habitsApi";
+import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, completeLabel, type Habit } from "../services/habitsApi";
 import { fromTaskDue, isOverdue } from "../services/taskDue";
 import { describeClassNow, fetchClassesNow, type ClassNow } from "../services/academicApi";
 
@@ -263,7 +263,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                           onClick={() => toggleHabit(habit)}
                           role="checkbox"
                           aria-checked={done}
-                          aria-label={`${habit.title}: ${done ? "desmarcar" : "completar"} hoy`}
+                          aria-label={`${habit.title}: ${completeLabel(habit.type ?? "BUILD", done).toLowerCase()}`}
                           className="flex h-11 w-11 items-center justify-center"
                         >
                           <span

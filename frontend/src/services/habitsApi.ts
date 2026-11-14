@@ -2,6 +2,14 @@ import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
 
+export type HabitType = "BUILD" | "QUIT";
+
+/** Texto de la acción de marcar el día según el tipo del hábito. */
+export function completeLabel(type: HabitType, done: boolean): string {
+  if (type === "QUIT") return done ? "Desmarcar: hoy no lo evité" : "Hoy lo evité";
+  return done ? "Desmarcar hoy" : "Completar hoy";
+}
+
 export interface Habit {
   id: string;
   userId: string;
@@ -13,6 +21,8 @@ export interface Habit {
   completedDates: string[];
   /** Meta de cumplimiento mensual en % (1-100); null = sin meta. */
   monthlyGoal: number | null;
+  /** BUILD: por construir («lo hice»). QUIT: para dejar («hoy lo evité»). */
+  type: HabitType;
 }
 
 export interface CreateHabitInput {
@@ -23,6 +33,7 @@ export interface CreateHabitInput {
   icon: string;
   /** 1-100 la fija; null en la creación = sin meta. */
   monthlyGoal?: number | null;
+  type?: HabitType;
 }
 
 export function todayKey(): string {

@@ -9,6 +9,7 @@ import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.habits.domain.HabitStats;
+import com.app.myorbit.habits.domain.HabitType;
 import com.app.myorbit.habits.domain.MonthlyProgress;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
 import com.app.myorbit.users.application.UserZoneService;
@@ -55,6 +56,7 @@ public class HabitService {
         habit.setColor(request.color() == null || request.color().isBlank() ? "#7A5AF8" : request.color());
         habit.setIcon(request.icon() == null || request.icon().isBlank() ? "target" : request.icon());
         habit.setMonthlyGoal(request.monthlyGoal());
+        habit.setType(request.type() == null ? HabitType.BUILD : request.type());
         return habitRepository.save(habit);
     }
 
@@ -69,6 +71,7 @@ public class HabitService {
         habit.setDaysOfWeek(normalizeDays(days, habit.getFrequency()));
         if (request.color() != null && !request.color().isBlank()) habit.setColor(request.color());
         if (request.icon() != null && !request.icon().isBlank()) habit.setIcon(request.icon());
+        if (request.type() != null) habit.setType(request.type());
         if (request.monthlyGoal() != null) habit.setMonthlyGoal(request.monthlyGoal() == 0 ? null : request.monthlyGoal());
         return habitRepository.save(habit);
     }
@@ -103,7 +106,7 @@ public class HabitService {
         int pending = 0;
         for (Habit habit : habitRepository.findByUserIdOrderByTitleAsc(userId)) {
             if (!habit.isScheduledOn(date) || habit.getCompletedDates().contains(key)) continue;
-            events.publishEvent(new HabitPendingEvent(habit.getUserId(), habit.getId(), habit.getTitle(), date));
+            events.publishEvent(new HabitPendingEvent(habit.getUserId(), habit.getId(), habit.getTitle(), date, habit.isQuit()));
             pending++;
         }
         return pending;

@@ -5,6 +5,7 @@ import com.app.myorbit.habits.api.UpdateHabitRequest;
 import com.app.myorbit.habits.domain.HabitFrequency;
 import com.app.myorbit.habits.domain.HabitPendingEvent;
 import com.app.myorbit.habits.domain.HabitStats;
+import com.app.myorbit.habits.domain.HabitType;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.habits.domain.Habit;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
@@ -307,5 +308,51 @@ class HabitServiceTest {
         when(repository.findById("h1")).thenReturn(Optional.of(habitOf("u2")));
 
         assertThrows(NotFoundException.class, () -> service.monthlyGoal("u1", "h1", 6));
+    }
+
+    @Test
+    void createDefaultsToABuildHabitAndAcceptsAQuitHabit() {
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        assertEquals(HabitType.BUILD, service.create("u1", new com.app.myorbit.habits.api.CreateHabitRequest("Leer", null, null, null, null)).getType());
+        Habit quit = service.create("u1", new com.app.myorbit.habits.api.CreateHabitRequest("No fumar", null, null, null, null, 90, HabitType.QUIT));
+        assertEquals(HabitType.QUIT, quit.getType());
+        assertEquals(90, quit.getMonthlyGoal());
+    }
+
+    @Test
+    void habitsWithoutATypeAreTreatedAsBuildHabits() {
+        assertEquals(HabitType.BUILD, habitOf("u1").getType());
+    }
+
+    @Test
+    void updateChangesTheTypeOnlyWhenGiven() {
+        Habit habit = habitOf("u1");
+        habit.setTitle("No fumar");
+        habit.setFrequency(HabitFrequency.DAILY);
+        habit.setType(HabitType.QUIT);
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        assertEquals(HabitType.QUIT, service.update("u1", "h1", new UpdateHabitRequest("No fumar", null, null, null, null)).getType());
+        assertEquals(HabitType.BUILD, service.update("u1", "h1", new UpdateHabitRequest("No fumar", null, null, null, null, null, HabitType.BUILD)).getType());
+    }
+
+    @Test
+    void pendingReminderTellsQuitHabitsApart() {
+        Habit build = habitOf("u1");
+        build.setFrequency(HabitFrequency.DAILY);
+        build.setTitle("Leer");
+        Habit quit = habitOf("u1");
+        quit.setId("h2");
+        quit.setFrequency(HabitFrequency.DAILY);
+        quit.setTitle("No fumar");
+        quit.setType(HabitType.QUIT);
+        when(repository.findByUserIdOrderByTitleAsc("u1")).thenReturn(List.of(quit, build));
+
+        service.publishPendingHabits("u1", java.time.LocalDate.of(2026, 10, 10));
+
+        org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u1", "h2", "No fumar", java.time.LocalDate.of(2026, 10, 10), true));
+        org.mockito.Mockito.verify(events).publishEvent(new HabitPendingEvent("u1", "h1", "Leer", java.time.LocalDate.of(2026, 10, 10), false));
     }
 }
