@@ -178,9 +178,9 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
           {habits.length > 0 && (
             <div className="mt-4 flex items-center justify-between gap-3">
               <span id="stats-window-label" className="text-[13px] font-semibold text-ink-2">Estadísticas de los últimos</span>
-              <div role="radiogroup" aria-labelledby="stats-window-label" className="flex rounded-md bg-wash p-1">
+              <div role="radiogroup" aria-labelledby="stats-window-label" className="flex flex-shrink-0 rounded-md bg-wash p-1">
                 {STATS_WINDOWS.map((days) => (
-                  <button key={days} type="button" role="radio" aria-checked={statsWindow === days} onClick={() => setStatsWindow(days)} className="num min-h-[44px] min-w-[44px] rounded-[4px] px-3 text-[14px] font-semibold" style={{ background: statsWindow === days ? "var(--color-card)" : "transparent", color: statsWindow === days ? "var(--color-ink)" : "var(--color-ink-2)" }}>{days} d</button>
+                  <button key={days} type="button" role="radio" aria-checked={statsWindow === days} onClick={() => setStatsWindow(days)} className="num min-h-[44px] min-w-[44px] whitespace-nowrap rounded-[4px] px-2.5 text-[14px] font-semibold" style={{ background: statsWindow === days ? "var(--color-card)" : "transparent", color: statsWindow === days ? "var(--color-ink)" : "var(--color-ink-2)" }}>{days} d</button>
                 ))}
               </div>
             </div>
