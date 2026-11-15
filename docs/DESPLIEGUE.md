@@ -19,7 +19,7 @@ Backend en **Render** (Docker), frontend en **Cloudflare Pages**, base de datos 
 |---|---|
 | `SPRING_MONGODB_URI` | URI de Atlas |
 | `SPRING_MONGODB_DATABASE` | `myorbit` |
-| `MYORBIT_CORS_ALLOWED_ORIGINS` | Orígenes que llaman a `/api`, separados por coma y **sin `/` final**: la URL del frontend (p. ej. `https://myorbit.pages.dev`) y, para la app instalable de Capacitor (#147), `https://localhost`. Por defecto solo permite `localhost:8443` y `localhost:5173`, así que **si falta, la web desplegada falla con un error de CORS** aunque la API responda. |
+| `MYORBIT_CORS_ALLOWED_ORIGINS` | Orígenes que llaman a `/api`, separados por coma y **sin `/` final**: la URL del frontend (p. ej. `https://myorbit.pages.dev`) y, para la app Android de Capacitor, `https://localhost` (ver [ANDROID.md](ANDROID.md)). Por defecto solo permite `localhost:8443` y `localhost:5173`, así que **si falta, la web desplegada falla con un error de CORS** aunque la API responda. |
 
 **Opcionales** (con su valor por defecto del código):
 
