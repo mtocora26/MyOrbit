@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar, ListSkeleton, ErrorBanner } from "../components/shared";
+import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import { IconCalendar } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
@@ -545,7 +545,7 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
             </p>
           )}
           <button onClick={() => setAddingChild(!addingChild)} disabled={saving} title="Añadir subpaso" className="flex h-11 w-11 -m-2 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold text-blue-ink hover:bg-blue-wash">+</button>
-          <button onClick={() => onDelete(subtask.id)} disabled={saving} title="Eliminar subtarea" aria-label="Eliminar subtarea" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-danger hover:bg-danger-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+          <DeleteButton label={`subtarea «${subtask.title}»`} onClick={() => onDelete(subtask.id)} disabled={saving} className="ml-1" />
         </div>
         <button onClick={openDueEditor} disabled={saving} className={`ml-8 flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-bold ${overdue ? "bg-danger-wash text-danger" : subtask.due ? "bg-blue-wash text-blue-ink" : "bg-wash text-ink-3"}`}>
           <IconCalendar size={10} color={overdue ? "var(--color-danger)" : subtask.due ? "var(--color-blue)" : "var(--color-ink-3)"} />

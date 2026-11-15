@@ -26,6 +26,17 @@ const PRIORITIES: { id: TaskPriority; label: string }[] = [
   { id: "baja", label: "Baja" },
 ];
 
+const LAST_CATEGORY_KEY = "myorbit.quickadd.category";
+function rememberCategory(id: string) {
+  try { localStorage.setItem(LAST_CATEGORY_KEY, id); } catch { /* sin almacenamiento: se usa la de por defecto */ }
+}
+/** La última categoría elegida (si aún existe); si no, «Personal» o la primera. */
+function preferredCategory(categories: Category[]): string {
+  let stored: string | null = null;
+  try { stored = localStorage.getItem(LAST_CATEGORY_KEY); } catch { /* sin almacenamiento */ }
+  return (stored && categories.some((category) => category.id === stored) ? stored : "") || categories.find((category) => category.name === "Personal")?.id || categories[0]?.id || "";
+}
+
 const chip = "flex h-11 flex-shrink-0 items-center gap-1.5 rounded-md border px-3 text-[14px] font-semibold";
 const chipOn = "border-ink bg-wash text-ink";
 const chipOff = "border-line text-ink-2";
@@ -46,7 +57,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   useEffect(() => {
     if (open) fetchCategories().then((data) => {
       setCategories(data);
-      setCategoryId((current) => current || data.find((category) => category.name === "Personal")?.id || data[0]?.id || "");
+      setCategoryId((current) => current || preferredCategory(data));
     }).catch(() => setCategories([]));
   }, [open]);
 
@@ -66,6 +77,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
     const category = await createCategory(name, color);
     setCategories((current) => [...current, category]);
     setCategoryId(category.id);
+    rememberCategory(category.id);
   }
 
   const active = MODES.find((m) => m.id === mode)!;
@@ -95,7 +107,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       setTime("23:59");
       setPriority("media");
       setSubjectId("");
-      setCategoryId(categories.find((category) => category.name === "Personal")?.id || categories[0]?.id || "");
+      setCategoryId(preferredCategory(categories));
       closeSheet();
     } catch (err) {
       setError(err instanceof Error ? err.message : `No fue posible crear: ${active.label.toLowerCase()}`);
@@ -184,7 +196,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
               })}
             </div>
 
-            <CategoryPicker variant="chips" categories={categories} value={categoryId} onChange={setCategoryId} onCreate={handleCreateCategory} />
+            <CategoryPicker variant="chips" categories={categories} value={categoryId} onChange={(id) => { setCategoryId(id); rememberCategory(id); }} onCreate={handleCreateCategory} />
 
             <SubjectPicker subjects={subjects} value={subjectId} onChange={handleSubjectChange} />
           </>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
+import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import { IconPencil } from "../components/icons";
 import { createCategory, deleteCategory, fetchCategories, orderCategories, updateCategory, type Category } from "../services/categoriesApi";
 import { fetchTasks } from "../services/tasksApi";
@@ -150,9 +150,7 @@ export default function CategoriesScreen({ onBack }: Props) {
                 <button onClick={() => openForm(category)} aria-label={`Editar categoría ${category.name}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash">
                   <IconPencil size={18} />
                 </button>
-                <button onClick={() => openDelete(category)} aria-label={`Eliminar categoría ${category.name}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 7h12M9 7V5h6v2M9 10v7M12 10v7M15 10v7M7 7l1 12h8l1-12" /></svg>
-                </button>
+                <DeleteButton label={`categoría ${category.name}`} onClick={() => openDelete(category)} />
               </li>
               );
             })}

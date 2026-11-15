@@ -50,3 +50,17 @@ export function isOverdue(value: string): boolean {
   const due = new Date(`${input.date}T${input.time || "23:59"}`);
   return due.getTime() < Date.now();
 }
+
+/** AAAA-MM-DD de hoy más {@code days} días, en la zona del dispositivo. */
+export function addDaysInputValue(days: number): string {
+  const next = new Date();
+  next.setDate(next.getDate() + days);
+  const offset = next.getTimezoneOffset() * 60_000;
+  return new Date(next.getTime() - offset).toISOString().slice(0, 10);
+}
+
+/** El lunes siguiente a hoy (si hoy es lunes, el de la semana que viene). */
+export function nextMondayInputValue(): string {
+  const day = new Date().getDay();
+  return addDaysInputValue(day === 1 ? 7 : (8 - day) % 7 || 7);
+}

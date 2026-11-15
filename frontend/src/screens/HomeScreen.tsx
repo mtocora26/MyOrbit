@@ -173,7 +173,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
             ? <p className="num whitespace-nowrap text-[15px] font-medium text-ink-2">{completedTasks}/{tasks.length}</p>
             : <Skeleton className="h-[22px] w-9" />}
         </div>
-        <p className="mt-1.5 text-[14px] text-ink-2">
+        <div className="mt-1.5 text-[14px] text-ink-2">
           {!tasksKnown
             ? (taskError ? "No se pudieron cargar tus tareas." : <Skeleton className="h-[20px] w-44" />)
             : tasks.length === 0
@@ -181,7 +181,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
             : overdueCount > 0
               ? `${overdueCount} ${overdueCount === 1 ? "vencida" : "vencidas"} · ${pendingTasks - overdueCount} por llegar`
               : `${pendingTasks} por llegar · vas a tiempo`}
-        </p>
+        </div>
         {classBanner && (
           <button type="button" onClick={onAgenda} className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-[4px] bg-blue-wash px-2 py-1.5 text-left text-[14px] font-semibold leading-snug text-blue-ink">
             <span aria-hidden="true" className="num flex-shrink-0">{classNow?.current ? "●" : "→"}</span>
