@@ -334,6 +334,25 @@ export function Skeleton({ className = "" }: { className?: string; }) {
   return <div className={`bg-wash rounded-sm animate-pulse ${className}`} />;
 }
 
+// Papelera: área táctil de 44×44 px con icono de 22 px, con estado activo visible y nombre accesible.
+// `label` nombra lo que se elimina («tarea «Leer»»). Quien la use debe separarla de los controles frecuentes.
+export function DeleteButton({ label, onClick, disabled, className = "" }: { label: string; onClick: () => void; disabled?: boolean; className?: string; }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => { event.stopPropagation(); onClick(); }}
+      disabled={disabled}
+      title={`Eliminar ${label}`}
+      aria-label={`Eliminar ${label}`}
+      className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-[background-color,color,transform] duration-150 ease-out hover:text-danger active:scale-95 active:bg-danger-wash active:text-danger disabled:opacity-50 ${className}`}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 7h16M9 7V5h6v2M6 7l1 12h10l1-12M10 11v5M14 11v5" />
+      </svg>
+    </button>
+  );
+}
+
 // Error de carga o de acción: mensaje corto y, si se puede, un «Reintentar» de 44 px.
 export function ErrorBanner({ message, onRetry, className = "" }: { message: string; onRetry?: () => void; className?: string; }) {
   return (

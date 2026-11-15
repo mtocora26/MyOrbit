@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
+import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
@@ -119,9 +119,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
         right={
           <div className="-mr-2 flex items-center">
             <button onClick={() => setEditing(true)} aria-label={`Editar materia ${subject.name}`} className="flex h-11 w-11 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash"><IconPencil size={18} /></button>
-            <button onClick={() => { setError(null); setConfirmingDelete(true); }} aria-label={`Eliminar materia ${subject.name}`} className="flex h-11 w-11 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 7h12M9 7V5h6v2M9 10v7M12 10v7M15 10v7M7 7l1 12h8l1-12" /></svg>
-            </button>
+            <DeleteButton label={`materia ${subject.name}`} onClick={() => { setError(null); setConfirmingDelete(true); }} className="ml-3" />
           </div>
         }
       />

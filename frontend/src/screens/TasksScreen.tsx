@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, Checkbox, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
-import { IconCalendar, IconChecklist } from "../components/icons";
+import { CategoryBadge, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
+import RescheduleSheet from "../components/RescheduleSheet";
+import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
 import { deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
-import { isOverdue } from "../services/taskDue";
+import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
 import { categoryLabel, fetchCategories, orderCategories, type Category } from "../services/categoriesApi";
 
 interface Props { onTaskTap: (taskId: string) => void; onFab: () => void; refreshTick: number; }
@@ -13,19 +14,47 @@ const STATUS_COLUMNS = [
   { id: "completadas", label: "Completadas" },
 ] as const;
 
-type DatePreset = "todas" | "hoy" | "semana";
+type DatePreset = "todas" | "hoy" | "semana" | "vencidas";
 type DoneFilter = "todas" | "pendientes" | "completadas";
+const DATE_PRESETS: { id: DatePreset; label: string }[] = [
+  { id: "todas", label: "Todas" },
+  { id: "hoy", label: "Hoy" },
+  { id: "semana", label: "Semana" },
+  { id: "vencidas", label: "Vencidas" },
+];
+
+// La pestaña abre en el último filtro usado; la primera vez, todo lo pendiente.
+const FILTERS_KEY = "myorbit.tasks.filters";
+function savedFilters(): { datePreset: DatePreset; doneFilter: DoneFilter } {
+  try {
+    const stored = JSON.parse(localStorage.getItem(FILTERS_KEY) ?? "null");
+    const datePreset = DATE_PRESETS.some((preset) => preset.id === stored?.datePreset) ? stored.datePreset as DatePreset : "todas";
+    const doneFilter = ["todas", "pendientes", "completadas"].includes(stored?.doneFilter) ? stored.doneFilter as DoneFilter : "pendientes";
+    return { datePreset, doneFilter };
+  } catch {
+    return { datePreset: "todas", doneFilter: "pendientes" };
+  }
+}
+
+/** Quita acentos y mayúsculas para que «ensayo» encuentre «Ensayo de Historia». */
+const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 type PriorityFilter = "todas" | "alta" | "media" | "baja";
 
 function toIsoLocal(date: Date, hours: string): string {
-  const normalized = date.toISOString().slice(0, 10);
-  return `${normalized}T${hours}`;
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${hours}`;
 }
 
 function todayRange(): { dueFrom: string; dueTo: string } {
   const now = new Date();
-  const day = now.toISOString().slice(0, 10);
-  return { dueFrom: `${day}T00:00`, dueTo: `${day}T23:59` };
+  return { dueFrom: toIsoLocal(now, "00:00"), dueTo: toIsoLocal(now, "23:59") };
+}
+
+/** Vencidas: todo lo que debía entregarse antes de este momento. */
+function overdueRange(): { dueTo: string } {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return { dueTo: toIsoLocal(now, `${pad(now.getHours())}:${pad(now.getMinutes())}`) };
 }
 
 function weekRange(): { dueFrom: string; dueTo: string } {
@@ -44,8 +73,15 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [datePreset, setDatePreset] = useState<DatePreset>("todas");
-  const [doneFilter, setDoneFilter] = useState<DoneFilter>("todas");
+  const [datePreset, setDatePreset] = useState<DatePreset>(() => savedFilters().datePreset);
+  const [doneFilter, setDoneFilter] = useState<DoneFilter>(() => savedFilters().doneFilter);
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [rescheduling, setRescheduling] = useState<UiTask | null>(null);
+
+  useEffect(() => {
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify({ datePreset, doneFilter })); } catch { /* sin almacenamiento */ }
+  }, [datePreset, doneFilter]);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("todas");
   const [categoryFilter, setCategoryFilter] = useState<string>("todas");
   const [view, setView] = useState<"lista" | "tablero">("lista");
@@ -66,14 +102,14 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   const nameOf = (categoryId: string | null) =>
     (categoryId ? nameByCategoryId.get(categoryId) : undefined) ?? (categoryId ? "Categoría" : "Sin categoría");
 
-  async function loadTasks() {
+  async function loadTasks(quiet = false) {
     try {
-      setLoading(true);
+      if (!quiet) setLoading(true);
       setError(null);
-      const range = datePreset === "hoy" ? todayRange() : datePreset === "semana" ? weekRange() : {};
+      const range = datePreset === "hoy" ? todayRange() : datePreset === "semana" ? weekRange() : datePreset === "vencidas" ? overdueRange() : {};
       const filters: TaskFilters = {
         ...range,
-        done: doneFilter === "pendientes" ? false : doneFilter === "completadas" ? true : undefined,
+        done: datePreset === "vencidas" || doneFilter === "pendientes" ? false : doneFilter === "completadas" ? true : undefined,
         priority: priorityFilter === "todas" ? undefined : priorityFilter,
         categoryId: categoryFilter === "todas" || categoryFilter === "none" ? undefined : categoryFilter,
         uncategorized: categoryFilter === "none",
@@ -93,7 +129,12 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTick, datePreset, doneFilter, priorityFilter, categoryFilter]);
 
-  const filteredTasks = tasks;
+  const filteredTasks = useMemo(() => {
+    const needle = normalize(query.trim());
+    if (!needle) return tasks;
+    return tasks.filter((task) => normalize(`${task.label} ${nameOf(task.categoryId)}`).includes(needle));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, query, categories]);
 
   async function handleToggleTask(task: UiTask) {
     const previousTasks = tasks;
@@ -120,6 +161,22 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
     }
   }
 
+  async function handleReschedule(task: UiTask, date: string) {
+    setRescheduling(null);
+    const due = toTaskDue(date, fromTaskDue(task.rawDue).time);
+    const previousTasks = tasks;
+    setTasks(tasks.map((item) => item.id === task.id ? { ...item, rawDue: due, due: formatTaskDue(due) } : item));
+
+    try {
+      await updateTask(task.id, { title: task.label, due, priority: task.priority, categoryId: task.categoryId });
+      // En «Hoy» o «Vencidas» la tarea movida sale de la lista: se actualiza sin mostrar el esqueleto.
+      if (datePreset !== "todas") await loadTasks(true);
+    } catch (err) {
+      setTasks(previousTasks);
+      setError(err instanceof Error ? err.message : "No fue posible mover la tarea");
+    }
+  }
+
   async function handleRenameTask(task: UiTask, title: string) {
     const trimmed = title.trim();
     if (!trimmed || trimmed === task.label) return;
@@ -139,10 +196,20 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
       <div className="px-4 pt-3 pb-0 bg-paper flex-shrink-0 border-b border-line lg:px-8 lg:pt-8">
         <div className="flex items-center justify-between mb-1">
           <h1 className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Tareas</h1>
+          <div className="-mr-2 flex items-center">
+          <button
+            onClick={() => { if (searching) setQuery(""); setSearching(!searching); }}
+            aria-pressed={searching}
+            title="Buscar tareas"
+            aria-label="Buscar tareas"
+            className="flex h-11 w-11 items-center justify-center rounded-md active:bg-wash"
+          >
+            <IconSearch size={20} color={searching ? "var(--color-coral-ink)" : "var(--color-ink-2)"} />
+          </button>
           <button
             onClick={() => setView(view === "lista" ? "tablero" : "lista")}
             title={view === "lista" ? "Ver como tablero" : "Ver como lista"}
-            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md active:bg-wash"
+            className="flex h-11 w-11 items-center justify-center rounded-md active:bg-wash"
             aria-label="Cambiar vista"
           >
             {view === "lista" ? (
@@ -155,9 +222,19 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
               </svg>
             )}
           </button>
+          </div>
         </div>
+        {searching && (
+          <div className="mb-2 flex items-center gap-2">
+            <label className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-md border border-line bg-card px-3 transition-colors focus-within:border-coral">
+              <IconSearch size={16} color="var(--color-ink-3)" />
+              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar tareas" aria-label="Buscar tareas" className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
+            </label>
+            <button type="button" onClick={() => { setQuery(""); setSearching(false); }} className="-mr-2 min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Cerrar</button>
+          </div>
+        )}
         <div className="flex gap-2 pb-3 overflow-x-auto no-scrollbar">
-          {(["todas", "hoy", "semana"] as const).map((f) => (
+          {DATE_PRESETS.map(({ id: f, label }) => (
             <button
               key={f}
               onClick={() => setDatePreset(f)}
@@ -165,7 +242,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
               className="flex-shrink-0 min-h-[44px] rounded-md px-4 text-[14px] font-semibold transition-colors duration-150"
               style={{ background: datePreset === f ? "var(--color-strong)" : "var(--color-wash)", color: datePreset === f ? "var(--color-on-strong)" : "var(--color-ink-2)" }}
             >
-              {f === "todas" ? "Todas" : f === "hoy" ? "Hoy" : "Esta semana"}
+              {label}
             </button>
           ))}
           <select value={doneFilter} onChange={(e) => setDoneFilter(e.target.value as DoneFilter)} aria-label="Filtrar por estado" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
@@ -193,34 +270,38 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
             </button>
           )}
         </div>
-        {error && <ErrorBanner message={error} onRetry={loadTasks} className="mb-3" />}
+        {error && <ErrorBanner message={error} onRetry={() => loadTasks()} className="mb-3" />}
       </div>
 
       {loading ? (
         <ListSkeleton rows={5} label="Cargando tareas" />
       ) : filteredTasks.length === 0 ? (
         // Si la carga falló no se dice «sin tareas»: el aviso de error con «Reintentar» ya explica lo que pasa.
-        error ? null : <div className="px-4 pt-4">
+        error ? null : query.trim() ? <div className="px-4 pt-4"><EmptyState icon="—" title="Sin resultados" sub={`Ninguna tarea coincide con «${query.trim()}».`} /></div> : <div className="px-4 pt-4">
           <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" onAction={onFab} />
         </div>
       ) : view === "lista" ? (
         <ol className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 py-4 pb-24 lg:px-8 lg:max-w-[760px]">
           {filteredTasks.map((task, index) => (
-            <TaskCard key={task.id} last={index === filteredTasks.length - 1} task={task} categoryColor={task.categoryId ? colorByCategoryId.get(task.categoryId) : undefined} categoryName={nameOf(task.categoryId)} onTap={() => onTaskTap(task.id)} onToggle={() => handleToggleTask(task)} onDelete={() => handleDeleteTask(task.id)} onRename={(title) => handleRenameTask(task, title)} />
+            <TaskCard key={task.id} last={index === filteredTasks.length - 1} task={task} categoryColor={task.categoryId ? colorByCategoryId.get(task.categoryId) : undefined} categoryName={nameOf(task.categoryId)} onTap={() => onTaskTap(task.id)} onToggle={() => handleToggleTask(task)} onDelete={() => handleDeleteTask(task.id)} onReschedule={() => setRescheduling(task)} onRename={(title) => handleRenameTask(task, title)} />
           ))}
         </ol>
       ) : (
         <TasksBoard tasks={filteredTasks} categories={categories} colorByCategoryId={colorByCategoryId} nameByCategoryId={nameByCategoryId} groupBy={groupBy} onTaskTap={onTaskTap} onToggle={handleToggleTask} />
       )}
+
+      <RescheduleSheet task={rescheduling} onClose={() => setRescheduling(null)} onPick={(date) => rescheduling && handleReschedule(rescheduling, date)} />
     </div>
   );
 }
 
-function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, onDelete, onRename }: { task: UiTask; categoryColor?: string; categoryName: string; last: boolean; onTap: () => void; onToggle: () => void; onDelete: () => void; onRename: (title: string) => void }) {
+function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, onDelete, onReschedule, onRename }: { task: UiTask; categoryColor?: string; categoryName: string; last: boolean; onTap: () => void; onToggle: () => void; onDelete: () => void; onReschedule: () => void; onRename: (title: string) => void }) {
   const overdue = !task.done && isOverdue(task.rawDue);
   const subtaskInfo = task.subtasks.length ? getSubtaskProgress(task.subtasks) : null;
   const color = categoryColor ?? "#FF6B4A";
   const [renaming, setRenaming] = useState(false);
+  // En pantallas táctiles no hay doble clic: tocar el título abre el detalle. El renombrado en línea queda para el ratón.
+  const touch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
   const [draftTitle, setDraftTitle] = useState(task.label);
 
   function commitRename() {
@@ -249,16 +330,29 @@ function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, on
             />
           ) : (
             <p
-              onClick={(event) => event.stopPropagation()}
-              onDoubleClick={() => { setDraftTitle(task.label); setRenaming(true); }}
-              title="Doble clic para renombrar"
+              onClick={(event) => { if (!touch) event.stopPropagation(); }}
+              onDoubleClick={touch ? undefined : () => { setDraftTitle(task.label); setRenaming(true); }}
+              title={touch ? undefined : "Doble clic para renombrar"}
               className={`text-[16px] font-semibold leading-snug ${task.done ? "line-through text-ink-3" : "text-ink"}`}
             >
               {task.label}
             </p>
           )}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className={`num text-[16px] font-semibold ${overdue ? "text-danger" : "text-ink-2"}`}>{task.due}</span>
+            {task.done
+              ? <span className="num text-[16px] font-semibold text-ink-2">{task.due}</span>
+              : (
+                // Tocar la fecha abre «Mover a…»: reprogramar en dos toques, sin entrar al detalle. 44 px de alto sin crecer la fila.
+                <button
+                  type="button"
+                  onClick={(event) => { event.stopPropagation(); onReschedule(); }}
+                  aria-label={`Mover «${task.label}», vence ${task.due}`}
+                  className={`num -my-2 -ml-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-2 text-[16px] font-semibold transition-[background-color,transform] duration-150 ease-out active:scale-95 active:bg-wash ${overdue ? "text-danger" : "text-ink-2"}`}
+                >
+                  <IconCalendar size={16} />
+                  {task.due}
+                </button>
+              )}
             {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
             <CategoryBadge name={categoryName} color={categoryColor} />
             {subtaskInfo && <span className="num text-[14px] font-semibold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total} pasos</span>}
@@ -266,16 +360,9 @@ function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, on
           </div>
           {subtaskInfo && <div className="mt-2.5"><ProgressBar value={subtaskInfo.percentage} color={color} height={4} /></div>}
         </div>
-        <button
-          onClick={onDelete}
-          className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-3 transition-colors hover:text-danger active:bg-wash"
-          title="Eliminar tarea"
-          aria-label="Eliminar tarea"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 7h12M9 7V5h6v2M9 10v7M12 10v7M15 10v7" />
-          </svg>
-        </button>
+        {/* La papelera va aparte, tras una línea: nunca pegada a «completar» ni a la fecha. */}
+        <span aria-hidden="true" className="my-1 w-px flex-shrink-0 self-stretch bg-line" />
+        <DeleteButton label={`tarea «${task.label}»`} onClick={onDelete} className="-mr-2" />
       </div>
     </li>
   );

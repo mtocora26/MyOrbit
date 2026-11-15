@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ErrorBanner, ProgressBar, ScreenHeader, Skeleton } from "../components/shared";
+import { ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton } from "../components/shared";
 import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
 import { createHabit, deleteHabit, fetchHabitSummaries, fetchHabits, toLocalKey, todayKey, updateHabit, updateHabitCompletion, completeLabel, type Habit, type HabitType, type HabitStats, type HabitSummary, type MonthlyGoal } from "../services/habitsApi";
 
@@ -204,9 +204,7 @@ function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySu
         <button onClick={onEdit} disabled={saving} title="Editar hábito" aria-label={`Editar hábito ${habit.title}`} className="flex h-11 w-11 items-center justify-center rounded-md text-ink-3 transition-colors active:bg-wash disabled:opacity-50">
           <IconPencil size={16} />
         </button>
-        <button onClick={onDelete} disabled={saving} title="Eliminar hábito" aria-label={`Eliminar hábito ${habit.title}`} className="flex h-11 w-11 items-center justify-center rounded-md text-ink-3 transition-colors active:bg-wash disabled:opacity-50">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 7h12M9 7V5h6v2M9 10v7M12 10v7M15 10v7" /></svg>
-        </button>
+        <DeleteButton label={`hábito ${habit.title}`} onClick={onDelete} disabled={saving} className="mr-2" />
         <button
           onClick={onToggle}
           disabled={saving}
