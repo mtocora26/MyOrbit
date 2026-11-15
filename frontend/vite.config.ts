@@ -34,12 +34,14 @@ const apiProxy = {
   },
 }
 
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => ({
   plugins: [
     clearStaleServiceWorker,
     react(),
     tailwindcss(),
     VitePWA({
+      // Dentro de la app instalada no hace falta service worker ni manifest: el APK ya trae los archivos.
+      disable: mode === 'android',
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {

@@ -20,6 +20,7 @@ import { useUnreadNotifications } from "./hooks/useUnreadNotifications";
 import QuickAddSheet from "./components/QuickAddSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
+import { hideSplash, useBackHandler } from "./hooks/useNativeApp";
 import { ensureTimeZone, getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
@@ -49,6 +50,17 @@ export default function App() {
     setActiveTab(tab);
     setSubScreen(sub ?? null);
   };
+
+  // Botón «atrás» de Android: sube un nivel (subpantalla → pestaña → Hoy) y solo al final cierra la app.
+  useBackHandler(() => {
+    if (fabOpen) { setFabOpen(false); return true; }
+    if (subScreen === "grades") { setSubScreen("subjectDetail"); return true; }
+    if (subScreen !== null) { goBack(); return true; }
+    if (activeTab !== "home") { navigate("home"); return true; }
+    return false;
+  });
+
+  useEffect(() => { hideSplash(); }, []);
 
   const goBack = () => {
     const wasTaskDetail = subScreen === "taskDetail";

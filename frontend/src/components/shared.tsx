@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { categoryLabel, orderCategories } from "../services/categoriesApi";
+import { registerBackHandler } from "../hooks/useNativeApp";
 
 /*
  * Lenguaje de ruta: paneles planos separados por líneas finas, estaciones
@@ -282,7 +283,9 @@ export function BottomSheet({ open, onClose, title, children }: { open: boolean;
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // En Android, «atrás» cierra la hoja abierta antes de salir de la pantalla.
+    const removeBackHandler = registerBackHandler(() => { onClose(); return true; });
+    return () => { window.removeEventListener("keydown", onKey); removeBackHandler(); };
   }, [open, onClose]);
 
   if (!mounted) return null;

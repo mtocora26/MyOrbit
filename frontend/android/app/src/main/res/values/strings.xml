@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MyOrbit</string>
+    <string name="title_activity_main">MyOrbit</string>
+    <string name="package_name">com.app.myorbit</string>
+    <string name="custom_url_scheme">com.app.myorbit</string>
+</resources>

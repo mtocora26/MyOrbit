@@ -151,3 +151,5 @@
 # ---------------------------------------------------------------------------
 public/*.png         -filter -diff -merge -text
 assets/*.png         -filter -diff -merge -text
+android/**/*.png      -filter -diff -merge -text
+android/gradle/wrapper/gradle-wrapper.jar -filter -diff -merge -text

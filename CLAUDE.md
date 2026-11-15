@@ -17,6 +17,7 @@ Lee primero lo que corresponda al cambio: [CONTRIBUTING.md](CONTRIBUTING.md) (fl
 # Frontend (desde frontend/)
 pnpm dev                   # :8443, /api va al backend (VITE_DEV_API_TARGET)
 pnpm typecheck             # CI también corre pnpm build
+pnpm build:android         # build de la app Android + cap sync (guía: docs/ANDROID.md)
 ```
 
 No hay tests de frontend: la verificación es `pnpm typecheck` y mirar la pantalla en el navegador.
