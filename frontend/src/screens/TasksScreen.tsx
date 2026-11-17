@@ -240,7 +240,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
         </div>
         {searching && (
           <div className="mb-2 flex items-center gap-2">
-            <label className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-md border border-line bg-card px-3 transition-colors focus-within:border-coral">
+            <label className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-md border border-line-control bg-card px-3 transition-colors focus-within:border-coral">
               <IconSearch size={16} color="var(--color-ink-3)" />
               <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar tareas" aria-label="Buscar tareas" className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
             </label>

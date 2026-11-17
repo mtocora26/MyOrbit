@@ -84,7 +84,7 @@ export default function SemesterFormSheet({ open, onClose, semester, existingNam
       <form onSubmit={submit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-[14px] font-semibold text-ink">Semestre</span>
-          <select value={name} onChange={(e) => setName(e.target.value)} className="num rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral">
+          <select value={name} onChange={(e) => setName(e.target.value)} className="num rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral">
             {nameOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
         </label>
@@ -92,18 +92,18 @@ export default function SemesterFormSheet({ open, onClose, semester, existingNam
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[14px] font-semibold text-ink">Inicio</span>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="num rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral" />
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="num rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral" />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[14px] font-semibold text-ink">Fin</span>
-            <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} aria-invalid={orderInvalid} className={`num rounded-md border bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral ${orderInvalid ? "border-danger-line" : "border-line"}`} />
+            <input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} aria-invalid={orderInvalid} className={`num rounded-md border bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral ${orderInvalid ? "border-danger-line" : "border-line-control"}`} />
           </label>
         </div>
         <p className="-mt-2 text-[13px] text-ink-3">Con las fechas completas, la app sabe cuál es tu semestre actual.</p>
 
         <label className="flex flex-col gap-1.5">
           <span className="text-[14px] font-semibold text-ink">Meta de promedio (opcional)</span>
-          <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${targetError ? "border-danger-line" : "border-line"}`}>
+          <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${targetError ? "border-danger-line" : "border-line-control"}`}>
             <input value={target} inputMode="decimal" onChange={(e) => setTarget(e.target.value.replace(/[^\d.,]/g, "").slice(0, 4))} aria-invalid={!!targetError} placeholder="Ej. 4,0" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
             <span className="text-[14px] text-ink-3">/5</span>
           </span>

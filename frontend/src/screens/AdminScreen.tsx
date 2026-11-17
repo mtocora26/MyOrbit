@@ -99,7 +99,7 @@ export default function AdminScreen({ onBack }: Props) {
           ))}
         </dl>
 
-        <label className="flex items-center gap-2 rounded-md border border-line bg-card px-3 py-2.5 transition-colors focus-within:border-coral">
+        <label className="flex items-center gap-2 rounded-md border border-line-control bg-card px-3 py-2.5 transition-colors focus-within:border-coral">
           <IconSearch size={16} color="var(--color-ink-3)" />
           <input
             className="flex-1 bg-transparent text-[16px] text-ink outline-none"

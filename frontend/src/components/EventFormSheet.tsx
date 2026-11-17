@@ -98,7 +98,7 @@ export default function EventFormSheet({ open, onClose, event, defaultDate, subj
     }
   }
 
-  const field = "min-h-[44px] rounded-md border border-line bg-card px-3 py-2.5 text-[16px] text-ink outline-none focus:border-coral";
+  const field = "min-h-[44px] rounded-md border border-line-control bg-card px-3 py-2.5 text-[16px] text-ink outline-none focus:border-coral";
 
   return (
     <BottomSheet open={open} onClose={close} title={confirmingDelete ? "Eliminar evento" : event ? "Editar evento" : "Nuevo evento"}>
@@ -158,7 +158,7 @@ export default function EventFormSheet({ open, onClose, event, defaultDate, subj
           {categories.length > 0 && (
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-semibold text-ink-2">Categoría (opcional)</span>
-              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} aria-label="Categoría del evento" className="min-h-[44px] rounded-md border border-line bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral">
+              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} aria-label="Categoría del evento" className="min-h-[44px] rounded-md border border-line-control bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral">
                 <option value="">Sin categoría</option>
                 {orderCategories(categories).map((category) => <option key={category.id} value={category.id}>{categoryLabel(category, categories)}</option>)}
               </select>

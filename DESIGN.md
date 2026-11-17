@@ -7,6 +7,7 @@ colors:
   wash: "#e6eaf1"
   line: "#d7dde8"
   line-strong: "#b4bdce"
+  line-control: "#7a869c"
   ink: "#121a2b"
   ink-2: "#465066"
   ink-3: "#5c667b"
@@ -33,8 +34,9 @@ colors:
   paper-dark: "#0a111f"
   card-dark: "#111a2d"
   wash-dark: "#18233a"
-  line-dark: "#243250"
-  line-strong-dark: "#3a4a6c"
+  line-dark: "#34466d"
+  line-strong-dark: "#6479a1"
+  line-control-dark: "#34466d"
   ink-dark: "#e9edf6"
   ink-2-dark: "#aab4c8"
   ink-3-dark: "#8c98b0"
@@ -175,7 +177,7 @@ A cool pale or deep navy ground with one hot coral line, and four route hues eac
 - **Paper** (`paper` #eef1f6 / #0a111f): screen ground.
 - **Card** (`card` #ffffff / #111a2d): panels, nav, sheets, inputs.
 - **Wash** (`wash` #e6eaf1 / #18233a): quiet buttons, skeletons, progress tracks, pressed state.
-- **Line / Line Strong** (`line` #d7dde8, `line-strong` #b4bdce; dark #243250, #3a4a6c): hairlines and control outlines.
+- **Line / Line Strong / Line Control** (light `line` #d7dde8, `line-strong` #b4bdce, `line-control` #7a869c; dark #34466d, #6479a1, #34466d): `line` is the decorative hairline between rows and panels (1.36:1 on card, light); `line-strong` is decorative emphasis (handle, dashed empty states, inactive stations; 1.89:1 light, 3.6:1 dark); `line-control` is the outline of fields, selects and filter chips, where the border is the only cue (WCAG 1.4.11, 3:1): light 3.67:1 on card, 3.24:1 on paper, 3.04:1 on wash. Dark `line-control` is unchanged from `line` (1.69:1 on card) and is pending a follow-up.
 - **Ink, Ink-2, Ink-3** (#121a2b, #465066, #5c667b; dark #e9edf6, #aab4c8, #8c98b0): primary, secondary, tertiary text.
 - **Night** (`night` #0e1626 / #060b15) and **Navy** (`navy` #1d3461 / #2a4a86): dark text on coral, scrim, and the brand navy.
 - **Strong** (`strong`, equals ink; `on-strong`): inverted button/badge pair.
