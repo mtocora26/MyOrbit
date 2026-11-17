@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cacheKeys, peek } from "../services/cache";
 import { fetchTasks, peekTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
@@ -123,7 +123,8 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
   const weekKey = dayKey(weekStart);
   const bands = useMemo(() => {
     const placed: { event: CalendarEvent; from: number; to: number; lane: number }[] = [];
-    [...events].sort((a, b) => a.startDate.localeCompare(b.startDate) || b.endDate.localeCompare(a.endDate)).forEach((event) => {
+    // Solo los eventos de varios días: uno de un día cabe en una sola columna y no se lee (ya lo marca el punto del día).
+    [...events].filter((event) => event.multiDay).sort((a, b) => a.startDate.localeCompare(b.startDate) || b.endDate.localeCompare(a.endDate)).forEach((event) => {
       const from = Math.max(0, daysBetween(weekKey, event.startDate));
       const to = Math.min(6, daysBetween(weekKey, event.endDate));
       let lane = 0;
@@ -156,6 +157,21 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     return category ? categoryLabel(category, categories) : task.categoryId ? "Categoría" : "Sin categoría";
   };
 
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+
+  function moveDay(delta: number) {
+    const next = new Date(`${selected}T00:00`);
+    next.setDate(next.getDate() + delta);
+    const monday = mondayOf(next);
+    if (dayKey(monday) !== weekKey) setWeekStart(monday);
+    setSelected(dayKey(next));
+  }
+
+  function goToday() {
+    setWeekStart(mondayOf(new Date()));
+    setSelected(todayKey);
+  }
+
   function shiftWeek(delta: number) {
     const next = new Date(weekStart);
     next.setDate(next.getDate() + delta * 7);
@@ -178,7 +194,8 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
   const tomorrowKey = (() => { const next = new Date(); next.setDate(next.getDate() + 1); return dayKey(next); })();
   const classBanner = classNow ? describeClassNow(classNow, todayKey, tomorrowKey) : null;
 
-  const monthLabel = capitalize(week[3].toLocaleDateString("es-CO", { month: "long", year: "numeric" }));
+  const monthName = capitalize(week[3].toLocaleDateString("es-CO", { month: "long" }));
+  const monthYear = week[3].getFullYear();
   const selectedDate = new Date(`${selected}T00:00`);
   const dayLabel = capitalize(selectedDate.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }));
 
@@ -186,9 +203,11 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     <div className="flex h-full flex-col bg-paper">
       <div className="flex-shrink-0 border-b border-line">
         <div className="flex items-center justify-between px-4 pt-3 pb-1 lg:px-8 lg:pt-8">
-          <h1 className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">{monthLabel}</h1>
-          <div className="-mr-2 flex items-center">
-            <button onClick={() => openEventSheet(null)} className="mr-1 min-h-[44px] px-2 text-[14px] font-semibold text-coral-ink">+ Evento</button>
+          <h1 className="min-w-0 truncate font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">{monthName}<span className="num ml-2 text-[16px] font-medium tracking-normal text-ink-3">{monthYear}</span></h1>
+          <div className="-mr-2 flex flex-shrink-0 items-center">
+            <button onClick={() => openEventSheet(null)} aria-label="Añadir evento" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-coral-ink active:bg-wash">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            </button>
             <WeekButton label="Semana anterior" onClick={() => shiftWeek(-1)} path="M15 18l-6-6 6-6" />
             <WeekButton label="Semana siguiente" onClick={() => shiftWeek(1)} path="M9 18l6-6-6-6" />
           </div>
@@ -217,20 +236,20 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
         </div>
 
         {bands.length > 0 && (
-          <div className="px-3 pb-3 lg:max-w-[760px] lg:px-8" role="group" aria-label="Eventos de la semana">
-            <div className="grid gap-y-1" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", columnGap: 4 }}>
+          <div className="px-3 pb-3 lg:max-w-[760px] lg:px-8">
+            {/* Resumen visual de la semana: cada evento se abre desde la lista de su día, así que no es pulsable (28 px no cumple los 44 px). */}
+            <div className="grid gap-y-1" aria-hidden="true" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", columnGap: 4 }}>
               {bands.filter((band) => band.lane < MAX_LANES).map(({ event, from, to, lane }) => {
                 const color = eventColor(event);
                 return (
-                  <button
+                  <div
                     key={event.id}
-                    onClick={() => openEventSheet(event)}
-                    aria-label={`Editar evento ${event.title}`}
-                    className="min-h-[28px] truncate rounded-[4px] px-2 text-left text-[13px] font-semibold leading-tight text-ink"
-                    style={{ gridColumn: `${from + 1} / ${to + 2}`, gridRow: lane + 1, background: `color-mix(in srgb, ${color} 22%, transparent)`, borderLeft: `3px solid ${color}` }}
+                    className="min-h-[28px] truncate rounded-[4px] px-2 py-1 text-left text-[13px] font-semibold leading-tight text-ink"
+                    style={{ gridColumn: `${from + 1} / ${to + 2}`, gridRow: lane + 1, background: `color-mix(in srgb, ${color} 22%, transparent)` }}
                   >
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: color }} />
                     {event.title}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -239,14 +258,30 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
         )}
       </div>
 
-      <div className="no-scrollbar flex-1 overflow-y-auto px-4 pt-3 pb-24 lg:px-8">
+      <div
+        className="no-scrollbar flex-1 overflow-y-auto px-4 pt-2 pb-24 lg:px-8"
+        style={{ touchAction: "pan-y" }}
+        onTouchStart={(e) => { swipeStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+        onTouchEnd={(e) => {
+          const start = swipeStart.current;
+          swipeStart.current = null;
+          if (!start) return;
+          const dx = e.changedTouches[0].clientX - start.x;
+          const dy = e.changedTouches[0].clientY - start.y;
+          // Gesto horizontal claro (no un scroll vertical en diagonal): arrastrar a la izquierda va al día siguiente.
+          if (Math.abs(dx) >= 64 && Math.abs(dy) < Math.abs(dx) * 0.6) moveDay(dx < 0 ? 1 : -1);
+        }}
+      >
         <div className="lg:max-w-[760px]">
-          <div className="mb-2 flex items-baseline justify-between">
-            <h2 className="font-display text-[20px] font-semibold leading-none text-ink">{dayLabel}</h2>
-            {dayTasks.length > 0 && <span className="num text-[14px] text-ink-2">{dayTasks.filter((t) => t.done).length}/{dayTasks.length}</span>}
+          <div className="mb-1 flex min-h-[44px] items-center justify-between gap-3">
+            <h2 className="min-w-0 font-display text-[20px] font-semibold leading-none text-ink">{dayLabel}</h2>
+            <div className="-mr-2 flex flex-shrink-0 items-center">
+              {dayTasks.length > 0 && <span className="num px-2 text-[14px] text-ink-2">{dayTasks.filter((t) => t.done).length}/{dayTasks.length}</span>}
+              {selected !== todayKey && <button onClick={goToday} className="min-h-[44px] min-w-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink active:bg-wash rounded-md">Hoy</button>}
+            </div>
           </div>
 
-          {classBanner && (
+          {classBanner && selected === todayKey && (
             <p className="mb-3 inline-flex items-center gap-2 rounded-[4px] px-2 py-1.5 text-[14px] font-semibold" style={{ background: "var(--color-blue-wash)", color: "var(--color-blue-ink)" }}>
               <span aria-hidden="true" className="num">{classNow?.current ? "●" : "→"}</span>
               <span>{classBanner}{classNow?.current ? ` · ${classNow.current.subjectName}${classNow.current.room ? ` · ${classNow.current.room}` : ""}` : classNow?.next ? ` · ${classNow.next.subjectName}${classNow.next.room ? ` · ${classNow.next.room}` : ""}` : ""}</span>
