@@ -1,3 +1,4 @@
+import { cacheKeys, remember } from "./cache";
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
@@ -32,7 +33,7 @@ export function orderCategories<T extends Hierarchical>(all: T[]): T[] {
 export async function fetchCategories(): Promise<Category[]> {
   const response = await fetch(`${API_BASE_URL}/api/categories`, { headers: authHeaders() });
   if (!response.ok) throw new Error("No fue posible cargar las categorías");
-  return response.json();
+  return remember(cacheKeys.categories, await response.json());
 }
 
 /** `parentId` opcional: crea una subcategoría de esa categoría raíz. */

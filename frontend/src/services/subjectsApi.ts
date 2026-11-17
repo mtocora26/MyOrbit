@@ -1,3 +1,4 @@
+import { cacheKeys, remember } from "./cache";
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
@@ -57,7 +58,7 @@ const JSON_HEADERS = () => ({ "Content-Type": "application/json", ...authHeaders
 export async function fetchSubjects(): Promise<Subject[]> {
   const response = await fetch(`${API_BASE_URL}/api/subjects`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las materias"));
-  return response.json();
+  return remember(cacheKeys.subjects, await response.json());
 }
 
 export async function createSubject(input: SubjectInput): Promise<Subject> {

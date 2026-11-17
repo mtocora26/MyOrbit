@@ -1,3 +1,4 @@
+import { cacheKeys, remember } from "./cache";
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
@@ -36,7 +37,7 @@ const JSON_HEADERS = () => ({ "Content-Type": "application/json", ...authHeaders
 export async function fetchEvents(from: string, to: string): Promise<CalendarEvent[]> {
   const response = await fetch(`${API_BASE_URL}/api/events?from=${from}&to=${to}`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar los eventos"));
-  return response.json();
+  return remember(cacheKeys.events(from, to), await response.json());
 }
 
 export async function createEvent(input: EventInput): Promise<CalendarEvent> {

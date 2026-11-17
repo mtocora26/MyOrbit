@@ -1,3 +1,4 @@
+import { cacheKeys, peek, remember } from "./cache";
 import { authHeaders } from "./authApi";
 import { formatTaskDue } from "./taskDue";
 import { API_BASE_URL } from "./apiConfig";
@@ -112,7 +113,7 @@ export interface TaskFilters {
   subjectId?: string;
 }
 
-export async function fetchTasks(filters: TaskFilters = {}): Promise<ApiTask[]> {
+function tasksQuery(filters: TaskFilters): string {
   const params = new URLSearchParams();
   if (filters.done !== undefined) params.set("done", String(filters.done));
   if (filters.dueFrom) params.set("dueFrom", filters.dueFrom);
@@ -121,12 +122,21 @@ export async function fetchTasks(filters: TaskFilters = {}): Promise<ApiTask[]> 
   if (filters.categoryId) params.set("categoryId", filters.categoryId);
   if (filters.uncategorized) params.set("uncategorized", "true");
   if (filters.subjectId) params.set("subjectId", filters.subjectId);
-  const query = params.size ? `?${params}` : "";
+  return params.size ? `?${params}` : "";
+}
+
+/** Lo último que se tuvo para esos filtros (undefined si aún no se ha pedido). */
+export function peekTasks(filters: TaskFilters = {}): ApiTask[] | undefined {
+  return peek<ApiTask[]>(cacheKeys.tasks(tasksQuery(filters)));
+}
+
+export async function fetchTasks(filters: TaskFilters = {}): Promise<ApiTask[]> {
+  const query = tasksQuery(filters);
   const response = await fetch(`${API_BASE_URL}/api/tasks${query}`, { headers: authHeaders() });
   if (!response.ok) {
     throw new Error(`No fue posible cargar tareas (${response.status})`);
   }
-  return response.json();
+  return remember(cacheKeys.tasks(query), await response.json());
 }
 
 export async function createTask(input: CreateTaskInput): Promise<ApiTask> {

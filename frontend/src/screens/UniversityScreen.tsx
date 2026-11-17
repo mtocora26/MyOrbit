@@ -3,18 +3,19 @@ import { EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
 import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import { fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
+import { cacheKeys, peek } from "../services/cache";
 import { fetchSemesters, type Semester } from "../services/semestersApi";
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
 
 interface Props { onSubjectTap: (subject: Subject) => void; }
 
 export default function UniversityScreen({ onSubjectTap }: Props) {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [subjects, setSubjects] = useState<Subject[]>(() => peek<Subject[]>(cacheKeys.subjects) ?? []);
+  const [loading, setLoading] = useState(() => peek<Subject[]>(cacheKeys.subjects) === undefined);
   const [error, setError] = useState<string | null>(null);
   const [semester, setSemester] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [semesterRecords, setSemesterRecords] = useState<Semester[]>([]);
+  const [semesterRecords, setSemesterRecords] = useState<Semester[]>(() => peek<Semester[]>(cacheKeys.semesters) ?? []);
   const [semesterSheet, setSemesterSheet] = useState<{ semester: Semester | null } | null>(null);
   const [summary, setSummary] = useState<AcademicSummary | null>(null);
 

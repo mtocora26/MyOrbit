@@ -1,5 +1,6 @@
 import { readErrorMessage } from "./apiError";
 import { API_BASE_URL } from "./apiConfig";
+import { clearCache } from "./cache";
 
 export interface AuthSession {
   token: string;
@@ -39,6 +40,7 @@ async function submit(path: string, body: Record<string, string>): Promise<AuthS
     throw new Error(await readErrorMessage(response, "No fue posible iniciar sesion"));
   }
   const session = await response.json() as AuthSession;
+  clearCache();
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
 }
@@ -53,6 +55,7 @@ export function register(name: string, email: string, password: string): Promise
 
 export function clearSession(): void {
   localStorage.removeItem(SESSION_KEY);
+  clearCache();
 }
 
 export async function logout(): Promise<void> {

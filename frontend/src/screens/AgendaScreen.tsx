@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
+import { cacheKeys, peek } from "../services/cache";
+import { fetchTasks, peekTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { fromTaskDue } from "../services/taskDue";
 import { describeClassNow, fetchAgendaEvaluations, fetchClasses, fetchClassesNow, formatGrade, type AgendaEvaluation, type ClassNow, type ClassOccurrence } from "../services/academicApi";
@@ -25,17 +26,17 @@ function mondayOf(date: Date): Date {
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; refreshTick?: number }) {
-  const [tasks, setTasks] = useState<UiTask[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [evaluations, setEvaluations] = useState<AgendaEvaluation[]>([]);
+  const [tasks, setTasks] = useState<UiTask[]>(() => peekTasks()?.map(toUiTask) ?? []);
+  const [categories, setCategories] = useState<Category[]>(() => peek<Category[]>(cacheKeys.categories) ?? []);
+  const [evaluations, setEvaluations] = useState<AgendaEvaluation[]>(() => peek<AgendaEvaluation[]>(cacheKeys.agendaEvaluations) ?? []);
   const [classes, setClasses] = useState<ClassOccurrence[]>([]);
   const [classNow, setClassNow] = useState<ClassNow | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>(() => peek<Subject[]>(cacheKeys.subjects) ?? []);
   // La hoja conserva su contenido mientras anima la salida: se cierra con `eventSheetOpen`, no vaciando `editingEvent`.
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [eventSheetOpen, setEventSheetOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => peekTasks() === undefined);
   const [retryTick, setRetryTick] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
