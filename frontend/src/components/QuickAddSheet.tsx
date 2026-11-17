@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BottomSheet, CategoryPicker, PriorityDot } from "./shared";
-import { IconPencil, IconCalendar, IconHabit, IconBell, IconClock } from "./icons";
+import { IconPencil, IconCalendar, IconHabit, IconClock } from "./icons";
 import { createTask, type TaskPriority } from "../services/tasksApi";
 import { todayInputValue, tomorrowInputValue, toTaskDue } from "../services/taskDue";
 import { createHabit } from "../services/habitsApi";
@@ -8,16 +8,15 @@ import { createCategory, fetchCategories, type Category } from "../services/cate
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
 import SubjectPicker from "./SubjectPicker";
 
-interface Props { open: boolean; onClose: () => void; onTaskCreated: () => void; onHabitCreated: () => void; }
+interface Props { open: boolean; onClose: () => void; onTaskCreated: () => void; onHabitCreated: () => void; /** «Evento» no se escribe en esta hoja: se abre el formulario de eventos de la Agenda. */ onEventRequested: () => void; }
 
-type Mode = "tarea" | "evento" | "hábito" | "recordatorio";
+type Mode = "tarea" | "evento" | "hábito";
 
-// Etiquetas cortas: en 360 px caben cuatro modos en una sola fila.
-const MODES: { id: Mode; icon: React.ReactNode; label: string; placeholder: string; color: string; bg: string; ready: boolean }[] = [
-  { id: "tarea",        icon: <IconPencil size={18} />,   label: "Tarea",  placeholder: "Nueva tarea",  color: "var(--color-coral-ink)",  bg: "var(--color-coral-wash)",  ready: true },
-  { id: "evento",       icon: <IconCalendar size={18} />, label: "Evento", placeholder: "Nuevo evento", color: "var(--color-blue-ink)",   bg: "var(--color-blue-wash)",   ready: false },
-  { id: "hábito",       icon: <IconHabit size={18} />,    label: "Hábito", placeholder: "Nuevo hábito", color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", ready: true },
-  { id: "recordatorio", icon: <IconBell size={18} />,     label: "Aviso",  placeholder: "Nuevo aviso",  color: "var(--color-amber-ink)",  bg: "var(--color-amber-wash)",  ready: false },
+// Los avisos personales volverán con su sistema (#198); hasta entonces no se muestran.
+const MODES: { id: Mode; icon: React.ReactNode; label: string; placeholder: string; color: string; bg: string }[] = [
+  { id: "tarea",        icon: <IconPencil size={18} />,   label: "Tarea",  placeholder: "Nueva tarea",  color: "var(--color-coral-ink)",  bg: "var(--color-coral-wash)" },
+  { id: "evento",       icon: <IconCalendar size={18} />, label: "Evento", placeholder: "Nuevo evento", color: "var(--color-blue-ink)",   bg: "var(--color-blue-wash)" },
+  { id: "hábito",       icon: <IconHabit size={18} />,    label: "Hábito", placeholder: "Nuevo hábito", color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)" },
 ];
 
 const PRIORITIES: { id: TaskPriority; label: string }[] = [
@@ -41,7 +40,7 @@ const chip = "flex h-11 flex-shrink-0 items-center gap-1.5 rounded-md border px-
 const chipOn = "border-ink bg-wash text-ink";
 const chipOff = "border-line text-ink-2";
 
-export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCreated }: Props) {
+export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCreated, onEventRequested }: Props) {
   const [mode, setMode] = useState<Mode>("tarea");
   const [name, setName] = useState("");
   const [date, setDate] = useState(todayInputValue);
@@ -81,7 +80,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   }
 
   const active = MODES.find((m) => m.id === mode)!;
-  const canSubmit = active.ready && !!name.trim() && !saving;
+  const canSubmit = !!name.trim() && !saving;
 
   function closeSheet() {
     setError(null);
@@ -123,7 +122,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   return (
     <BottomSheet open={open} onClose={closeSheet}>
       <form onSubmit={handleCreate} className="flex flex-col gap-3">
-        <div role="radiogroup" aria-label="Qué añadir" className="grid grid-cols-4 gap-1.5">
+        <div role="radiogroup" aria-label="Qué añadir" className="grid grid-cols-3 gap-1.5">
           {MODES.map((m) => {
             const selected = mode === m.id;
             return (
@@ -132,7 +131,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => { setMode(m.id); setError(null); }}
+                onClick={() => { if (m.id === "evento") { closeSheet(); onEventRequested(); return; } setMode(m.id); setError(null); }}
                 className="flex h-11 items-center justify-center gap-1.5 rounded-md text-[14px] font-semibold"
                 style={{
                   background: selected ? m.bg : "transparent",
@@ -172,8 +171,6 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
             )}
           </button>
         </div>
-
-        {!active.ready && <p className="text-[14px] text-ink-2">Próximamente. Por ahora puedes crear tareas y hábitos.</p>}
 
         {mode === "tarea" && (
           <>

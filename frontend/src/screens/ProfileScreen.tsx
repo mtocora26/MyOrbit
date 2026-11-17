@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from "../services/notificationsApi";
 import { CollapsibleSection, ScreenHeader, Toggle, ListSkeleton } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
-import { IconCalendar, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
+import { IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
 import type { AuthSession } from "../services/authApi";
 import { updateName, changePassword, updateTimeZone, availableTimeZones, detectTimeZone } from "../services/authApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
@@ -249,20 +249,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           {prefs && prefsError && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{prefsError}</p>}
         </Section>
 
-        {/* Integrations */}
-        <Section id="integrations" title="Integraciones" summary="Próximamente">
-          {/* Sin estado propio: no se muestra una cuenta ni una conexión hasta que exista la integración real (#47). */}
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "var(--color-blue-wash)" }}>
-              <IconCalendar size={16} color="var(--color-blue)" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-bold text-ink">Google Calendar</p>
-              <p className="text-[13px] text-ink-3">Sincroniza tus fechas límite con tu calendario</p>
-            </div>
-            <span className="flex-shrink-0 rounded-[3px] bg-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-ink-2">Próximamente</span>
-          </div>
-        </Section>
+        {/* Integraciones (Google Calendar) oculto hasta que exista la integración real (#47). */}
 
         {/* Time zone */}
         <Section id="timezone" title="Zona horaria" summary={(user.timeZone ?? detectTimeZone() ?? "America/Bogota").replace(/_/g, " ")}>
