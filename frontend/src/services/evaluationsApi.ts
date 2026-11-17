@@ -1,6 +1,7 @@
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
+import type { GradeSummary } from "./academicApi";
 
 /** Parte de un corte; su porcentaje es sobre el corte, no sobre la materia. */
 export interface EvaluationComponent {
@@ -58,6 +59,13 @@ const JSON_HEADERS = () => ({ "Content-Type": "application/json", ...authHeaders
 
 export async function fetchEvaluations(subjectId: string): Promise<Evaluation[]> {
   const response = await fetch(base(subjectId), { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las evaluaciones"));
+  return response.json();
+}
+
+/** Evaluaciones de la materia y su resumen de notas en una sola petición. */
+export async function fetchSubjectGrades(subjectId: string): Promise<{ evaluations: Evaluation[]; summary: GradeSummary }> {
+  const response = await fetch(`${base(subjectId)}/overview`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las evaluaciones"));
   return response.json();
 }

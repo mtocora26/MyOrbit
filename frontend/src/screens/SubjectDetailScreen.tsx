@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
-import { createEvaluation, DEFAULT_CUTS, fetchEvaluations, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
+import { createEvaluation, DEFAULT_CUTS, fetchSubjectGrades, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
 import { formatTaskDue } from "../services/taskDue";
 import { fetchTasks, type ApiTask } from "../services/tasksApi";
 import { DAY_NAMES, deleteSubject, sortSlots, type Subject } from "../services/subjectsApi";
@@ -17,6 +17,8 @@ interface Props {
   onDeleted: () => void;
   onGrades: () => void;
 }
+
+const evaluationsSignature = (list: Evaluation[]) => list.map((evaluation) => `${evaluation.id}:${evaluation.percentage}:${evaluation.grade ?? ""}:${evaluation.components.map((part) => `${part.percentage}/${part.grade ?? ""}`).join(",")}`).join("|");
 
 export default function SubjectDetailScreen({ subject: initial, onBack, onDeleted, onGrades }: Props) {
   const [subject, setSubject] = useState(initial);
@@ -35,11 +37,18 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   const [creatingCuts, setCreatingCuts] = useState(false);
   const [pendingTasks, setPendingTasks] = useState<ApiTask[]>([]);
 
+  const summaryFor = useRef<string | null>(null);
+
   async function loadEvaluations() {
     try {
       setLoadingEvals(true);
       setEvalsError(null);
-      setEvaluations(await fetchEvaluations(subject.id));
+      // Evaluaciones y resumen de notas llegan juntos: el resumen no se vuelve a pedir para esa misma lista.
+      const grades = await fetchSubjectGrades(subject.id);
+      summaryFor.current = evaluationsSignature(grades.evaluations);
+      setEvaluations(grades.evaluations);
+      setSummary(grades.summary);
+      setSummaryError(null);
     } catch (err) {
       setEvalsError(err instanceof Error ? err.message : "No fue posible cargar las evaluaciones");
     } finally {
@@ -50,14 +59,16 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   useEffect(() => { loadEvaluations(); }, [subject.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // La nota actual y la necesaria dependen de cada evaluación: se recalculan cuando cambian.
-  const evaluationsKey = evaluations.map((evaluation) => `${evaluation.id}:${evaluation.percentage}:${evaluation.grade ?? ""}:${evaluation.components.map((part) => `${part.percentage}/${part.grade ?? ""}`).join(",")}`).join("|");
+  const evaluationsKey = evaluationsSignature(evaluations);
   useEffect(() => {
+    if (loadingEvals || summaryFor.current === evaluationsKey) return;
+    summaryFor.current = null;
     let cancelled = false;
     fetchGradeSummary(subject.id)
       .then((value) => { if (!cancelled) { setSummary(value); setSummaryError(null); } })
       .catch((err) => { if (!cancelled) setSummaryError(err instanceof Error ? err.message : "No fue posible calcular las notas"); });
     return () => { cancelled = true; };
-  }, [subject.id, evaluationsKey]);
+  }, [subject.id, evaluationsKey, loadingEvals]);
 
   // Las tareas pendientes de la materia son informativas: si no cargan, el resto del detalle sigue igual.
   useEffect(() => {

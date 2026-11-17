@@ -1,4 +1,6 @@
 import { cacheKeys, remember } from "./cache";
+import type { Semester } from "./semestersApi";
+import type { Subject } from "./subjectsApi";
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
@@ -109,6 +111,16 @@ export function describeClassNow(now: ClassNow, today: string, tomorrow: string)
   if (!now.next) return null;
   const when = now.next.date === today ? "hoy" : now.next.date === tomorrow ? "mañana" : new Date(`${now.next.date}T00:00`).toLocaleDateString("es-CO", { weekday: "long" });
   return `Próxima clase: ${when} ${now.next.start}`;
+}
+
+/** Materias y semestres en una sola petición (pantalla de Universidad). Deja ambas listas en el caché. */
+export async function fetchAcademicOverview(): Promise<{ subjects: Subject[]; semesters: Semester[] }> {
+  const response = await fetch(`${API_BASE_URL}/api/academic/overview`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las materias"));
+  const overview = await response.json() as { subjects: Subject[]; semesters: Semester[] };
+  remember(cacheKeys.subjects, overview.subjects);
+  remember(cacheKeys.semesters, overview.semesters);
+  return overview;
 }
 
 export async function fetchAcademicSummary(semester?: string): Promise<AcademicSummary> {

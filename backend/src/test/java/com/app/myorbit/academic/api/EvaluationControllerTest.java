@@ -66,6 +66,17 @@ class EvaluationControllerTest {
     }
 
     @Test
+    void overviewReturnsEvaluationsAndSummaryInOneResponse() throws Exception {
+        when(evaluationService.list("u1", "s1")).thenReturn(List.of(evaluation()));
+        when(gradeSummaryService.summarize("u1", "s1", null)).thenReturn(new GradeSummary(4.0, 1.2, 30.0, 70.0, 3.5, 3.29, true));
+
+        mockMvc.perform(get(BASE + "/overview").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.evaluations[0].name").value("Parcial 1"))
+                .andExpect(jsonPath("$.summary.currentGrade").value(4.0));
+    }
+
+    @Test
     void listReturnsEvaluationsWithoutOwnerData() throws Exception {
         when(evaluationService.list("u1", "s1")).thenReturn(List.of(evaluation()));
 

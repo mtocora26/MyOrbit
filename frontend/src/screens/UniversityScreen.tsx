@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
 import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
-import { fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
+import { fetchAcademicOverview, fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
 import { cacheKeys, peek } from "../services/cache";
 import { fetchSemesters, type Semester } from "../services/semestersApi";
-import { fetchSubjects, type Subject } from "../services/subjectsApi";
+import { type Subject } from "../services/subjectsApi";
 
 interface Props { onSubjectTap: (subject: Subject) => void; }
 
@@ -23,7 +23,9 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
     try {
       if (peek(cacheKeys.subjects) === undefined) setLoading(true);
       setError(null);
-      setSubjects(await fetchSubjects());
+      const overview = await fetchAcademicOverview();
+      setSubjects(overview.subjects);
+      setSemesterRecords(overview.semesters);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las materias");
     } finally {
@@ -36,7 +38,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
     try { setSemesterRecords(await fetchSemesters()); } catch { /* se deriva de las materias */ }
   }
 
-  useEffect(() => { load(); loadSemesters(); }, []);
+  useEffect(() => { load(); }, []);
 
   const semesters = useMemo(() => [...new Set([...semesterRecords.map((record) => record.name), ...subjects.map((subject) => subject.semester)])].sort().reverse(), [semesterRecords, subjects]);
   // Sin elección (o si la elegida ya no existe) se muestra el semestre en curso o, si no hay, el más reciente.
@@ -148,7 +150,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         onClose={() => setSemesterSheet(null)}
         semester={semesterSheet?.semester ?? null}
         existingNames={semesterRecords.map((record) => record.name)}
-        onSaved={(saved) => { setSemester(saved.name); load(); loadSemesters(); }}
+        onSaved={(saved) => { setSemester(saved.name); load(); }}
         onDeleted={() => { setSemester(null); loadSemesters(); }}
       />
     </div>

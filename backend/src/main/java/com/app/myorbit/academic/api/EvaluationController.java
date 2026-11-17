@@ -40,6 +40,13 @@ public class EvaluationController {
         return GradeSummaryResponse.from(gradeSummaryService.summarize(user.getId(), subjectId, target));
     }
 
+    @GetMapping("/overview")
+    public SubjectGradesResponse overview(@PathVariable String subjectId, @RequestParam(required = false) Double target, @CurrentUser User user) {
+        return new SubjectGradesResponse(
+                evaluationService.list(user.getId(), subjectId).stream().map(EvaluationResponse::from).toList(),
+                GradeSummaryResponse.from(gradeSummaryService.summarize(user.getId(), subjectId, target)));
+    }
+
     @GetMapping("/{id}")
     public EvaluationResponse get(@PathVariable String subjectId, @PathVariable String id, @CurrentUser User user) {
         return EvaluationResponse.from(evaluationService.getOwned(user.getId(), subjectId, id));
