@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BottomSheet, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
+import { BottomSheet, CollapsibleSection, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
@@ -19,6 +19,14 @@ interface Props {
 }
 
 const evaluationsSignature = (list: Evaluation[]) => list.map((evaluation) => `${evaluation.id}:${evaluation.percentage}:${evaluation.grade ?? ""}:${evaluation.components.map((part) => `${part.percentage}/${part.grade ?? ""}`).join(",")}`).join("|");
+
+function scheduleSummary(slots: Subject["schedule"]): string {
+  const sorted = sortSlots(slots);
+  const first = sorted[0];
+  if (!first) return "";
+  const head = `${DAY_NAMES[first.dayOfWeek - 1].slice(0, 3)} ${first.start}`;
+  return sorted.length > 1 ? `${head} · +${sorted.length - 1}` : head;
+}
 
 export default function SubjectDetailScreen({ subject: initial, onBack, onDeleted, onGrades }: Props) {
   const [subject, setSubject] = useState(initial);
@@ -135,45 +143,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
         }
       />
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
-        <div className="flex items-center gap-3 rounded-md border border-line bg-card p-4">
-          <span className="h-10 w-3 flex-shrink-0 rounded-[3px]" style={{ background: subject.color }} aria-hidden="true" />
-          <dl className="grid flex-1 grid-cols-2 gap-3">
-            <div><dt className="text-[13px] text-ink-2">Créditos</dt><dd className="num mt-0.5 text-[26px] font-semibold leading-none text-ink">{subject.credits}</dd></div>
-            <div><dt className="text-[13px] text-ink-2">Semestre</dt><dd className="num mt-0.5 text-[26px] font-semibold leading-none text-ink">{subject.semester}</dd></div>
-          </dl>
-        </div>
-
-        {subject.schedule.length > 0 && (
-          <section aria-labelledby="schedule-title" className="flex flex-col gap-2">
-            <h2 id="schedule-title" className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Horario</h2>
-            <ul className="overflow-hidden rounded-md border border-line bg-card">
-              {sortSlots(subject.schedule).map((slot, index) => (
-                <li key={`${slot.dayOfWeek}-${slot.start}`} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
-                  <span className="w-[88px] flex-shrink-0 text-[15px] font-semibold text-ink">{DAY_NAMES[slot.dayOfWeek - 1]}</span>
-                  <span className="num flex-1 text-[15px] text-ink">{slot.start}–{slot.end}</span>
-                  {slot.room && <span className="min-w-0 truncate text-[14px] text-ink-2">{slot.room}</span>}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {pendingTasks.length > 0 && (
-          <section aria-labelledby="pending-tasks-title" className="flex flex-col gap-2">
-            <h2 id="pending-tasks-title" className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Tareas pendientes ({pendingTasks.length})</h2>
-            <ul className="overflow-hidden rounded-md border border-line bg-card">
-              {pendingTasks.map((task, index) => (
-                <li key={task.id} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
-                  <span className="h-[14px] w-[14px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color }} aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{task.title}</span>
-                  {task.due && <span className="num flex-shrink-0 text-[13px] text-ink-2">{formatTaskDue(task.due)}</span>}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
         {summary && status && (
           <section aria-label="Notas de la materia" className="rounded-md border border-line bg-card p-4">
             <div className="flex items-center gap-4">
@@ -194,12 +164,13 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
         )}
         {summaryError && !summary && <p role="alert" className="text-[14px] font-semibold text-danger">{summaryError}</p>}
 
-        <section aria-labelledby="evals-title" className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h2 id="evals-title" className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Evaluaciones</h2>
-            {evaluations.length > 0 && <button onClick={() => openEvalSheet(null)} className="-mr-2 flex min-h-[44px] items-center px-2 text-[14px] font-semibold text-coral-ink">Agregar</button>}
-          </div>
-
+        <CollapsibleSection
+          id="subject-evaluations"
+          title="Evaluaciones"
+          defaultOpen
+          summary={evaluations.length > 0 ? `${evaluations.length} · ${formatNumber(assigned)}% repartido` : undefined}
+          action={evaluations.length > 0 ? <button onClick={() => openEvalSheet(null)} className="-mr-2 flex min-h-[44px] flex-shrink-0 items-center px-3 text-[14px] font-semibold text-coral-ink">Agregar</button> : undefined}
+        >
           {evalsError && <ErrorBanner message={evalsError} onRetry={loadEvaluations} />}
 
           {loadingEvals ? (
@@ -245,7 +216,35 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
               </ul>
             </>
           )}
-        </section>
+        </CollapsibleSection>
+        {pendingTasks.length > 0 && (
+          <CollapsibleSection id="subject-tasks" title="Tareas pendientes" summary={`${pendingTasks.length}`}>
+            <ul className="overflow-hidden rounded-md border border-line bg-card">
+              {pendingTasks.map((task, index) => (
+                <li key={task.id} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
+                  <span className="h-[14px] w-[14px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color }} aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{task.title}</span>
+                  {task.due && <span className="num flex-shrink-0 text-[13px] text-ink-2">{formatTaskDue(task.due)}</span>}
+                </li>
+              ))}
+            </ul>
+          </CollapsibleSection>
+        )}
+
+        {subject.schedule.length > 0 && (
+          <CollapsibleSection id="subject-schedule" title="Horario" summary={scheduleSummary(subject.schedule)}>
+            <ul className="overflow-hidden rounded-md border border-line bg-card">
+              {sortSlots(subject.schedule).map((slot, index) => (
+                <li key={`${slot.dayOfWeek}-${slot.start}`} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
+                  <span className="w-[88px] flex-shrink-0 text-[15px] font-semibold text-ink">{DAY_NAMES[slot.dayOfWeek - 1]}</span>
+                  <span className="num flex-1 text-[15px] text-ink">{slot.start}–{slot.end}</span>
+                  {slot.room && <span className="min-w-0 truncate text-[14px] text-ink-2">{slot.room}</span>}
+                </li>
+              ))}
+            </ul>
+          </CollapsibleSection>
+        )}
+
       </div>
 
       <EvaluationFormSheet

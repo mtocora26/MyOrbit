@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ProgressBar, ScreenHeader } from "../components/shared";
+import { CollapsibleSection, ProgressBar, ScreenHeader } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, projectedFinal, type GradeSummary } from "../services/academicApi";
 import { fetchEvaluations, formatNumber, type Evaluation } from "../services/evaluationsApi";
@@ -44,7 +44,7 @@ export default function GradesScreen({ subject, onBack }: Props) {
     <div className="flex h-full min-h-0 flex-col bg-paper">
       <ScreenHeader title="Notas y metas" subtitle={subject.name} onBack={onBack} />
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
         {error && (
           <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2">
             <p className="text-[14px] font-semibold text-danger">{error}</p>
@@ -73,9 +73,9 @@ export default function GradesScreen({ subject, onBack }: Props) {
             </section>
 
             {hasPending && (
-              <section aria-labelledby="sim-title" className="rounded-md border border-line bg-card p-4">
-                <h2 id="sim-title" className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Simulador</h2>
-                <p className="mt-1 text-[14px] text-ink-2">¿Qué promedio sacarías en el {formatNumber(summary.remainingPercentage)}% restante?</p>
+              <CollapsibleSection id="grades-simulator" title="Simulador" defaultOpen summary={`Proyectada ${formatGrade(projected)}`}>
+              <div className="rounded-md border border-line bg-card p-4">
+                <p className="text-[14px] text-ink-2">¿Qué promedio sacarías en el {formatNumber(summary.remainingPercentage)}% restante?</p>
                 <div className="mt-3 flex items-center gap-3">
                   <input type="range" min={0} max={MAX_GRADE} step={0.1} value={expected} onChange={(e) => setExpected(Number(e.target.value))} aria-label="Promedio esperado en lo que falta" className="h-11 min-w-0 flex-1" style={{ accentColor: "var(--color-coral)" }} />
                   <span className="num w-12 text-right text-[26px] font-semibold leading-none text-ink">{formatGrade(expected)}</span>
@@ -92,11 +92,11 @@ export default function GradesScreen({ subject, onBack }: Props) {
                     {reaches ? `Llegas a la meta de ${formatGrade(summary.targetGrade)}.` : `Te faltarían ${formatGrade(summary.targetGrade - projected)} puntos para la meta de ${formatGrade(summary.targetGrade)}.`}
                   </GradeStatusLine>
                 </div>
-              </section>
+              </div>
+              </CollapsibleSection>
             )}
 
-            <section aria-labelledby="evals-grades-title" className="flex flex-col gap-2">
-              <h2 id="evals-grades-title" className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Notas por evaluación</h2>
+            <CollapsibleSection id="grades-evaluations" title="Notas por evaluación" defaultOpen summary={`${evaluations.length}`}>
               {evaluations.length === 0 ? (
                 <p className="rounded-md border border-dashed border-line-strong px-4 py-6 text-center text-[14px] text-ink-2">Agrega evaluaciones en el detalle de la materia para ver tus notas.</p>
               ) : (
@@ -123,7 +123,7 @@ export default function GradesScreen({ subject, onBack }: Props) {
               {summary.requiredGrade !== null && summary.requiredGrade > 0 && evaluations.some((evaluation) => evaluation.grade === null) && (
                 <p className="text-[13px] text-ink-3">«Necesitas» es el promedio mínimo que debes sacar en conjunto en lo pendiente para llegar a la meta.</p>
               )}
-            </section>
+            </CollapsibleSection>
           </>
         )}
       </div>
