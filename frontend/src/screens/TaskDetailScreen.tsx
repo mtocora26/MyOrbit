@@ -356,7 +356,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                     value={draftTitle}
                     onChange={(e) => setDraftTitle(e.target.value)}
                     placeholder="Titulo de la tarea"
-                    className="rounded-md border border-line bg-paper px-3 py-2 text-[14px] font-semibold text-ink outline-none"
+                    className="min-h-[44px] rounded-md border border-line bg-paper px-3 text-[14px] font-semibold text-ink outline-none"
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <input
@@ -364,19 +364,19 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                       value={draftDate}
                       onChange={(e) => setDraftDate(e.target.value)}
                       aria-label="Fecha límite"
-                      className="rounded-md border border-line bg-paper px-3 py-2 text-[13px] text-ink outline-none"
+                      className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none"
                     />
                     <input
                       type="time"
                       value={draftTime}
                       onChange={(e) => setDraftTime(e.target.value)}
                       aria-label="Hora límite"
-                      className="rounded-md border border-line bg-paper px-3 py-2 text-[13px] text-ink outline-none"
+                      className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none"
                     />
                     <select
                       value={draftPriority}
                       onChange={(e) => setDraftPriority(e.target.value as TaskPriority)}
-                      className="col-span-2 rounded-md border border-line bg-paper px-3 py-2 text-[13px] text-ink outline-none"
+                      className="col-span-2 min-h-[44px] rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none"
                     >
                       <option value="alta">Alta</option>
                       <option value="media">Media</option>
@@ -450,12 +450,12 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               </div>
               <div className="mt-3 flex flex-col gap-2">
                 <div className="flex gap-2">
-                  <input value={newSubtaskTitle} onChange={(event) => setNewSubtaskTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined); }} placeholder="Añadir un paso" className="min-w-0 flex-1 rounded-md border border-line bg-paper px-3 py-2 text-[13px] outline-none focus:border-coral" />
-                  <button onClick={() => handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined)} disabled={saving || !newSubtaskTitle.trim()} className="rounded-md bg-strong px-3 text-[13px] font-bold text-on-strong disabled:opacity-50">Añadir</button>
+                  <input value={newSubtaskTitle} onChange={(event) => setNewSubtaskTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined); }} placeholder="Añadir un paso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-paper px-3 text-[14px] outline-none focus:border-coral" />
+                  <button onClick={() => handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined)} disabled={saving || !newSubtaskTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-strong px-3 text-[13px] font-bold text-on-strong disabled:opacity-50">Añadir</button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="date" value={newSubtaskDate} onChange={(event) => setNewSubtaskDate(event.target.value)} aria-label="Fecha del paso" className="min-w-0 rounded-md border border-line bg-paper px-3 py-2 text-[13px] text-ink outline-none" />
-                  <input type="time" value={newSubtaskTime} onChange={(event) => setNewSubtaskTime(event.target.value)} aria-label="Hora del paso" className="min-w-0 rounded-md border border-line bg-paper px-3 py-2 text-[13px] text-ink outline-none" />
+                  <input type="date" value={newSubtaskDate} onChange={(event) => setNewSubtaskDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none" />
+                  <input type="time" value={newSubtaskTime} onChange={(event) => setNewSubtaskTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none" />
                 </div>
               </div>
             </div>
@@ -578,14 +578,18 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
         </button>
       </div>
       {editingDue && (
-        <div className="ml-8 flex gap-2">
-          <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2 text-[13px] outline-none" />
-          <input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2 text-[13px] outline-none" />
-          <button onClick={saveDue} disabled={saving} className="rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Guardar</button>
-          <button onClick={() => setEditingDue(false)} disabled={saving} className="rounded-md bg-wash px-3 text-[13px] font-bold text-ink-2">Cancelar</button>
+        <div className="ml-8 flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-card px-3 text-[14px] text-ink outline-none" />
+            <input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-card px-3 text-[14px] text-ink outline-none" />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={saveDue} disabled={saving} className="min-h-[44px] flex-1 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Guardar</button>
+            <button onClick={() => setEditingDue(false)} disabled={saving} className="min-h-[44px] flex-1 rounded-md bg-wash px-3 text-[13px] font-bold text-ink-2">Cancelar</button>
+          </div>
         </div>
       )}
-      {addingChild && <div className="ml-8 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2 text-[13px] outline-none focus:border-blue" /><button onClick={addChild} disabled={saving || !childTitle.trim()} className="rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Añadir</button></div>}
+      {addingChild && <div className="ml-8 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-card px-3 text-[14px] outline-none focus:border-blue" /><button onClick={addChild} disabled={saving || !childTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Añadir</button></div>}
       {children.map((child) => <SubtaskItem key={child.id} subtask={child} depth={depth + 1} saving={saving} onToggle={onToggle} onDelete={onDelete} onAddChild={onAddChild} onUpdateDue={onUpdateDue} onRename={onRename} />)}
     </div>
   );
