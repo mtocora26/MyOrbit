@@ -25,7 +25,7 @@ function apply(theme: Theme | null) {
   const root = document.documentElement;
   if (theme) root.dataset.theme = theme;
   else delete root.dataset.theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", (theme ?? systemTheme()) === "dark" ? "#0a111f" : "#eef1f6");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", (theme ?? systemTheme()) === "dark" ? "#0c1527" : "#eef1f6");
 }
 
 // Aplica el tema guardado antes del primer render para evitar el destello.
