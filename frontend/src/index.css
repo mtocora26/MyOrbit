@@ -158,6 +158,12 @@ input, select, textarea {
   font-family: inherit;
 }
 
+/* En el WebView de Android, date/time/datetime-local traen un ancho intrínseco que no se encoge y se sale de su celda. */
+input[type="date"], input[type="time"], input[type="datetime-local"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
 input::placeholder, textarea::placeholder {
   color: var(--color-ink-3);
   opacity: 0.8;
