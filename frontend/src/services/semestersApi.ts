@@ -1,3 +1,4 @@
+import { cacheKeys, remember } from "./cache";
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
@@ -29,7 +30,7 @@ const JSON_HEADERS = () => ({ "Content-Type": "application/json", ...authHeaders
 export async function fetchSemesters(): Promise<Semester[]> {
   const response = await fetch(`${API_BASE_URL}/api/semesters`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar los semestres"));
-  return response.json();
+  return remember(cacheKeys.semesters, await response.json());
 }
 
 export async function createSemester(input: SemesterInput): Promise<Semester> {

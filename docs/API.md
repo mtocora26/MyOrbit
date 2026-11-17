@@ -309,6 +309,17 @@ Reúne las materias del usuario con su estado de notas, el promedio ponderado po
 
 Errores: `400` si `target` está fuera de 0–5, `401` sin sesión.
 
+## Respuestas agrupadas para pantallas móviles
+
+Dos `GET` de solo lectura que reúnen lo que una pantalla pide junta, para no hacer varias peticiones. Los endpoints individuales siguen igual.
+
+| Ruta | Respuesta |
+|---|---|
+| `GET /api/academic/overview` | `{ "subjects": [...], "semesters": [...] }`: lo mismo que `GET /api/subjects` y `GET /api/semesters`. |
+| `GET /api/subjects/{subjectId}/evaluations/overview?target=` | `{ "evaluations": [...], "summary": {...} }`: lo mismo que `GET .../evaluations` y `GET .../evaluations/summary`. `404` si la materia no es del usuario. |
+
+Ambos: `401` sin sesión.
+
 ## Fechas de tareas y subtareas (`due`)
 
 `due` es una fecha real ISO-8601 sin zona horaria (`2026-10-10T23:59`). Sin fecha, la respuesta trae `null`.

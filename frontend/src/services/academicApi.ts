@@ -1,3 +1,6 @@
+import { cacheKeys, remember } from "./cache";
+import type { Semester } from "./semestersApi";
+import type { Subject } from "./subjectsApi";
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
@@ -63,7 +66,7 @@ export interface AgendaEvaluation {
 export async function fetchAgendaEvaluations(): Promise<AgendaEvaluation[]> {
   const response = await fetch(`${API_BASE_URL}/api/academic/evaluations`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las evaluaciones"));
-  return response.json();
+  return remember(cacheKeys.agendaEvaluations, await response.json());
 }
 
 /** Una clase concreta (la franja de una materia en una fecha). */
@@ -86,7 +89,7 @@ export interface ClassOccurrence {
 export async function fetchClasses(from: string, to: string): Promise<ClassOccurrence[]> {
   const response = await fetch(`${API_BASE_URL}/api/academic/classes?from=${from}&to=${to}`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las clases"));
-  return response.json();
+  return remember(cacheKeys.classes(from, to), await response.json());
 }
 
 export interface ClassNow {
@@ -110,11 +113,21 @@ export function describeClassNow(now: ClassNow, today: string, tomorrow: string)
   return `Próxima clase: ${when} ${now.next.start}`;
 }
 
+/** Materias y semestres en una sola petición (pantalla de Universidad). Deja ambas listas en el caché. */
+export async function fetchAcademicOverview(): Promise<{ subjects: Subject[]; semesters: Semester[] }> {
+  const response = await fetch(`${API_BASE_URL}/api/academic/overview`, { headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las materias"));
+  const overview = await response.json() as { subjects: Subject[]; semesters: Semester[] };
+  remember(cacheKeys.subjects, overview.subjects);
+  remember(cacheKeys.semesters, overview.semesters);
+  return overview;
+}
+
 export async function fetchAcademicSummary(semester?: string): Promise<AcademicSummary> {
   const query = semester ? `?semester=${encodeURIComponent(semester)}` : "";
   const response = await fetch(`${API_BASE_URL}/api/academic/summary${query}`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar el resumen académico"));
-  return response.json();
+  return remember(cacheKeys.academicSummary(semester), await response.json());
 }
 
 /** Nota con hasta dos decimales y coma decimal: 3.6 → "3,6", 3.667 → "3,67". */

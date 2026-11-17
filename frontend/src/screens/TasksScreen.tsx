@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CategoryBadge, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
 import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
-import { deleteTask, fetchTasks, getSubtaskProgress, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
+import { cacheKeys, peek } from "../services/cache";
+import { deleteTask, fetchTasks, getSubtaskProgress, peekTasks, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
 import { categoryLabel, fetchCategories, orderCategories, type Category } from "../services/categoriesApi";
 
@@ -68,10 +69,23 @@ function weekRange(): { dueFrom: string; dueTo: string } {
   return { dueFrom: toIsoLocal(monday, "00:00"), dueTo: toIsoLocal(sunday, "23:59") };
 }
 
+function buildFilters(datePreset: DatePreset, doneFilter: DoneFilter, priorityFilter: PriorityFilter, categoryFilter: string): TaskFilters {
+  const range = datePreset === "hoy" ? todayRange() : datePreset === "semana" ? weekRange() : datePreset === "vencidas" ? overdueRange() : {};
+  return {
+    ...range,
+    done: datePreset === "vencidas" || doneFilter === "pendientes" ? false : doneFilter === "completadas" ? true : undefined,
+    priority: priorityFilter === "todas" ? undefined : priorityFilter,
+    categoryId: categoryFilter === "todas" || categoryFilter === "none" ? undefined : categoryFilter,
+    uncategorized: categoryFilter === "none",
+  };
+}
+
 export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
-  const [tasks, setTasks] = useState<UiTask[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Segunda visita: se pinta lo último que se tuvo (sin esqueleto) y se revalida en segundo plano.
+  const [initialTasks] = useState(() => { const saved = savedFilters(); return peekTasks(buildFilters(saved.datePreset, saved.doneFilter, "todas", "todas")); });
+  const [tasks, setTasks] = useState<UiTask[]>(() => initialTasks?.map(toUiTask) ?? []);
+  const [categories, setCategories] = useState<Category[]>(() => peek<Category[]>(cacheKeys.categories) ?? []);
+  const [loading, setLoading] = useState(!initialTasks);
   const [error, setError] = useState<string | null>(null);
   const [datePreset, setDatePreset] = useState<DatePreset>(() => savedFilters().datePreset);
   const [doneFilter, setDoneFilter] = useState<DoneFilter>(() => savedFilters().doneFilter);
@@ -106,14 +120,9 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
     try {
       if (!quiet) setLoading(true);
       setError(null);
-      const range = datePreset === "hoy" ? todayRange() : datePreset === "semana" ? weekRange() : datePreset === "vencidas" ? overdueRange() : {};
-      const filters: TaskFilters = {
-        ...range,
-        done: datePreset === "vencidas" || doneFilter === "pendientes" ? false : doneFilter === "completadas" ? true : undefined,
-        priority: priorityFilter === "todas" ? undefined : priorityFilter,
-        categoryId: categoryFilter === "todas" || categoryFilter === "none" ? undefined : categoryFilter,
-        uncategorized: categoryFilter === "none",
-      };
+      const filters = buildFilters(datePreset, doneFilter, priorityFilter, categoryFilter);
+      const cached = peekTasks(filters);
+      if (cached && !quiet) { setTasks(cached.map(toUiTask)); setLoading(false); }
       const apiTasks = await fetchTasks(filters);
       setTasks(apiTasks.map(toUiTask));
     } catch (err) {

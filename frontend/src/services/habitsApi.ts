@@ -1,3 +1,4 @@
+import { cacheKeys, remember } from "./cache";
 import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
@@ -47,7 +48,7 @@ export function toLocalKey(date: Date): string {
 export async function fetchHabits(): Promise<Habit[]> {
   const response = await fetch(`${API_BASE_URL}/api/habits`, { headers: authHeaders() });
   if (!response.ok) throw new Error(`No fue posible cargar habitos (${response.status})`);
-  return response.json();
+  return remember(cacheKeys.habits, await response.json());
 }
 
 export async function createHabit(input: CreateHabitInput): Promise<Habit> {
@@ -151,5 +152,5 @@ export interface HabitSummary {
 export async function fetchHabitSummaries(days = 30, months = 6): Promise<HabitSummary[]> {
   const response = await fetch(`${API_BASE_URL}/api/habits/summary?days=${days}&months=${months}`, { headers: authHeaders() });
   if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible cargar las estadísticas"));
-  return response.json();
+  return remember(cacheKeys.habitSummaries(days, months), await response.json());
 }

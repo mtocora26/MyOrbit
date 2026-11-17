@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton } from "../components/shared";
 import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
+import { cacheKeys, peek } from "../services/cache";
 import { createHabit, deleteHabit, fetchHabitSummaries, fetchHabits, toLocalKey, todayKey, updateHabit, updateHabitCompletion, completeLabel, type Habit, type HabitType, type HabitStats, type HabitSummary, type MonthlyGoal } from "../services/habitsApi";
 
 interface Props { onBack: () => void; refreshTick: number; }
@@ -10,9 +11,14 @@ const STATS_WINDOWS = [7, 30, 90] as const;
 const COLORS = ["#7A5AF8", "#FF6B4A", "#2E90FA", "#12B76A", "#F79009"];
 const ICONS = { book: IconBook, run: IconRun, reading: IconReadingBook, meditate: IconMeditate, phone: IconNoPhone, target: IconTarget };
 
+function summariesFromCache(days: number): Record<string, HabitSummary> {
+  const list = peek<HabitSummary[]>(cacheKeys.habitSummaries(days, 6)) ?? [];
+  return Object.fromEntries(list.map((summary) => [summary.habitId, summary]));
+}
+
 export default function HabitsScreen({ onBack, refreshTick }: Props) {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [habits, setHabits] = useState<Habit[]>(() => peek<Habit[]>(cacheKeys.habits) ?? []);
+  const [loading, setLoading] = useState(() => peek<Habit[]>(cacheKeys.habits) === undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -22,7 +28,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
   const [statsWindow, setStatsWindow] = useState<(typeof STATS_WINDOWS)[number]>(30);
   // Estadísticas y meta mensual de todos los hábitos, de una sola petición. Mientras no llegan, las tarjetas
   // muestran esqueletos (nunca «0 días» ni «–» inventados); al recalcular se conservan los valores anteriores.
-  const [summaries, setSummaries] = useState<Record<string, HabitSummary>>({});
+  const [summaries, setSummaries] = useState<Record<string, HabitSummary>>(() => summariesFromCache(30));
   const [summaryFailed, setSummaryFailed] = useState(false);
   const [summaryTick, setSummaryTick] = useState(0);
   const [monthlyGoal, setMonthlyGoal] = useState("");
@@ -35,7 +41,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
 
   async function loadHabits() {
     try {
-      setLoading(true);
+      if (peek(cacheKeys.habits) === undefined) setLoading(true);
       setError(null);
       setHabits(await fetchHabits());
     } catch (err) {
@@ -222,7 +228,7 @@ function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySu
         <span>{habit.frequency === "diaria" ? "Diario" : "Personalizado"}</span>
         {habit.type === "QUIT" && <span className="font-semibold text-coral-ink">Para dejar · marca los días que lo evitas</span>}
       </p>
-      <HabitStatsRow stats={summary?.stats} failed={summaryFailed && !summary} onRetry={onRetrySummary} />
+      <HabitStatsRow stats={summary?.stats} noHistory={habit.completedDates.length === 0} failed={summaryFailed && !summary} onRetry={onRetrySummary} />
       {summary?.monthlyGoal && <MonthlyGoalRow monthly={summary.monthlyGoal} color={habit.color} />}
       {habit.monthlyGoal && !summary && !summaryFailed && <Skeleton className="mt-3 h-[56px] w-full" />}
       {/* La semana como una línea: una estación por día */}
@@ -287,7 +293,7 @@ function MonthlyGoalRow({ monthly, color }: { monthly: MonthlyGoal; color: strin
 const percent = (value: number) => `${value.toLocaleString("es", { maximumFractionDigits: 1 })}%`;
 
 /** Racha actual, mejor racha y cumplimiento: tablero de salidas, cifras condensadas sobre etiquetas pequeñas. */
-function HabitStatsRow({ stats, failed, onRetry }: { stats?: HabitStats; failed: boolean; onRetry: () => void }) {
+function HabitStatsRow({ stats, noHistory, failed, onRetry }: { stats?: HabitStats; noHistory: boolean; failed: boolean; onRetry: () => void }) {
   // Sin datos reales no se pinta ninguna cifra: esqueleto con la forma final (sin saltos) o error con reintento.
   if (!stats) {
     return (
@@ -302,6 +308,8 @@ function HabitStatsRow({ stats, failed, onRetry }: { stats?: HabitStats; failed:
             {[0, 1, 2].map((index) => <div key={index}><Skeleton className="h-[13px] w-16" /><Skeleton className="mt-1.5 h-[26px] w-14" /></div>)}
           </div>
         )}
+        {/* Se decide con el historial del hábito (ya conocido): reserva el alto de la pista para que no haya salto. */}
+        {noHistory && !failed && <p className="invisible mt-2 text-[13px]" aria-hidden="true">Marca tu primer día para empezar la racha.</p>}
       </div>
     );
   }
@@ -311,7 +319,6 @@ function HabitStatsRow({ stats, failed, onRetry }: { stats?: HabitStats; failed:
     { label: "Mejor racha", value: String(stats.bestStreak), unit: days(stats.bestStreak) },
     { label: `Cumplimiento ${stats.windowDays} d`, value: stats.scheduledDays > 0 ? percent(stats.completionRate) : "–", unit: stats.scheduledDays > 0 ? `${stats.completedDays}/${stats.scheduledDays}` : "" },
   ];
-  const empty = stats.bestStreak === 0 && stats.completedDays === 0;
   return (
     <div className="mt-3 border-t border-line pt-3">
       <dl className="grid grid-cols-3 gap-2">
@@ -322,7 +329,7 @@ function HabitStatsRow({ stats, failed, onRetry }: { stats?: HabitStats; failed:
           </div>
         ))}
       </dl>
-      {empty && <p className="mt-2 text-[13px] text-ink-2">Marca tu primer día para empezar la racha.</p>}
+      {noHistory && <p className="mt-2 text-[13px] text-ink-2">Marca tu primer día para empezar la racha.</p>}
     </div>
   );
 }

@@ -2,27 +2,30 @@ import { useEffect, useMemo, useState } from "react";
 import { EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
 import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
-import { fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
+import { fetchAcademicOverview, fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
+import { cacheKeys, peek } from "../services/cache";
 import { fetchSemesters, type Semester } from "../services/semestersApi";
-import { fetchSubjects, type Subject } from "../services/subjectsApi";
+import { type Subject } from "../services/subjectsApi";
 
 interface Props { onSubjectTap: (subject: Subject) => void; }
 
 export default function UniversityScreen({ onSubjectTap }: Props) {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [subjects, setSubjects] = useState<Subject[]>(() => peek<Subject[]>(cacheKeys.subjects) ?? []);
+  const [loading, setLoading] = useState(() => peek<Subject[]>(cacheKeys.subjects) === undefined);
   const [error, setError] = useState<string | null>(null);
   const [semester, setSemester] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [semesterRecords, setSemesterRecords] = useState<Semester[]>([]);
+  const [semesterRecords, setSemesterRecords] = useState<Semester[]>(() => peek<Semester[]>(cacheKeys.semesters) ?? []);
   const [semesterSheet, setSemesterSheet] = useState<{ semester: Semester | null } | null>(null);
   const [summary, setSummary] = useState<AcademicSummary | null>(null);
 
   async function load() {
     try {
-      setLoading(true);
+      if (peek(cacheKeys.subjects) === undefined) setLoading(true);
       setError(null);
-      setSubjects(await fetchSubjects());
+      const overview = await fetchAcademicOverview();
+      setSubjects(overview.subjects);
+      setSemesterRecords(overview.semesters);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las materias");
     } finally {
@@ -35,7 +38,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
     try { setSemesterRecords(await fetchSemesters()); } catch { /* se deriva de las materias */ }
   }
 
-  useEffect(() => { load(); loadSemesters(); }, []);
+  useEffect(() => { load(); }, []);
 
   const semesters = useMemo(() => [...new Set([...semesterRecords.map((record) => record.name), ...subjects.map((subject) => subject.semester)])].sort().reverse(), [semesterRecords, subjects]);
   // Sin elección (o si la elegida ya no existe) se muestra el semestre en curso o, si no hay, el más reciente.
@@ -50,6 +53,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
   useEffect(() => {
     if (!activeSemester || visible.length === 0) { setSummary(null); return; }
     let cancelled = false;
+    setSummary(peek<AcademicSummary>(cacheKeys.academicSummary(activeSemester)) ?? null);
     fetchAcademicSummary(activeSemester).then((value) => { if (!cancelled) setSummary(value); }).catch(() => { if (!cancelled) setSummary(null); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -146,7 +150,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         onClose={() => setSemesterSheet(null)}
         semester={semesterSheet?.semester ?? null}
         existingNames={semesterRecords.map((record) => record.name)}
-        onSaved={(saved) => { setSemester(saved.name); load(); loadSemesters(); }}
+        onSaved={(saved) => { setSemester(saved.name); load(); }}
         onDeleted={() => { setSemester(null); loadSemesters(); }}
       />
     </div>
