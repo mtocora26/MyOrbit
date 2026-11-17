@@ -54,10 +54,20 @@ Las fuentes están en `frontend/assets/` (ver su README) y los recursos generado
 
 ```bash
 cd frontend
-pnpm exec capacitor-assets generate --android --iconBackgroundColor '#FF6B4A' --iconBackgroundColorDark '#FF6B4A' --splashBackgroundColor '#EEF1F6' --splashBackgroundColorDark '#0A111F'
+pnpm exec capacitor-assets generate --android --iconBackgroundColor '#FF6B4A' --iconBackgroundColorDark '#FF6B4A' --splashBackgroundColor '#EEF1F6' --splashBackgroundColorDark '#0C1527'
 ```
 
-El splash es el del sistema (Android 12+): el logo sobre `paper`, claro u oscuro según el tema del teléfono. Se oculta en cuanto React pinta la primera pantalla (`hideSplash()` en `App.tsx`); si algo falla, Capacitor lo oculta solo a los 3 s para no dejarlo atascado.
+### Splash animado (qué es nativo y qué es web)
+
+El arranque tiene tres tramos con el mismo fondo (`paper`: `#EEF1F6` claro, `#0C1527` oscuro) y el mismo logo de 120 px/dp centrado, para que el relevo no salte:
+
+1. **Splash del sistema (nativo, Android 12+).** Ícono animado: los arcos se trazan y aparecen las dos estaciones en ~0,8 s. Vive en `android/app/src/main/res/`: `drawable-v31/splash_orbit.xml` (animated-vector), `drawable/splash_orbit_vector.xml` (el dibujo, estado inicial sin trazar), `animator/splash_*.xml` (tiempos) y `values*/splash_colors.xml` (fondo claro/oscuro). Los atributos están en `AppTheme.NoActionBarLaunch` (`styles.xml`). El sistema admite hasta ~1 s; con «eliminar animaciones» activo salta al logo completo. En Android 11 y anteriores se ve el logo quieto (`drawable/splash_orbit.xml` y el PNG heredado de `splash.png`).
+2. **HTML de arranque (web).** `#boot` en `index.html`: el mismo logo estático sobre el mismo fondo, que se pinta antes de que cargue React. Un script aplica antes el tema guardado.
+3. **`BootScreen` (React).** `OrbitLoader` en movimiento mientras se confirma la sesión. Solo si hay sesión guardada, y como mucho 1,2 s (`BOOT_MAX_MS` en `App.tsx`): después se muestra lo guardado y las pantallas siguen con sus esqueletos. Sin sesión se abre el acceso sin esperas.
+
+La misma animación (`OrbitLoader`) se reutiliza al **volver tras 30 min o más en segundo plano** (`useResume`: revalida la sesión y los datos; entre 0,5 y 3 s) y en el botón **Reintentar** del aviso «Servidor inalcanzable». Con movimiento reducido (`prefers-reduced-motion`) el logo queda quieto.
+
+El splash se oculta en cuanto React pinta la primera pantalla (`hideSplash()` en `App.tsx`); si algo falla, Capacitor lo oculta solo a los 3 s. Para ver la animación nativa a cámara lenta: `adb shell settings put global animator_duration_scale 10` (y `1` al terminar).
 
 ## Comportamiento nativo
 

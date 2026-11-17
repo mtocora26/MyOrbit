@@ -8,7 +8,7 @@ Fuentes para generar íconos y splash de Android/iOS con `@capacitor/assets`, qu
 | `icon-foreground.png` | 1024×1024 | Solo el glifo, fondo transparente, dentro de la zona segura (ícono adaptativo de Android). |
 | `icon-background.png` | 1024×1024 | Coral sólido `#FF6B4A` (fondo del ícono adaptativo). |
 | `splash.png` | 2732×2732 | Ícono centrado sobre `paper` `#EEF1F6`. |
-| `splash-dark.png` | 2732×2732 | Ícono centrado sobre `paper-dark` `#0A111F`. |
+| `splash-dark.png` | 2732×2732 | Ícono centrado sobre `paper-dark` `#0C1527` (el PNG del splash heredado de Android 11 y anteriores sigue en `#0A111F` hasta regenerarlo; Android 12+ usa el color de `values-night/splash_colors.xml`). |
 
 Cuando Capacitor esté inicializado en `frontend/`:
 

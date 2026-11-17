@@ -18,5 +18,9 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+: fondo paper (claro/oscuro) e ícono animado (drawable-v31); antes, el logo quieto. -->
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_orbit</item>
+        <item name="windowSplashScreenAnimationDuration">900</item>
     </style>
 </resources>

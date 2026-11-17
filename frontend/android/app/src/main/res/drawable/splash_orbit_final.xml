@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El logo completo y quieto (mismas formas que splash_orbit_vector, ya trazadas). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <path
+        android:fillColor="#FF6B4A"
+        android:pathData="M110.25,84 H177.75 A26.25,26.25 0 0 1 204,110.25 V177.75 A26.25,26.25 0 0 1 177.75,204 H110.25 A26.25,26.25 0 0 1 84,177.75 V110.25 A26.25,26.25 0 0 1 110.25,84 Z" />
+    <path
+        android:pathData="M123.29,131.26 A24.3,24.3 0 0 1 164.71,131.26 M123.29,156.74 A24.3,24.3 0 0 0 164.71,156.74"
+        android:strokeColor="#0E1626"
+        android:strokeWidth="8.1" />
+    <path
+        android:fillColor="#0E1626"
+        android:pathData="M106.47,144 a13.23,13.23 0 1,0 26.46,0 a13.23,13.23 0 1,0 -26.46,0" />
+    <path
+        android:pathData="M159.12,144 a9.18,9.18 0 1,0 18.36,0 a9.18,9.18 0 1,0 -18.36,0"
+        android:strokeColor="#0E1626"
+        android:strokeWidth="8.1" />
+</vector>

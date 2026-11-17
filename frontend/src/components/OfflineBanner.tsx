@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
+import OrbitLoader from "./OrbitLoader";
 import { getConnectionState, retryConnection, subscribeConnection } from "../services/connection";
 
 const MESSAGES = {
@@ -12,6 +13,7 @@ const ICON_PROPS = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", 
 /** Aviso no bloqueante arriba: dice qué pasa con palabras e icono (nunca solo color) y ofrece «Reintentar». */
 export default function OfflineBanner() {
   const state = useSyncExternalStore(subscribeConnection, getConnectionState, () => "online" as const);
+  const [retrying, setRetrying] = useState(false);
   if (state === "online") return null;
   const message = MESSAGES[state];
   const tone = state === "recovered" ? "bg-green-wash text-green-ink border-green" : state === "unreachable" ? "bg-amber-wash text-amber-ink border-amber" : "bg-strong text-on-strong border-line-strong";
@@ -22,7 +24,10 @@ export default function OfflineBanner() {
       {state === "recovered" && <svg {...ICON_PROPS}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
       <p className="min-w-0 flex-1 py-2 text-[14px] leading-snug"><strong className="font-semibold">{message.title}.</strong> {message.detail}</p>
       {state !== "recovered" && (
-        <button type="button" onClick={() => { void retryConnection(); }} className="-mr-2 min-h-[44px] flex-shrink-0 rounded-md px-3 text-[14px] font-semibold underline underline-offset-4 active:opacity-70">Reintentar</button>
+        <button type="button" disabled={retrying} onClick={() => { setRetrying(true); void retryConnection().finally(() => setRetrying(false)); }} className="-mr-2 flex min-h-[44px] flex-shrink-0 items-center gap-2 rounded-md px-3 text-[14px] font-semibold underline underline-offset-4 active:opacity-70">
+          {retrying && <OrbitLoader size={20} className="flex-shrink-0 rounded-[4px]" />}
+          {retrying ? "Reintentando" : "Reintentar"}
+        </button>
       )}
     </div>
   );

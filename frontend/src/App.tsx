@@ -1,5 +1,5 @@
 import UndoToast from "./components/UndoToast";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import HomeScreen from "./screens/HomeScreen";
 import TasksScreen from "./screens/TasksScreen";
 import AgendaScreen from "./screens/AgendaScreen";
@@ -23,7 +23,14 @@ import QuickEventSheet from "./components/QuickEventSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
 import { hideSplash, useBackHandler } from "./hooks/useNativeApp";
+import { useResume } from "./hooks/useResume";
+import BootScreen from "./components/BootScreen";
 import { ensureTimeZone, getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
+
+/** Lo máximo que la animación de arranque retiene la app esperando al servidor. */
+const BOOT_MAX_MS = 1200;
+/** Tiempo en segundo plano a partir del cual, al volver, se revalida con la animación. */
+const RESUME_AFTER_MS = 30 * 60_000;
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
 export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "profile" | "admin" | "categories" | "notifications";
@@ -33,13 +40,22 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(false);
   const unread = useUnreadNotifications(session !== null);
 
-  // Al abrir la app se confirma la sesión y se trae el rol actual (también invalida sesiones desactivadas).
-  useEffect(() => {
-    refreshSession().then(async (fresh) => {
-      setSession(fresh);
-      if (fresh) setSession(await ensureTimeZone(fresh));
-    }).catch(() => undefined);
+  // Con sesión guardada, la animación de arranque cubre solo la confirmación real (como mucho BOOT_MAX_MS): luego se
+  // muestra lo guardado y las pantallas siguen con sus esqueletos. Sin sesión no hay nada que esperar.
+  const [booting, setBooting] = useState(() => getSession() !== null);
+
+  // Confirma la sesión y trae el rol actual (también invalida sesiones desactivadas).
+  const revalidate = useCallback(async () => {
+    const fresh = await refreshSession();
+    setSession(fresh);
+    if (fresh) setSession(await ensureTimeZone(fresh));
   }, []);
+
+  useEffect(() => {
+    const cap = setTimeout(() => setBooting(false), BOOT_MAX_MS);
+    revalidate().catch(() => undefined).finally(() => { clearTimeout(cap); setBooting(false); });
+    return () => clearTimeout(cap);
+  }, [revalidate]);
   const [activeTab, setActiveTab] = useState<MainTab>("home");
   const [subScreen, setSubScreen] = useState<SubScreen>(null);
   const [fabOpen, setFabOpen] = useState(false);
@@ -48,6 +64,13 @@ export default function App() {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [tasksRefreshTick, setTasksRefreshTick] = useState(0);
   const [habitsRefreshTick, setHabitsRefreshTick] = useState(0);
+
+  // Tras mucho tiempo en segundo plano se vuelve a confirmar la sesión y a pedir los datos.
+  const resuming = useResume(RESUME_AFTER_MS, async () => {
+    await revalidate();
+    setTasksRefreshTick((prev) => prev + 1);
+    setHabitsRefreshTick((prev) => prev + 1);
+  });
 
   const navigate = (tab: MainTab, sub?: SubScreen) => {
     setActiveTab(tab);
@@ -92,6 +115,8 @@ export default function App() {
     setActiveTab("home");
   }
 
+  if (booting && session) return <BootScreen />;
+
   if (!session) {
     return <AuthScreen onAuthenticated={(newSession, isNewAccount) => {
       setSession(newSession);
@@ -102,6 +127,7 @@ export default function App() {
 
   return (
     <div className="relative h-dvh bg-paper">
+      {resuming && <BootScreen overlay label="Actualizando MyOrbit" />}
       <div className="w-full h-dvh flex flex-col overflow-hidden lg:flex-row">
           <SideNav active={activeTab} userName={session.name} onChange={(t) => navigate(t)} onFab={() => setFabOpen(true)} onProfile={() => { navigate("more"); setSubScreen("profile"); }} unreadCount={unread.count} onNotifications={() => setSubScreen("notifications")} />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">

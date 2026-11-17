@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Logo de MyOrbit para el splash del sistema: placa coral de 120 dp con la órbita, centrada en un lienzo de 288 dp
+  (el sistema muestra un círculo de 192 dp; la placa cabe dentro). Mismas proporciones que el logo web
+  (OrbitLoader / BootScreen, 120 px) para que el relevo no salte. Estado inicial: sin trazar; al terminar la
+  animación (o si el sistema tiene las animaciones desactivadas) queda el logo completo.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <path
+        android:name="tile"
+        android:fillColor="#FF6B4A"
+        android:pathData="M110.25,84 H177.75 A26.25,26.25 0 0 1 204,110.25 V177.75 A26.25,26.25 0 0 1 177.75,204 H110.25 A26.25,26.25 0 0 1 84,177.75 V110.25 A26.25,26.25 0 0 1 110.25,84 Z" />
+    <path
+        android:name="arc_top"
+        android:pathData="M123.29,131.26 A24.3,24.3 0 0 1 164.71,131.26"
+        android:strokeColor="#0E1626"
+        android:strokeWidth="8.1"
+        android:trimPathEnd="0" />
+    <path
+        android:name="arc_bottom"
+        android:pathData="M123.29,156.74 A24.3,24.3 0 0 0 164.71,156.74"
+        android:strokeColor="#0E1626"
+        android:strokeWidth="8.1"
+        android:trimPathEnd="0" />
+    <path
+        android:name="station"
+        android:fillColor="#0E1626"
+        android:fillAlpha="0"
+        android:pathData="M106.47,144 a13.23,13.23 0 1,0 26.46,0 a13.23,13.23 0 1,0 -26.46,0" />
+    <path
+        android:name="ring"
+        android:pathData="M159.12,144 a9.18,9.18 0 1,0 18.36,0 a9.18,9.18 0 1,0 -18.36,0"
+        android:strokeColor="#0E1626"
+        android:strokeWidth="8.1"
+        android:strokeAlpha="0" />
+</vector>

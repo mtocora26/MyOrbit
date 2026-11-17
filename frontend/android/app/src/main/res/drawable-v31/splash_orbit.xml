@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+: ícono animado del splash del sistema (lo único animable ahí; el sistema admite hasta ~1 s).
+  Los arcos se trazan, aparece la estación llena y luego la hueca: la órbita se cierra en ~0,8 s.
+-->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/splash_orbit_vector">
+    <target
+        android:name="arc_top"
+        android:animation="@animator/splash_arc_trim" />
+    <target
+        android:name="arc_bottom"
+        android:animation="@animator/splash_arc_trim" />
+    <target
+        android:name="station"
+        android:animation="@animator/splash_station_in" />
+    <target
+        android:name="ring"
+        android:animation="@animator/splash_ring_in" />
+</animated-vector>
