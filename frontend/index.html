@@ -12,9 +12,23 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>MyOrbit</title>
+    <script>
+      // Aplica el tema guardado antes del primer pintado: el fondo de arranque coincide con el de la app.
+      try { var t = localStorage.getItem("myorbit.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+    </script>
+    <style>
+      /* Arranque: mismo fondo (paper) y logo de 120 px centrado que el splash nativo; React lo reemplaza al montar. */
+      #boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #eef1f6; }
+      @media (prefers-color-scheme: dark) { html:not([data-theme="light"]) #boot { background: #0c1527; } }
+      html[data-theme="dark"] #boot { background: #0c1527; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="120" height="120"><rect width="32" height="32" rx="7" fill="#ff6b4a"/><g transform="translate(16 16) scale(0.72) translate(-16 -16)" fill="#0e1626" stroke="#0e1626"><path d="M8.33 11.28A9 9 0 0 1 23.67 11.28M8.33 20.72A9 9 0 0 0 23.67 20.72" fill="none" stroke-width="3"/><circle cx="7" cy="16" r="4.9" stroke="none"/><circle cx="25" cy="16" r="3.4" fill="none" stroke-width="3"/></g></svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
