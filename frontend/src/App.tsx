@@ -147,7 +147,7 @@ export default function App() {
 
             {subScreen === null && (
               <>
-                {activeTab === "home"       && <HomeScreen userName={session.name} onTaskTap={openTaskDetail} onHabits={() => { navigate("more"); setSubScreen("habits"); }} onFab={() => setFabOpen(true)} onViewTasks={() => navigate("tasks")} onConfigureProfile={() => { navigate("more"); setSubScreen("profile"); }} unreadCount={unread.count} onNotifications={() => setSubScreen("notifications")} onAgenda={() => navigate("agenda")} refreshTick={tasksRefreshTick} />}
+                {activeTab === "home"       && <HomeScreen userName={session.name} onTaskTap={openTaskDetail} onHabits={() => { navigate("more"); setSubScreen("habits"); }} onFab={() => setFabOpen(true)} onViewTasks={() => navigate("tasks")} onUniversity={() => navigate("university")} unreadCount={unread.count} onNotifications={() => setSubScreen("notifications")} onAgenda={() => navigate("agenda")} refreshTick={tasksRefreshTick} />}
                 {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "agenda"     && <AgendaScreen onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "university" && <UniversityScreen onSubjectTap={(subject) => { setSelectedSubject(subject); setSubScreen("subjectDetail"); }} />}

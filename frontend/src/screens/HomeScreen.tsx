@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "../components/ThemeToggle";
 import NotificationBell from "../components/NotificationBell";
+import AcademicGlance from "../components/AcademicGlance";
 import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner, Skeleton } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
-import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, completeLabel, type Habit } from "../services/habitsApi";
 import { fromTaskDue, isOverdue } from "../services/taskDue";
@@ -15,7 +15,7 @@ interface Props {
   onHabits: () => void;
   onFab: () => void;
   onViewTasks: () => void;
-  onConfigureProfile: () => void;
+  onUniversity: () => void;
   unreadCount: number;
   onNotifications: () => void;
   onAgenda: () => void;
@@ -43,12 +43,11 @@ function dueTimestamp(task: UiTask): number {
   return date ? new Date(`${date}T${time || "23:59"}`).getTime() : Number.MAX_SAFE_INTEGER;
 }
 
-export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onViewTasks, onConfigureProfile, unreadCount, onNotifications, onAgenda, refreshTick }: Props) {
+export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onViewTasks, onUniversity, unreadCount, onNotifications, onAgenda, refreshTick }: Props) {
   const [tasks, setTasks] = useState<UiTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [retryTick, setRetryTick] = useState(0);
   const [taskError, setTaskError] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [classNow, setClassNow] = useState<ClassNow | null>(null);
@@ -77,7 +76,6 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
     }
 
     loadTasks();
-    fetchUserProfile().then((data) => { if (!ignore) setProfile(data); }).catch(() => { if (!ignore) setProfile(null); });
     fetchHabits().then((data) => { if (!ignore) setHabits(data); }).catch(() => { if (!ignore) setHabits([]); });
     return () => { ignore = true; };
   }, [refreshTick, retryTick]);
@@ -292,31 +290,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
           )}
         </section>
 
-        {/* Resumen académico */}
-        <section aria-label="Resumen académico" className="border-t border-line pt-4">
-          {profile?.program ? (
-            <>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="font-display text-[20px] font-semibold leading-none text-ink">Resumen académico</h2>
-                  <p className="mt-2 text-[15px] text-ink-2">{profile.program}</p>
-                </div>
-                <span className="num text-[15px] font-semibold text-ink-2">{profile.semester || "Configurado"}</span>
-              </div>
-              <dl className="mt-4 flex gap-8">
-                <Metric label="Meta" value={profile.gradeTarget || "-"} />
-              </dl>
-            </>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-[16px] font-semibold text-ink">Crea tu resumen académico</h2>
-                <p className="mt-0.5 text-[14px] text-ink-2">Añade programa, semestre y una meta cuando quieras.</p>
-              </div>
-              <button onClick={onConfigureProfile} className="flex h-11 items-center rounded-md border border-line-strong px-4 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Configurar</button>
-            </div>
-          )}
-        </section>
+        <AcademicGlance onOpen={onUniversity} refreshTick={refreshTick} />
         </div>
       </div>
     </div>
@@ -335,15 +309,6 @@ function NowMarker() {
       </div>
       <p className="font-display text-[15px] font-semibold uppercase tracking-[0.08em] text-coral-ink">Ahora</p>
       <span className="num text-[15px] text-ink-2">{time}</span>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-[13px] font-medium text-ink-2">{label}</dt>
-      <dd className="num mt-0.5 text-[24px] font-semibold leading-none text-ink">{value}</dd>
     </div>
   );
 }
