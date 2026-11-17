@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { categoryLabel, orderCategories } from "../services/categoriesApi";
 import { registerBackHandler } from "../hooks/useNativeApp";
 
@@ -288,6 +288,12 @@ export function BottomSheet({ open, onClose, title, children }: { open: boolean;
     return () => { window.removeEventListener("keydown", onKey); removeBackHandler(); };
   }, [open, onClose]);
 
+  // Arrastrar el asa hacia abajo cierra la hoja: la sigue al dedo y, si pasa de 96 px o va rápido, se va; si no, vuelve.
+  const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef<{ y: number; t: number } | null>(null);
+  useEffect(() => { if (open) { setDrag(0); setDragging(false); } }, [open]);
+
   if (!mounted) return null;
   return (
     <div data-closing={open ? undefined : ""} className="orbit-scrim absolute inset-0 z-50 flex flex-col justify-end bg-night/60 lg:items-center lg:justify-center" onClick={onClose}>
@@ -296,10 +302,26 @@ export function BottomSheet({ open, onClose, title, children }: { open: boolean;
         aria-modal="true"
         aria-label={title}
         data-closing={open ? undefined : ""}
+        style={drag > 0 ? { transform: `translateY(${drag}px)`, transition: dragging ? "none" : "transform 200ms var(--ease-out)" } : undefined}
         className="orbit-sheet max-h-[92%] w-full overflow-y-auto rounded-t-lg border-t border-line bg-card px-5 pt-2.5 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:max-w-[480px] lg:rounded-lg lg:border lg:pb-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex justify-center">
+        <div
+          className="-mx-5 -mt-2.5 mb-1 flex h-11 touch-none justify-center pt-2.5 lg:hidden"
+          aria-hidden="true"
+          onPointerDown={(e) => { dragStart.current = { y: e.clientY, t: Date.now() }; setDragging(true); e.currentTarget.setPointerCapture(e.pointerId); }}
+          onPointerMove={(e) => { if (dragStart.current) setDrag(Math.max(0, e.clientY - dragStart.current.y)); }}
+          onPointerUp={(e) => {
+            const start = dragStart.current;
+            dragStart.current = null;
+            setDragging(false);
+            if (!start) return;
+            const distance = Math.max(0, e.clientY - start.y);
+            const speed = distance / Math.max(1, Date.now() - start.t);
+            if (distance > 96 || (distance > 24 && speed > 0.6)) onClose(); else setDrag(0);
+          }}
+          onPointerCancel={() => { dragStart.current = null; setDragging(false); setDrag(0); }}
+        >
           <div className="h-1 w-10 rounded-full bg-line-strong" />
         </div>
         {title && <p className="mb-4 font-display text-[24px] font-semibold leading-none text-ink">{title}</p>}

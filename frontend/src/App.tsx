@@ -98,6 +98,8 @@ export default function App() {
           <OfflineBanner />
           <div className="relative min-h-0 flex-1 overflow-hidden">
             <div className={`h-full w-full lg:mx-auto ${subScreen === null ? "lg:max-w-[1180px]" : "lg:max-w-[820px] lg:mx-0"}`}>
+            {/* Cada cambio de pestaña o subpantalla entra con un movimiento corto (fundido o empuje lateral). */}
+            <div key={subScreen ?? activeTab} className={`h-full w-full ${subScreen === null ? "orbit-fade" : "orbit-push"}`}>
             {subScreen === "taskDetail"    && <TaskDetailScreen onBack={goBack} taskId={selectedTaskId} />}
             {subScreen === "subjectDetail" && selectedSubject && <SubjectDetailScreen key={selectedSubject.id} subject={selectedSubject} onBack={goBack} onDeleted={goBack} onGrades={() => setSubScreen("grades")} />}
             {subScreen === "grades"        && selectedSubject && <GradesScreen subject={selectedSubject} onBack={() => setSubScreen("subjectDetail")} />}
@@ -117,6 +119,7 @@ export default function App() {
               </>
             )}
 
+            </div>
             </div>
 
             {showWelcome && (

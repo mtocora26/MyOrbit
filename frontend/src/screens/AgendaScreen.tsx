@@ -157,6 +157,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     return category ? categoryLabel(category, categories) : task.categoryId ? "Categoría" : "Sin categoría";
   };
 
+  const [direction, setDirection] = useState(0);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
 
   function moveDay(delta: number) {
@@ -164,10 +165,12 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     next.setDate(next.getDate() + delta);
     const monday = mondayOf(next);
     if (dayKey(monday) !== weekKey) setWeekStart(monday);
+    setDirection(delta);
     setSelected(dayKey(next));
   }
 
   function goToday() {
+    setDirection(todayKey < selected ? -1 : 1);
     setWeekStart(mondayOf(new Date()));
     setSelected(todayKey);
   }
@@ -176,6 +179,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     const next = new Date(weekStart);
     next.setDate(next.getDate() + delta * 7);
     setWeekStart(next);
+    setDirection(delta);
     // Si la semana incluye hoy se vuelve a hoy; si no, al lunes.
     setSelected(dayKey(mondayOf(new Date())) === dayKey(next) ? todayKey : dayKey(next));
   }
@@ -222,7 +226,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
             return (
               <button
                 key={key}
-                onClick={() => setSelected(key)}
+                onClick={() => { setDirection(key < selected ? -1 : 1); setSelected(key); }}
                 aria-pressed={isSelected}
                 aria-label={date.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })}
                 className={`flex min-h-[56px] flex-1 flex-col items-center justify-center rounded-md ${isSelected ? "bg-strong text-on-strong" : isToday ? "bg-coral-wash text-coral-ink" : "text-ink"}`}
@@ -290,6 +294,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
 
           {error && <ErrorBanner message={error} onRetry={() => { setLoading(true); setRetryTick((tick) => tick + 1); }} className="mb-3" />}
 
+          <div key={selected} className={direction > 0 ? "orbit-slide-next" : direction < 0 ? "orbit-slide-prev" : undefined}>
           {loading ? (
             <div className="flex flex-col gap-2" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-[60px] animate-pulse rounded-md bg-wash" />)}</div>
           ) : dayItems.length === 0 ? (
@@ -388,6 +393,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
               })}
             </ol>
           )}
+          </div>
         </div>
       </div>
       <EventFormSheet
