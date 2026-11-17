@@ -3,6 +3,7 @@ import { CategoryBadge, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyS
 import RescheduleSheet from "../components/RescheduleSheet";
 import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
+import { flushPending, runUndoable } from "../services/undo";
 import { deleteTask, fetchTasks, getSubtaskProgress, peekTasks, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
 import { categoryLabel, fetchCategories, orderCategories, type Category } from "../services/categoriesApi";
@@ -158,17 +159,21 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
     }
   }
 
-  async function handleDeleteTask(taskId: string) {
-    const previousTasks = tasks;
-    setTasks(tasks.filter((task) => task.id !== taskId));
-
-    try {
-      await deleteTask(taskId);
-    } catch (err) {
-      setTasks(previousTasks);
-      setError(err instanceof Error ? err.message : "No fue posible eliminar la tarea");
-    }
+  // Se quita al instante y el servidor la elimina al vencer el plazo de «Deshacer».
+  function handleDeleteTask(taskId: string) {
+    const index = tasks.findIndex((task) => task.id === taskId);
+    const removed = tasks[index];
+    if (!removed) return;
+    runUndoable({
+      message: "Tarea eliminada",
+      apply: () => setTasks((current) => current.filter((task) => task.id !== taskId)),
+      restore: () => setTasks((current) => current.some((task) => task.id === taskId) ? current : [...current.slice(0, index), removed, ...current.slice(index)]),
+      commit: () => deleteTask(taskId),
+    });
   }
+
+  // Al salir de la pantalla lo que espera «Deshacer» se confirma en el servidor.
+  useEffect(() => flushPending, []);
 
   async function handleReschedule(task: UiTask, date: string) {
     setRescheduling(null);

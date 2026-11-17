@@ -6,8 +6,30 @@ import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/ta
 import { categoryLabel, createCategory, fetchCategories, type Category } from "../services/categoriesApi";
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
 import SubjectPicker from "../components/SubjectPicker";
+import { flushPending, runUndoable } from "../services/undo";
 
 interface Props { onBack: () => void; taskId: string | null; }
+
+interface DetachedSubtask { list: Subtask[]; node: Subtask; parentId: string | null; index: number; }
+
+/** Quita una subtarea (en cualquier nivel) y recuerda de dónde salió para poder devolverla a su sitio. */
+function detachSubtask(list: Subtask[], id: string, parentId: string | null = null): DetachedSubtask | null {
+  const index = list.findIndex((item) => item.id === id);
+  if (index >= 0) return { list: list.filter((item) => item.id !== id), node: list[index], parentId, index };
+  for (const [position, item] of list.entries()) {
+    const inner = item.subtasks?.length ? detachSubtask(item.subtasks, id, item.id) : null;
+    if (inner) return { ...inner, list: list.map((entry, i) => (i === position ? { ...entry, subtasks: inner.list } : entry)) };
+  }
+  return null;
+}
+
+function attachSubtask(list: Subtask[], removed: DetachedSubtask): Subtask[] {
+  if (list.some((item) => item.id === removed.node.id)) return list;
+  if (removed.parentId === null) return [...list.slice(0, removed.index), removed.node, ...list.slice(removed.index)];
+  return list.map((item) => item.id === removed.parentId
+    ? { ...item, subtasks: [...(item.subtasks ?? []).slice(0, removed.index), removed.node, ...(item.subtasks ?? []).slice(removed.index)] }
+    : { ...item, subtasks: item.subtasks ? attachSubtask(item.subtasks, removed) : item.subtasks });
+}
 
 const PRIORITY_BADGE: Record<UiTask["priority"], { label: string; color: "coral" | "yellow" | "green" }> = {
   alta: { label: "Alta prioridad", color: "coral" },
@@ -142,19 +164,22 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
     }
   }
 
-  async function handleDeleteSubtask(subtaskId: string) {
+  // La subtarea sale al instante; el servidor la elimina al vencer el plazo de «Deshacer».
+  function handleDeleteSubtask(subtaskId: string) {
     if (!task || saving) return;
-    try {
-      setSaving(true);
-      setError(null);
-      const updated = await deleteSubtask(task.id, subtaskId);
-      setTask(toUiTask(updated));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible eliminar la subtarea");
-    } finally {
-      setSaving(false);
-    }
+    const taskId = task.id;
+    const removed = detachSubtask(task.subtasks, subtaskId);
+    if (!removed) return;
+    runUndoable({
+      message: "Subtarea eliminada",
+      apply: () => setTask((current) => current && { ...current, subtasks: detachSubtask(current.subtasks, subtaskId)?.list ?? current.subtasks }),
+      restore: () => setTask((current) => current && { ...current, subtasks: attachSubtask(current.subtasks, removed) }),
+      commit: async () => { const updated = await deleteSubtask(taskId, subtaskId); setTask(toUiTask(updated)); },
+    });
   }
+
+  // Al salir de la pantalla lo que espera «Deshacer» se confirma en el servidor.
+  useEffect(() => flushPending, []);
 
   async function handleUpdateSubtaskDue(subtaskId: string, due: string | undefined) {
     if (!task || saving) return;
