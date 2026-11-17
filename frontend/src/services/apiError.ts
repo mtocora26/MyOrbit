@@ -1,3 +1,5 @@
+import { isUnreachableStatus, reportApiResult } from "./connection";
+
 export async function readErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
     const problem = await response.json() as { detail?: string };
@@ -16,10 +18,18 @@ export const NETWORK_ERROR_MESSAGE = "No se pudo conectar con el servidor. Revis
 export function translateNetworkErrors(): void {
   const original = window.fetch.bind(window);
   window.fetch = async (...args: Parameters<typeof fetch>) => {
+    const [input] = args;
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    const isApi = url.includes("/api/");
     try {
-      return await original(...args);
+      const response = await original(...args);
+      if (isApi) reportApiResult(!isUnreachableStatus(response.status));
+      return response;
     } catch (error) {
-      if (error instanceof TypeError) throw new Error(NETWORK_ERROR_MESSAGE);
+      if (error instanceof TypeError) {
+        if (isApi) reportApiResult(false);
+        throw new Error(NETWORK_ERROR_MESSAGE);
+      }
       throw error;
     }
   };

@@ -63,6 +63,13 @@ export default function App() {
 
   useEffect(() => { hideSplash(); }, []);
 
+  // Al recuperar la conexión, las pantallas vuelven a pedir sus datos.
+  useEffect(() => {
+    const refreshAll = () => { setTasksRefreshTick((prev) => prev + 1); setHabitsRefreshTick((prev) => prev + 1); };
+    window.addEventListener("myorbit:recovered", refreshAll);
+    return () => window.removeEventListener("myorbit:recovered", refreshAll);
+  }, []);
+
   const goBack = () => {
     const wasTaskDetail = subScreen === "taskDetail";
     setSubScreen(null);
