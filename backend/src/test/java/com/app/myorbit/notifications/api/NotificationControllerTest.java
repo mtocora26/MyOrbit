@@ -152,7 +152,7 @@ class NotificationControllerTest {
 
     @Test
     void updatePreferencesSavesAndReturnsThem() throws Exception {
-        when(preferencesService.update("u1", false, true, false, true, false, false)).thenReturn(preferences(false, true, false, true, false, false));
+        when(preferencesService.update("u1", false, true, false, true, false, false, null)).thenReturn(preferences(false, true, false, true, false, false));
 
         mockMvc.perform(put("/api/notifications/preferences").header("Authorization", AUTH)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -160,7 +160,20 @@ class NotificationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deadline").value(false))
                 .andExpect(jsonPath("$.overdue").value(false));
-        verify(preferencesService).update("u1", false, true, false, true, false, false);
+        verify(preferencesService).update("u1", false, true, false, true, false, false, null);
+    }
+
+    @Test
+    void updatePreferencesAcceptsTheReminderChoice() throws Exception {
+        NotificationPreferences saved = preferences(true, true, true, true, true, true);
+        saved.setReminder(false);
+        when(preferencesService.update("u1", true, true, true, true, true, true, false)).thenReturn(saved);
+
+        mockMvc.perform(put("/api/notifications/preferences").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"deadline\":true,\"habit\":true,\"overdue\":true,\"exam\":true,\"atRisk\":true,\"classReminder\":true,\"reminder\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reminder").value(false));
     }
 
     @Test
@@ -169,7 +182,7 @@ class NotificationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"deadline\":false}"))
                 .andExpect(status().isBadRequest());
-        verify(preferencesService, never()).update(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean());
+        verify(preferencesService, never()).update(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test

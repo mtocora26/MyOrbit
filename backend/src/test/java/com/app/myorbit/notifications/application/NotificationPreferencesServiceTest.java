@@ -35,13 +35,25 @@ class NotificationPreferencesServiceTest {
         when(repository.findById("u1")).thenReturn(Optional.empty());
         when(repository.save(any(NotificationPreferences.class))).then(returnsFirstArg());
 
-        NotificationPreferences saved = service.update("u1", true, true, false, true, false, false);
+        NotificationPreferences saved = service.update("u1", true, true, false, true, false, false, null);
 
         assertFalse(saved.isOverdue());
         assertFalse(saved.isAtRisk());
         assertFalse(saved.isClassReminder());
         assertTrue(saved.isDeadline() && saved.isHabit() && saved.isExam());
+        assertTrue(saved.isReminder());
         verify(repository).save(saved);
+    }
+
+    @Test
+    void updateTurnsRemindersOffOnlyWhenTheClientSendsIt() {
+        when(repository.findById("u1")).thenReturn(Optional.empty());
+        when(repository.save(any(NotificationPreferences.class))).then(returnsFirstArg());
+
+        NotificationPreferences saved = service.update("u1", true, true, true, true, true, true, false);
+
+        assertFalse(saved.isReminder());
+        assertFalse(saved.isEnabled(NotificationType.REMINDER));
     }
 
     @Test

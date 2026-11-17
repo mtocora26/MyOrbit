@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.function.IntSupplier;
 
 /**
- * Avisos que dependen del minuto: «tienes clase en media hora» y «tu evento empieza ahora». Corre cada minuto y usa
+ * Avisos que dependen del minuto: «tienes clase en media hora» y «tu evento empieza ahora», más los recordatorios personales a su hora. Corre cada minuto y usa
  * la hora local de cada usuario. Cada aviso se detecta en varios ticks seguidos (la ventana de una clase dura
  * {@value #CLASS_LEAD_MINUTES} minutos); {@link NotificationEventListener} lo deduplica por ocurrencia, así que
  * se envía una sola vez y aun así sobrevive a un tick perdido (p. ej. un servidor gratuito que se durmió).
@@ -30,11 +30,13 @@ public class ClassReminderScheduler {
 
     private final ClassReminderService classes;
     private final EventReminderService events;
+    private final PersonalReminderService personal;
     private final UserZoneService userZone;
 
-    public ClassReminderScheduler(ClassReminderService classes, EventReminderService events, UserZoneService userZone) {
+    public ClassReminderScheduler(ClassReminderService classes, EventReminderService events, PersonalReminderService personal, UserZoneService userZone) {
         this.classes = classes;
         this.events = events;
+        this.personal = personal;
         this.userZone = userZone;
     }
 
@@ -52,6 +54,7 @@ public class ClassReminderScheduler {
             String id = user.userId();
             runSafely("clases próximas", id, () -> classes.publishClassesStartingSoon(id, local, CLASS_LEAD_MINUTES));
             runSafely("eventos que empiezan", id, () -> events.publishEventsStarting(id, local, EVENT_GRACE_MINUTES));
+            runSafely("recordatorios personales", id, () -> personal.fireDue(id, local));
         }
     }
 
