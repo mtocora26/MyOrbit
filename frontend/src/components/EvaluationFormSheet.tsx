@@ -120,7 +120,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
         <form onSubmit={submit} className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
             <span className="text-[14px] font-semibold text-ink">Nombre</span>
-            <span className="flex items-center rounded-md border border-line bg-card px-3 py-3 transition-colors focus-within:border-coral">
+            <span className="flex items-center rounded-md border border-line-control bg-card px-3 py-3 transition-colors focus-within:border-coral">
               <input autoFocus value={name} maxLength={100} onChange={(e) => setName(e.target.value)} placeholder="Ej. Parcial 1" className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
             </span>
           </label>
@@ -128,7 +128,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
               <span className="text-[14px] font-semibold text-ink">Porcentaje</span>
-              <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${percentageError ? "border-danger-line" : "border-line"}`}>
+              <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${percentageError ? "border-danger-line" : "border-line-control"}`}>
                 <input value={percentage} inputMode="decimal" onChange={(e) => setPercentage(decimalInput(e.target.value))} aria-invalid={!!percentageError} placeholder="30" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
                 <span className="text-[14px] text-ink-3">%</span>
               </span>
@@ -145,7 +145,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
             ) : (
             <label className="flex flex-col gap-1.5">
               <span className="text-[14px] font-semibold text-ink">Nota (opcional)</span>
-              <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${gradeError ? "border-danger-line" : "border-line"}`}>
+              <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${gradeError ? "border-danger-line" : "border-line-control"}`}>
                 <input value={grade} inputMode="decimal" onChange={(e) => setGrade(decimalInput(e.target.value))} aria-invalid={!!gradeError} placeholder="—" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
                 <span className="text-[14px] text-ink-3">/5</span>
               </span>
@@ -167,15 +167,15 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
                   {parts.map((part, index) => (
                     <li key={index} className="flex flex-col gap-2 rounded-md border border-line bg-card p-2">
                       <div className="flex items-center gap-2">
-                        <input value={part.name} maxLength={100} onChange={(e) => setPart(index, { name: e.target.value })} aria-label={`Nombre del componente ${index + 1}`} placeholder="Ej. Parcial" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+                        <input value={part.name} maxLength={100} onChange={(e) => setPart(index, { name: e.target.value })} aria-label={`Nombre del componente ${index + 1}`} placeholder="Ej. Parcial" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
                         <button type="button" onClick={() => setParts((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar componente ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <span className="flex items-center gap-1 rounded-md border border-line bg-card px-3 py-2.5 focus-within:border-coral">
+                        <span className="flex items-center gap-1 rounded-md border border-line-control bg-card px-3 py-2.5 focus-within:border-coral">
                           <input value={part.percentage} inputMode="decimal" onChange={(e) => setPart(index, { percentage: decimalInput(e.target.value) })} aria-label={`Porcentaje del componente ${index + 1}`} placeholder="50" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
                           <span className="text-[14px] text-ink-3">% del corte</span>
                         </span>
-                        <span className="flex items-center gap-1 rounded-md border border-line bg-card px-3 py-2.5 focus-within:border-coral">
+                        <span className="flex items-center gap-1 rounded-md border border-line-control bg-card px-3 py-2.5 focus-within:border-coral">
                           <input value={part.grade} inputMode="decimal" onChange={(e) => setPart(index, { grade: decimalInput(e.target.value) })} aria-label={`Nota del componente ${index + 1}`} placeholder="—" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
                           <span className="text-[14px] text-ink-3">/5</span>
                         </span>
@@ -193,8 +193,8 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
           <div>
             <p className="mb-1.5 text-[14px] font-semibold text-ink">Fecha (opcional)</p>
             <div className="flex items-center gap-2">
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Fecha de la evaluación" className="num min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral" />
-              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!date} aria-label="Hora de la evaluación" className="num w-[120px] rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50" />
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Fecha de la evaluación" className="num min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral" />
+              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!date} aria-label="Hora de la evaluación" className="num w-[120px] rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50" />
               {date && <button type="button" onClick={() => setDate("")} aria-label="Quitar fecha" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>}
             </div>
           </div>

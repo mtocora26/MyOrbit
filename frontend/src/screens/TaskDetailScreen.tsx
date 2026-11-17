@@ -450,12 +450,12 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               </div>
               <div className="mt-3 flex flex-col gap-2">
                 <div className="flex gap-2">
-                  <input value={newSubtaskTitle} onChange={(event) => setNewSubtaskTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined); }} placeholder="Añadir un paso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-paper px-3 text-[14px] outline-none focus:border-coral" />
+                  <input value={newSubtaskTitle} onChange={(event) => setNewSubtaskTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined); }} placeholder="Añadir un paso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-paper px-3 text-[14px] outline-none focus:border-coral" />
                   <button onClick={() => handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined)} disabled={saving || !newSubtaskTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-strong px-3 text-[13px] font-bold text-on-strong disabled:opacity-50">Añadir</button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="date" value={newSubtaskDate} onChange={(event) => setNewSubtaskDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none" />
-                  <input type="time" value={newSubtaskTime} onChange={(event) => setNewSubtaskTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none" />
+                  <input type="date" value={newSubtaskDate} onChange={(event) => setNewSubtaskDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-paper px-3 text-[14px] text-ink outline-none" />
+                  <input type="time" value={newSubtaskTime} onChange={(event) => setNewSubtaskTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-paper px-3 text-[14px] text-ink outline-none" />
                 </div>
               </div>
             </div>
@@ -580,8 +580,8 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
       {editingDue && (
         <div className="ml-8 flex flex-col gap-2">
           <div className="grid grid-cols-2 gap-2">
-            <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-card px-3 text-[14px] text-ink outline-none" />
-            <input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-card px-3 text-[14px] text-ink outline-none" />
+            <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none" />
+            <input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none" />
           </div>
           <div className="flex gap-2">
             <button onClick={saveDue} disabled={saving} className="min-h-[44px] flex-1 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Guardar</button>
@@ -589,7 +589,7 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
           </div>
         </div>
       )}
-      {addingChild && <div className="ml-8 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-card px-3 text-[14px] outline-none focus:border-blue" /><button onClick={addChild} disabled={saving || !childTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Añadir</button></div>}
+      {addingChild && <div className="ml-8 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[14px] outline-none focus:border-blue" /><button onClick={addChild} disabled={saving || !childTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Añadir</button></div>}
       {children.map((child) => <SubtaskItem key={child.id} subtask={child} depth={depth + 1} saving={saving} onToggle={onToggle} onDelete={onDelete} onAddChild={onAddChild} onUpdateDue={onUpdateDue} onRename={onRename} />)}
     </div>
   );

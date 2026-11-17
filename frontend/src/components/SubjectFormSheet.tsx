@@ -95,7 +95,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
       <form onSubmit={submit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
           <span className="text-[14px] font-semibold text-ink">Nombre</span>
-          <span className="flex items-center rounded-md border border-line bg-card px-3 py-3 transition-colors focus-within:border-coral">
+          <span className="flex items-center rounded-md border border-line-control bg-card px-3 py-3 transition-colors focus-within:border-coral">
             <input autoFocus value={name} maxLength={MAX_NAME} onChange={(e) => setName(e.target.value)} placeholder="Ej. Análisis Numérico" className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
           </span>
         </label>
@@ -103,14 +103,14 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[14px] font-semibold text-ink">Créditos</span>
-            <span className={`flex items-center rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${creditsValid || credits === "" ? "border-line" : "border-danger-line"}`}>
+            <span className={`flex items-center rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${creditsValid || credits === "" ? "border-line-control" : "border-danger-line"}`}>
               <input value={credits} inputMode="numeric" onChange={(e) => setCredits(e.target.value.replace(/\D/g, "").slice(0, 2))} aria-invalid={!creditsValid} className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
             </span>
             <span className="text-[13px] text-ink-3">Entre 1 y 20</span>
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[14px] font-semibold text-ink">Semestre</span>
-            <select value={semester} onChange={(e) => setSemester(e.target.value)} className="num rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral">
+            <select value={semester} onChange={(e) => setSemester(e.target.value)} className="num rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral">
               {semesterOptions([...knownSemesters, semester]).map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </label>
@@ -130,7 +130,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[14px] font-semibold text-ink">Meta (opcional)</span>
-            <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${targetError || orderError ? "border-danger-line" : "border-line"}`}>
+            <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${targetError || orderError ? "border-danger-line" : "border-line-control"}`}>
               <input value={target} inputMode="decimal" onChange={(e) => setTarget(e.target.value.replace(/[^\d.,]/g, "").slice(0, 4))} aria-invalid={!!(targetError || orderError)} placeholder="Ej. 4,5" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
               <span className="text-[14px] text-ink-3">/5</span>
             </span>
@@ -138,7 +138,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[14px] font-semibold text-ink">Para aprobar</span>
-            <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${passingError || orderError ? "border-danger-line" : "border-line"}`}>
+            <span className={`flex items-center gap-1 rounded-md border bg-card px-3 py-3 transition-colors focus-within:border-coral ${passingError || orderError ? "border-danger-line" : "border-line-control"}`}>
               <input value={passing} inputMode="decimal" onChange={(e) => setPassing(e.target.value.replace(/[^\d.,]/g, "").slice(0, 4))} aria-invalid={!!(passingError || orderError)} placeholder="3,0" className="num min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
               <span className="text-[14px] text-ink-3">/5</span>
             </span>
@@ -159,16 +159,16 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
               {slots.map((slot, index) => (
                 <li key={index} className="flex flex-col gap-2 rounded-md border border-line bg-card p-2">
                   <div className="flex items-center gap-2">
-                    <select value={slot.dayOfWeek} onChange={(e) => setSlot(index, { dayOfWeek: Number(e.target.value) })} aria-label={`Día de la franja ${index + 1}`} className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral">
+                    <select value={slot.dayOfWeek} onChange={(e) => setSlot(index, { dayOfWeek: Number(e.target.value) })} aria-label={`Día de la franja ${index + 1}`} className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral">
                       {DAY_NAMES.map((day, position) => <option key={day} value={position + 1}>{day}</option>)}
                     </select>
                     <button type="button" onClick={() => setSlots((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar franja ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="time" value={slot.start} onChange={(e) => setSlot(index, { start: e.target.value })} aria-label={`Inicio de la franja ${index + 1}`} className="num min-h-[44px] w-full min-w-0 rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
-                    <input type="time" value={slot.end} onChange={(e) => setSlot(index, { end: e.target.value })} aria-label={`Fin de la franja ${index + 1}`} aria-invalid={!!slotErrors[index]} className={`num min-h-[44px] w-full min-w-0 rounded-md border bg-card px-3 text-[16px] text-ink outline-none focus:border-coral ${slotErrors[index] ? "border-danger-line" : "border-line"}`} />
+                    <input type="time" value={slot.start} onChange={(e) => setSlot(index, { start: e.target.value })} aria-label={`Inicio de la franja ${index + 1}`} className="num min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+                    <input type="time" value={slot.end} onChange={(e) => setSlot(index, { end: e.target.value })} aria-label={`Fin de la franja ${index + 1}`} aria-invalid={!!slotErrors[index]} className={`num min-h-[44px] w-full min-w-0 rounded-md border bg-card px-3 text-[16px] text-ink outline-none focus:border-coral ${slotErrors[index] ? "border-danger-line" : "border-line-control"}`} />
                   </div>
-                  <input value={slot.room} maxLength={50} onChange={(e) => setSlot(index, { room: e.target.value })} aria-label={`Salón de la franja ${index + 1}`} placeholder="Salón (opcional)" className="min-h-[44px] rounded-md border border-line bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+                  <input value={slot.room} maxLength={50} onChange={(e) => setSlot(index, { room: e.target.value })} aria-label={`Salón de la franja ${index + 1}`} placeholder="Salón (opcional)" className="min-h-[44px] rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
                   {slotErrors[index] && <p role="alert" className="text-[13px] font-semibold text-danger">{slotErrors[index]}</p>}
                 </li>
               ))}

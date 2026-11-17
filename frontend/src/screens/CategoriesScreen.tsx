@@ -163,13 +163,13 @@ export default function CategoriesScreen({ onBack }: Props) {
           <form onSubmit={submit} className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
               <span className="text-[14px] font-semibold text-ink">Nombre</span>
-              <span className="flex items-center rounded-md border border-line bg-card px-3 py-3 transition-colors focus-within:border-coral">
+              <span className="flex items-center rounded-md border border-line-control bg-card px-3 py-3 transition-colors focus-within:border-coral">
                 <input autoFocus value={name} maxLength={MAX_NAME} onChange={(event) => setName(event.target.value)} placeholder="Ej. Universidad" className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none" />
               </span>
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-[14px] font-semibold text-ink">Dentro de (opcional)</span>
-              <select value={parentId} onChange={(event) => setParentId(event.target.value)} disabled={!!sheet.category && childrenOf(sheet.category.id).length > 0} className="rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
+              <select value={parentId} onChange={(event) => setParentId(event.target.value)} disabled={!!sheet.category && childrenOf(sheet.category.id).length > 0} className="rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
                 <option value="">Ninguna (categoría principal)</option>
                 {roots.filter((root) => root.id !== sheet.category?.id).map((root) => <option key={root.id} value={root.id}>{root.name}</option>)}
               </select>

@@ -256,7 +256,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           <div className="flex flex-col gap-2 px-4 py-3">
             <label className="flex flex-col gap-1.5">
               <span className="text-[14px] text-ink-2">Los recordatorios y «hoy» se calculan con esta zona</span>
-              <select value={user.timeZone ?? detectTimeZone() ?? "America/Bogota"} onChange={(event) => changeZone(event.target.value)} disabled={savingZone} aria-label="Zona horaria" className="rounded-md border border-line bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
+              <select value={user.timeZone ?? detectTimeZone() ?? "America/Bogota"} onChange={(event) => changeZone(event.target.value)} disabled={savingZone} aria-label="Zona horaria" className="rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
                 {zoneOptions(user.timeZone ?? detectTimeZone()).map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
               </select>
             </label>
@@ -299,7 +299,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function ProfileInput({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
-  return <label className="flex flex-col gap-1"><span className="text-[13px] font-bold text-ink-2">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="rounded-md border border-line bg-paper px-3 py-2 text-[13px] text-ink outline-none focus:border-coral" /></label>;
+  return <label className="flex flex-col gap-1"><span className="text-[13px] font-bold text-ink-2">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="rounded-md border border-line-control bg-paper px-3 py-2 text-[13px] text-ink outline-none focus:border-coral" /></label>;
 }
 
 function ToggleRow({ label, sub, on, onChange, icon, iconBg }: { label: string; sub: string; on: boolean; onChange: () => void; icon: React.ReactNode; iconBg: string }) {

@@ -26,6 +26,8 @@
   --color-wash: #e6eaf1;
   --color-line: #d7dde8;
   --color-line-strong: #b4bdce;
+  /* Borde de controles (campos, selectores, chips): ≥ 3:1 sobre card y paper. line-strong queda para decoración. */
+  --color-line-control: #7a869c;
   --color-ink: #121a2b;
   --color-ink-2: #465066;
   --color-ink-3: #5c667b;
@@ -66,6 +68,7 @@
     --color-wash: #1f2d4d;
     --color-line: #34466d;
     --color-line-strong: #6479a1;
+    --color-line-control: #34466d;
     --color-ink: #eef2fa;
     --color-ink-2: #b6c0d4;
     --color-ink-3: #9aa7c0;
@@ -101,6 +104,7 @@
   --color-wash: #1f2d4d;
   --color-line: #34466d;
   --color-line-strong: #6479a1;
+  --color-line-control: #34466d;
   --color-ink: #eef2fa;
   --color-ink-2: #b6c0d4;
   --color-ink-3: #9aa7c0;

@@ -38,7 +38,7 @@ function preferredCategory(categories: Category[]): string {
 
 const chip = "flex h-11 flex-shrink-0 items-center gap-1.5 rounded-md border px-3 text-[14px] font-semibold";
 const chipOn = "border-ink bg-wash text-ink";
-const chipOff = "border-line text-ink-2";
+const chipOff = "border-line-control text-ink-2";
 
 export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCreated, onEventRequested }: Props) {
   const [mode, setMode] = useState<Mode>("tarea");

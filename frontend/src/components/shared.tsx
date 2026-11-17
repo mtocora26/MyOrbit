@@ -107,7 +107,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
         <div className="flex gap-2">
-          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Nueva categoría" className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral" />
+          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Nueva categoría" className="min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral" />
           <button type="button" onClick={submit} disabled={!name.trim() || saving} className="rounded-md bg-strong px-3 text-[13px] font-semibold text-on-strong disabled:opacity-50">{saving ? "..." : "Crear"}</button>
           <button type="button" onClick={() => setCreating(false)} className="rounded-md bg-wash px-3 text-[13px] font-semibold text-ink-2">Cancelar</button>
         </div>
@@ -155,7 +155,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
 
   return (
     <div className={`flex gap-2 ${className}`}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral">
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral">
         {ordered.map((category) => <option key={category.id} value={category.id}>{labelOf(category)}</option>)}
         {value && !categories.some((category) => category.id === value) && <option value={value}>{value}</option>}
       </select>
@@ -420,7 +420,7 @@ export function InputField({ label, placeholder, value, onChange, type = "text",
   return (
     <label className="flex flex-col gap-1.5">
       {label && <span className="text-[14px] font-semibold text-ink">{label}</span>}
-      <span className="flex items-center rounded-md border border-line bg-card px-3 py-3 transition-colors focus-within:border-coral">
+      <span className="flex items-center rounded-md border border-line-control bg-card px-3 py-3 transition-colors focus-within:border-coral">
         <input
           type={type}
           autoFocus={autoFocus}
