@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from "../services/notificationsApi";
-import { ScreenHeader, Toggle, ListSkeleton } from "../components/shared";
+import { CollapsibleSection, ScreenHeader, Toggle, ListSkeleton } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
 import { IconCalendar, IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
 import type { AuthSession } from "../services/authApi";
@@ -154,25 +154,20 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     <div className="h-full flex flex-col bg-paper">
       <ScreenHeader title="Perfil" bg="var(--color-paper)" onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8 flex flex-col gap-4">
-        {/* Avatar */}
-        <div className="flex flex-col items-center py-4 gap-3">
-          <div className="relative">
-            <div
-              className="rounded-full flex items-center justify-center font-bold text-white text-[26px]"
-              style={{ width: 88, height: 88, background: "var(--color-night)" }}
-            >
-              {user.name.slice(0, 2).toUpperCase()}
-            </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8 flex flex-col gap-1">
+        {/* Avatar: una fila compacta en lugar de un bloque centrado de ~170 px */}
+        <div className="flex items-center gap-3 py-3">
+          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-[20px] font-bold text-white" style={{ background: "var(--color-night)" }} aria-hidden="true">
+            {user.name.slice(0, 2).toUpperCase()}
           </div>
-          <div className="text-center">
-            <p className="text-[18px] font-bold text-ink">{displayName}</p>
-            <p className="text-[13px] text-ink-3">{user.email}</p>
+          <div className="min-w-0">
+            <p className="truncate text-[18px] font-bold text-ink">{displayName}</p>
+            <p className="truncate text-[13px] text-ink-3">{user.email}</p>
           </div>
         </div>
 
         {/* Account */}
-        <Section title="Cuenta">
+        <Section id="account" title="Cuenta" summary={displayName} forceOpen={editingAccount}>
           {editingAccount ? (
             <div className="p-4 flex flex-col gap-3">
               <ProfileInput label="Nombre" value={draftName} onChange={setDraftName} placeholder="Tu nombre" />
@@ -206,7 +201,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         </Section>
 
         {/* Academic info */}
-        <Section title="Información académica">
+        <Section id="academic" title="Información académica" summary={profile?.program || "Sin configurar"} forceOpen={editingProfile}>
           {editingProfile ? (
             <div className="p-4 flex flex-col gap-3">
               <ProfileInput label="Programa" value={draft.program} onChange={(value) => setDraft({ ...draft, program: value })} />
@@ -234,7 +229,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         </Section>
 
         {/* Notifications */}
-        <Section title="Notificaciones">
+        <Section id="notifications" title="Notificaciones" summary={prefs ? `${Object.values(prefs).filter(Boolean).length} de ${Object.values(prefs).length} activas` : undefined}>
           {prefs ? (
             <>
               <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Fechas límite" sub="Al crear una tarea con fecha, 1 día y 1 hora antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
@@ -255,7 +250,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         </Section>
 
         {/* Integrations */}
-        <Section title="Integraciones">
+        <Section id="integrations" title="Integraciones" summary="Próximamente">
           {/* Sin estado propio: no se muestra una cuenta ni una conexión hasta que exista la integración real (#47). */}
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "var(--color-blue-wash)" }}>
@@ -270,7 +265,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         </Section>
 
         {/* Time zone */}
-        <Section title="Zona horaria">
+        <Section id="timezone" title="Zona horaria" summary={(user.timeZone ?? detectTimeZone() ?? "America/Bogota").replace(/_/g, " ")}>
           <div className="flex flex-col gap-2 px-4 py-3">
             <label className="flex flex-col gap-1.5">
               <span className="text-[14px] text-ink-2">Los recordatorios y «hoy» se calculan con esta zona</span>
@@ -284,7 +279,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         </Section>
 
         {/* Appearance */}
-        <Section title="Apariencia">
+        <Section id="appearance" title="Apariencia" summary={theme === "dark" ? "Oscuro" : "Claro"}>
           <ToggleRow icon={<IconMoon size={16} color="var(--color-ink)" />} iconBg="var(--color-wash)" label="Modo oscuro" sub="Tema oscuro de la interfaz" on={theme === "dark"} onChange={toggleTheme} />
         </Section>
 
@@ -296,14 +291,14 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/** Bloque desplegable (cerrado por defecto, recuerda su estado); `forceOpen` lo abre mientras se edita. */
+function Section({ id, title, summary, forceOpen, children }: { id: string; title: string; summary?: string; forceOpen?: boolean; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="font-display text-[20px] font-semibold text-ink mb-2 px-1">{title}</p>
+    <CollapsibleSection id={`profile-${id}`} title={title} summary={summary} forceOpen={forceOpen}>
       <div className="bg-card rounded-lg overflow-hidden divide-y divide-paper">
         {children}
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }
 

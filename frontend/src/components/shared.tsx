@@ -508,11 +508,12 @@ function writeOpen(id: string, open: boolean) {
  * Bloque que se abre y se cierra con un toque y recuerda su estado por `id`. Cerrado muestra `summary`
  * (una línea con lo esencial) para no obligar a abrirlo. `action` queda fuera del botón (p. ej. «Agregar»).
  */
-export function CollapsibleSection({ id, title, summary, action, defaultOpen = false, children }: { id: string; title: string; summary?: string; action?: ReactNode; defaultOpen?: boolean; children: ReactNode; }) {
-  const [open, setOpen] = useState(() => readOpen(id, defaultOpen));
+export function CollapsibleSection({ id, title, summary, action, defaultOpen = false, forceOpen = false, children }: { id: string; title: string; summary?: string; action?: ReactNode; defaultOpen?: boolean; /** Abierta mientras sea true (p. ej. al editar), sin tocar el estado recordado. */ forceOpen?: boolean; children: ReactNode; }) {
+  const [savedOpen, setOpen] = useState(() => readOpen(id, defaultOpen));
+  const open = savedOpen || forceOpen;
   const panelId = `section-${id}`;
   function toggle() {
-    setOpen((current) => { writeOpen(id, !current); return !current; });
+    setOpen((current) => { const next = !(current || forceOpen); writeOpen(id, next); return next; });
   }
   return (
     <section aria-labelledby={`${panelId}-title`} className="flex flex-col">
