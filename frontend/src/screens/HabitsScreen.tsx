@@ -202,53 +202,72 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
 
 function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySummary, onToggle, onEdit, onDelete }: { habit: Habit; weekDates: Date[]; saving: boolean; summary?: HabitSummary; summaryFailed: boolean; onRetrySummary: () => void; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
   const doneToday = habit.completedDates.includes(todayKey());
+  const [open, setOpen] = useState(false);
+  const panelId = `habit-${habit.id}`;
+  const goal = summary?.monthlyGoal?.current;
+  // Lectura rápida con la tarjeta cerrada: frecuencia, racha y avance de la meta del mes.
+  const quick = [
+    habit.type === "QUIT" ? "Para dejar" : habit.frequency === "diaria" ? "Diario" : "Personalizado",
+    summary ? `Racha ${summary.stats.currentStreak} ${summary.stats.currentStreak === 1 ? "día" : "días"}` : null,
+    goal ? `Meta ${goal.completedDays}/${goal.requiredDays}` : null,
+  ].filter(Boolean).join(" · ");
   return (
-    <div className="rounded-md border border-line bg-card px-4 pt-3 pb-4">
-      <div className="flex items-center gap-2">
-        <span className="h-3 w-3 flex-shrink-0 rounded-[3px]" style={{ background: habit.color }} aria-hidden="true" />
-        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold text-ink">{habit.title}</p>
-        <button onClick={onEdit} disabled={saving} title="Editar hábito" aria-label={`Editar hábito ${habit.title}`} className="flex h-11 w-11 items-center justify-center rounded-md text-ink-3 transition-colors active:bg-wash disabled:opacity-50">
-          <IconPencil size={16} />
+    <div className="rounded-md border border-line bg-card pl-4 pr-2">
+      <div className="flex items-center gap-1">
+        <button type="button" onClick={() => setOpen((current) => !current)} aria-expanded={open} aria-controls={panelId} className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-md py-2 text-left active:bg-wash">
+          <span className="h-3 w-3 flex-shrink-0 rounded-[3px]" style={{ background: habit.color }} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{habit.title}</span>
+            <span className="num block truncate text-[13px] text-ink-2">{quick}</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-ink-3 transition-transform duration-200 ${open ? "rotate-90" : ""}`} aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
         </button>
-        <DeleteButton label={`hábito ${habit.title}`} onClick={onDelete} disabled={saving} className="mr-2" />
         <button
           onClick={onToggle}
           disabled={saving}
           role="checkbox"
           aria-checked={doneToday}
           aria-label={completeLabel(habit.type ?? "BUILD", doneToday)}
-          className="-mr-2 flex h-11 w-11 items-center justify-center disabled:opacity-50"
+          className="flex h-12 w-12 flex-shrink-0 items-center justify-center disabled:opacity-50"
         >
-          <span className="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[3px] transition-[background-color,transform] duration-150 ease-out active:scale-75" style={{ borderColor: habit.color, background: doneToday ? habit.color : "var(--color-card)" }}>
-            {doneToday && <svg width="11" height="9" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+          <span className="flex h-[28px] w-[28px] items-center justify-center rounded-full border-[3px] transition-[background-color,transform] duration-150 ease-out active:scale-75" style={{ borderColor: habit.color, background: doneToday ? habit.color : "var(--color-card)" }}>
+            {doneToday && <svg width="12" height="10" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>}
           </span>
         </button>
       </div>
-      <p className="mt-0.5 flex items-center gap-3 text-[14px] text-ink-2">
-        <span>{habit.frequency === "diaria" ? "Diario" : "Personalizado"}</span>
-        {habit.type === "QUIT" && <span className="font-semibold text-coral-ink">Para dejar · marca los días que lo evitas</span>}
-      </p>
-      <HabitStatsRow stats={summary?.stats} noHistory={habit.completedDates.length === 0} failed={summaryFailed && !summary} onRetry={onRetrySummary} />
-      {summary?.monthlyGoal && <MonthlyGoalRow monthly={summary.monthlyGoal} color={habit.color} />}
-      {habit.monthlyGoal && !summary && !summaryFailed && <Skeleton className="mt-3 h-[56px] w-full" />}
-      {/* La semana como una línea: una estación por día */}
-      <div className="relative mt-3">
-        <span className="absolute left-3 right-3 top-[11px] h-[3px] bg-line-strong" />
-        <ul className="relative flex justify-between">
-          {weekDates.map((date, index) => {
-            const key = toLocalKey(date);
-            const planned = habit.daysOfWeek.includes(index + 1);
-            const complete = habit.completedDates.includes(key);
-            return (
-              <li key={key} className="flex w-6 flex-col items-center gap-1" aria-label={`${DAYS[index]}: ${complete ? "hecho" : planned ? "pendiente" : "descanso"}`}>
-                <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-[3px]" style={{ borderColor: planned ? habit.color : "var(--color-line-strong)", background: complete ? habit.color : "var(--color-card)", borderStyle: planned ? "solid" : "dashed" }}>
-                  {complete && <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                </span>
-                <span className="text-[13px] font-medium text-ink-2">{DAYS[index]}</span>
-              </li>
-            );
-          })}
-        </ul>
+      <div id={panelId} className={`grid transition-[grid-template-rows] duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`} inert={!open}>
+        <div className="min-h-0 overflow-hidden">
+          <div className="pr-2 pb-3">
+            {habit.type === "QUIT" && <p className="mb-1 text-[13px] font-semibold text-coral-ink">Marca los días que lo evitas.</p>}
+            <HabitStatsRow stats={summary?.stats} noHistory={habit.completedDates.length === 0} failed={summaryFailed && !summary} onRetry={onRetrySummary} />
+            {summary?.monthlyGoal && <MonthlyGoalRow monthly={summary.monthlyGoal} color={habit.color} />}
+            {habit.monthlyGoal && !summary && !summaryFailed && <Skeleton className="mt-3 h-[56px] w-full" />}
+            {/* La semana como una línea: una estación por día */}
+            <div className="relative mt-3">
+              <span className="absolute left-3 right-3 top-[11px] h-[3px] bg-line-strong" />
+              <ul className="relative flex justify-between">
+                {weekDates.map((date, index) => {
+                  const key = toLocalKey(date);
+                  const planned = habit.daysOfWeek.includes(index + 1);
+                  const complete = habit.completedDates.includes(key);
+                  return (
+                    <li key={key} className="flex w-6 flex-col items-center gap-1" aria-label={`${DAYS[index]}: ${complete ? "hecho" : planned ? "pendiente" : "descanso"}`}>
+                      <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-[3px]" style={{ borderColor: planned ? habit.color : "var(--color-line-strong)", background: complete ? habit.color : "var(--color-card)", borderStyle: planned ? "solid" : "dashed" }}>
+                        {complete && <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      </span>
+                      <span className="text-[13px] font-medium text-ink-2">{DAYS[index]}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            {/* Acciones fuera de la fila: lejos del botón de marcar, para no tocarlas por error. */}
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-1">
+              <button onClick={onEdit} disabled={saving} aria-label={`Editar hábito ${habit.title}`} className="flex min-h-[44px] items-center gap-2 rounded-md px-2 text-[14px] font-semibold text-ink-2 active:bg-wash disabled:opacity-50"><IconPencil size={16} />Editar</button>
+              <DeleteButton label={`hábito ${habit.title}`} onClick={onDelete} disabled={saving} />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -317,7 +336,7 @@ function HabitStatsRow({ stats, noHistory, failed, onRetry }: { stats?: HabitSta
   const cells = [
     { label: "Racha", value: String(stats.currentStreak), unit: days(stats.currentStreak) },
     { label: "Mejor racha", value: String(stats.bestStreak), unit: days(stats.bestStreak) },
-    { label: `Cumplimiento ${stats.windowDays} d`, value: stats.scheduledDays > 0 ? percent(stats.completionRate) : "–", unit: stats.scheduledDays > 0 ? `${stats.completedDays}/${stats.scheduledDays}` : "" },
+    { label: "Cumplimiento", value: stats.scheduledDays > 0 ? percent(stats.completionRate) : "–", unit: stats.scheduledDays > 0 ? `${stats.completedDays}/${stats.scheduledDays}` : "" },
   ];
   return (
     <div className="mt-3 border-t border-line pt-3">
