@@ -1,3 +1,4 @@
+import UndoToast from "./components/UndoToast";
 import { useEffect, useState } from "react";
 import HomeScreen from "./screens/HomeScreen";
 import TasksScreen from "./screens/TasksScreen";
@@ -121,6 +122,8 @@ export default function App() {
 
             </div>
             </div>
+
+            <UndoToast />
 
             {showWelcome && (
               <WelcomeOnboarding
