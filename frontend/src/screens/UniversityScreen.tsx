@@ -21,7 +21,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
 
   async function load() {
     try {
-      setLoading(true);
+      if (peek(cacheKeys.subjects) === undefined) setLoading(true);
       setError(null);
       setSubjects(await fetchSubjects());
     } catch (err) {
@@ -51,6 +51,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
   useEffect(() => {
     if (!activeSemester || visible.length === 0) { setSummary(null); return; }
     let cancelled = false;
+    setSummary(peek<AcademicSummary>(cacheKeys.academicSummary(activeSemester)) ?? null);
     fetchAcademicSummary(activeSemester).then((value) => { if (!cancelled) setSummary(value); }).catch(() => { if (!cancelled) setSummary(null); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
