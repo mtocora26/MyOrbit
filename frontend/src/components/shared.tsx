@@ -462,3 +462,49 @@ export function Station({ color, done, overdue, onToggle, label }: { color: stri
     </button>
   );
 }
+
+// ─── Sección desplegable ───────────────────────────────────────────────────
+const SECTIONS_KEY = "myorbit.sections";
+
+function readOpen(id: string, fallback: boolean): boolean {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SECTIONS_KEY) ?? "{}") as Record<string, boolean>;
+    return typeof saved[id] === "boolean" ? saved[id] : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeOpen(id: string, open: boolean) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SECTIONS_KEY) ?? "{}") as Record<string, boolean>;
+    localStorage.setItem(SECTIONS_KEY, JSON.stringify({ ...saved, [id]: open }));
+  } catch { /* sin almacenamiento: solo esta sesión */ }
+}
+
+/**
+ * Bloque que se abre y se cierra con un toque y recuerda su estado por `id`. Cerrado muestra `summary`
+ * (una línea con lo esencial) para no obligar a abrirlo. `action` queda fuera del botón (p. ej. «Agregar»).
+ */
+export function CollapsibleSection({ id, title, summary, action, defaultOpen = false, children }: { id: string; title: string; summary?: string; action?: ReactNode; defaultOpen?: boolean; children: ReactNode; }) {
+  const [open, setOpen] = useState(() => readOpen(id, defaultOpen));
+  const panelId = `section-${id}`;
+  function toggle() {
+    setOpen((current) => { writeOpen(id, !current); return !current; });
+  }
+  return (
+    <section aria-labelledby={`${panelId}-title`} className="flex flex-col">
+      <div className="flex min-h-[44px] items-center gap-2">
+        <button type="button" onClick={toggle} aria-expanded={open} aria-controls={panelId} className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-md text-left active:bg-wash">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-ink-2 transition-transform duration-200 ${open ? "rotate-90" : ""}`} aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+          <span id={`${panelId}-title`} className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">{title}</span>
+          {!open && summary && <span className="num min-w-0 truncate text-[14px] text-ink-2">{summary}</span>}
+        </button>
+        {action}
+      </div>
+      <div id={panelId} className={`grid transition-[grid-template-rows] duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`} inert={!open}>
+        <div className="min-h-0 overflow-hidden"><div className="flex flex-col gap-2 pt-1">{children}</div></div>
+      </div>
+    </section>
+  );
+}
