@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
-import { IconCalendar, IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
+import { IconBell, IconCalendar, IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification, type NotificationType } from "../services/notificationsApi";
+import { deleteReminder, fetchReminders, type PersonalReminder } from "../services/remindersApi";
 
 interface Props {
   onBack: () => void;
@@ -23,6 +24,7 @@ const TYPE_STYLE: Record<NotificationType, { icon: ReactNode; color: string; bg:
   CLASS: { icon: <IconCalendar size={20} />, color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", label: "Agenda" },
   AT_RISK: { icon: <IconGraduation size={20} />, color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", label: "En riesgo" },
   HABIT: { icon: <IconHabit size={20} />, color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", label: "Hábito" },
+  REMINDER: { icon: <IconBell size={20} />, color: "var(--color-blue-ink)", bg: "var(--color-blue-wash)", label: "Recordatorio" },
 };
 
 /** Avisos antiguos de tipos que ya no existen (p. ej. «tarea completada»). */
@@ -46,6 +48,25 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("todas");
   const [busy, setBusy] = useState(false);
+  const [scheduled, setScheduled] = useState<PersonalReminder[]>([]);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  // Los programados son un extra: si no cargan, la bandeja funciona igual.
+  useEffect(() => { fetchReminders().then(setScheduled).catch(() => setScheduled([])); }, []);
+
+  async function removeReminder(id: string) {
+    if (removingId) return;
+    try {
+      setRemovingId(id);
+      setError(null);
+      await deleteReminder(id);
+      setScheduled((current) => current.filter((reminder) => reminder.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible quitar el recordatorio");
+    } finally {
+      setRemovingId(null);
+    }
+  }
 
   async function load() {
     try {
@@ -81,6 +102,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
     else if (notification.type === "EXAM" || notification.type === "AT_RISK") onOpenUniversity();
     else if (notification.type === "OVERDUE") onOpenTasks();
     else if (notification.type === "CLASS") onOpenAgenda();
+    else if (notification.type === "REMINDER") return; // el texto ya está en la tarjeta: no hay adónde ir
     else onOpenTask(notification.referenceId);
   }
 
@@ -117,6 +139,23 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
         </div>
 
         {error && <ErrorBanner message={error} onRetry={load} />}
+
+        {scheduled.length > 0 && (
+          <section aria-label="Recordatorios programados" className="flex flex-col gap-1.5">
+            <h2 className="px-1 font-display text-[18px] font-semibold leading-none text-ink-2">Programados</h2>
+            <ul className="overflow-hidden rounded-md border border-line bg-card">
+              {scheduled.map((reminder, index) => (
+                <li key={reminder.id} className={`flex items-center gap-3 pl-4 ${index > 0 ? "border-t border-line" : ""}`}>
+                  <span className="min-w-0 flex-1 py-3">
+                    <span className="block break-words text-[16px] font-medium text-ink">{reminder.text}</span>
+                    <span className="num mt-0.5 block text-[13px] text-ink-3">{formatRemindAt(reminder.remindAt)}</span>
+                  </span>
+                  <button type="button" onClick={() => removeReminder(reminder.id)} disabled={removingId !== null} aria-label={`Quitar recordatorio: ${reminder.text}`} className="flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center px-3 text-[14px] font-semibold text-coral-ink disabled:opacity-50">Quitar</button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {loading ? (
           <ListSkeleton rows={5} label="Cargando notificaciones" />
@@ -158,7 +197,14 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
   );
 }
 
-const localDayKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+/** «lun 20 nov, 8:30 a. m.»: la fecha y hora local que eligió el usuario (el servidor la guarda sin zona). */
+function formatRemindAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("es-CO", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
+
+const localDayKey =(date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /** Agrupa por día local, en el orden recibido: «Hoy», «Ayer» o la fecha. */
 function groupByDay(list: AppNotification[]): { key: string; label: string; items: AppNotification[] }[] {

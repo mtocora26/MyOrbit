@@ -2,7 +2,7 @@ import { readErrorMessage } from "./apiError";
 import { authHeaders } from "./authApi";
 import { API_BASE_URL } from "./apiConfig";
 
-export type NotificationType = "DEADLINE" | "HABIT" | "OVERDUE" | "EXAM" | "AT_RISK" | "CLASS";
+export type NotificationType = "DEADLINE" | "HABIT" | "OVERDUE" | "EXAM" | "AT_RISK" | "CLASS" | "REMINDER";
 
 export interface AppNotification {
   id: string;
@@ -52,6 +52,8 @@ export interface NotificationPreferences {
   atRisk: boolean;
   /** Clases (30 min antes) y eventos con hora (al empezar). */
   classReminder: boolean;
+  /** Recordatorios personales que el usuario programa desde «Añadir → Aviso». */
+  reminder: boolean;
 }
 
 export async function fetchNotificationPreferences(): Promise<NotificationPreferences> {

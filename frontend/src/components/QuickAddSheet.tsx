@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BottomSheet, CategoryPicker, PriorityDot } from "./shared";
-import { IconPencil, IconCalendar, IconHabit, IconClock } from "./icons";
+import { IconPencil, IconCalendar, IconHabit, IconClock, IconBell } from "./icons";
+import { createReminder, REMINDER_MAX_LENGTH } from "../services/remindersApi";
 import { createTask, type TaskPriority } from "../services/tasksApi";
 import { todayInputValue, tomorrowInputValue, toTaskDue } from "../services/taskDue";
 import { createHabit } from "../services/habitsApi";
@@ -10,14 +11,26 @@ import SubjectPicker from "./SubjectPicker";
 
 interface Props { open: boolean; onClose: () => void; onTaskCreated: () => void; onHabitCreated: () => void; /** «Evento» no se escribe en esta hoja: se abre el formulario de eventos de la Agenda. */ onEventRequested: () => void; }
 
-type Mode = "tarea" | "evento" | "hábito";
+type Mode = "tarea" | "evento" | "hábito" | "aviso";
 
-// Los avisos personales volverán con su sistema (#198); hasta entonces no se muestran.
 const MODES: { id: Mode; icon: React.ReactNode; label: string; placeholder: string; color: string; bg: string }[] = [
   { id: "tarea",        icon: <IconPencil size={18} />,   label: "Tarea",  placeholder: "Nueva tarea",  color: "var(--color-coral-ink)",  bg: "var(--color-coral-wash)" },
   { id: "evento",       icon: <IconCalendar size={18} />, label: "Evento", placeholder: "Nuevo evento", color: "var(--color-blue-ink)",   bg: "var(--color-blue-wash)" },
   { id: "hábito",       icon: <IconHabit size={18} />,    label: "Hábito", placeholder: "Nuevo hábito", color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)" },
+  { id: "aviso",        icon: <IconBell size={18} />,     label: "Aviso",  placeholder: "¿Qué quieres recordar?", color: "var(--color-blue-ink)", bg: "var(--color-blue-wash)" },
 ];
+
+/** La próxima hora en punto (`HH:mm`): un buen punto de partida para un aviso. */
+function nextHourValue(): string {
+  const next = new Date();
+  next.setHours(next.getHours() + 1, 0, 0, 0);
+  return `${String(next.getHours()).padStart(2, "0")}:00`;
+}
+
+function nowTimeValue(): string {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
 
 const PRIORITIES: { id: TaskPriority; label: string }[] = [
   { id: "alta", label: "Alta" },
@@ -97,13 +110,19 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       if (mode === "tarea") {
         await createTask({ title: name.trim(), due: toTaskDue(date, time), priority, categoryId: categoryId || null, subjectId: subjectId || null });
         onTaskCreated();
+      } else if (mode === "aviso") {
+        if (date < today || (date === today && time <= nowTimeValue())) {
+          setError("Elige una hora en el futuro");
+          return;
+        }
+        await createReminder(name.trim(), date, time);
       } else {
         await createHabit({ title: name.trim(), frequency: "diaria", daysOfWeek: [1, 2, 3, 4, 5, 6, 7], color: "var(--color-violet-ink)", icon: "target" });
         onHabitCreated();
       }
       setName("");
       setDate(todayInputValue());
-      setTime("23:59");
+      setTime(mode === "aviso" ? nextHourValue() : "23:59");
       setPriority("media");
       setSubjectId("");
       setCategoryId(preferredCategory(categories));
@@ -122,7 +141,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   return (
     <BottomSheet open={open} onClose={closeSheet}>
       <form onSubmit={handleCreate} className="flex flex-col gap-3">
-        <div role="radiogroup" aria-label="Qué añadir" className="grid grid-cols-3 gap-1.5">
+        <div role="radiogroup" aria-label="Qué añadir" className="grid grid-cols-4 gap-1.5">
           {MODES.map((m) => {
             const selected = mode === m.id;
             return (
@@ -131,8 +150,8 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => { if (m.id === "evento") { closeSheet(); onEventRequested(); return; } setMode(m.id); setError(null); }}
-                className="flex h-11 items-center justify-center gap-1.5 rounded-md text-[14px] font-semibold"
+                onClick={() => { if (m.id === "evento") { closeSheet(); onEventRequested(); return; } setMode(m.id); setError(null); setTime(m.id === "aviso" ? nextHourValue() : "23:59"); }}
+                className="flex h-11 min-w-0 items-center justify-center gap-1 rounded-md px-1 text-[14px] font-semibold"
                 style={{
                   background: selected ? m.bg : "transparent",
                   color: selected ? m.color : "var(--color-ink-3)",
@@ -154,6 +173,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
             onChange={(e) => setName(e.target.value)}
             placeholder={active.placeholder}
             aria-label={active.placeholder}
+            maxLength={mode === "aviso" ? REMINDER_MAX_LENGTH : undefined}
             enterKeyHint="done"
             autoComplete="off"
             className="h-12 min-w-0 flex-1 rounded-md border border-line bg-paper px-3.5 text-[16px] text-ink outline-none focus:border-coral"
@@ -172,14 +192,18 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
           </button>
         </div>
 
-        {mode === "tarea" && (
+        {(mode === "tarea" || mode === "aviso") && (
           <>
-            <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5" role="group" aria-label="Fecha y hora límite">
+            <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5" role="group" aria-label={mode === "aviso" ? "Fecha y hora del aviso" : "Fecha y hora límite"}>
               <button type="button" aria-pressed={date === today} onClick={() => setDate(today)} className={`${chip} ${date === today ? chipOn : chipOff}`}>Hoy</button>
               <button type="button" aria-pressed={date === tomorrow} onClick={() => setDate(tomorrow)} className={`${chip} ${date === tomorrow ? chipOn : chipOff}`}>Mañana</button>
               <PickerChip type="date" value={date} onChange={setDate} label="Elegir fecha" selected={customDate} icon={<IconCalendar size={16} />} text={customDate ? formatShortDate(date) : "Otra"} />
-              <PickerChip type="time" value={time} onChange={setTime} label="Hora límite" selected={false} icon={<IconClock size={16} />} text={formatTime(time)} />
+              <PickerChip type="time" value={time} onChange={setTime} label={mode === "aviso" ? "Hora del aviso" : "Hora límite"} selected={false} icon={<IconClock size={16} />} text={formatTime(time)} />
             </div>
+            {mode === "aviso" && <p className="text-[13px] text-ink-3">Te llegará a Notificaciones a esa hora.</p>}
+
+            {mode === "tarea" && (
+            <>
 
             <div role="radiogroup" aria-label="Prioridad" className="grid grid-cols-3 gap-2">
               {PRIORITIES.map((p) => {
@@ -196,6 +220,8 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
             <CategoryPicker variant="chips" categories={categories} value={categoryId} onChange={(id) => { setCategoryId(id); rememberCategory(id); }} onCreate={handleCreateCategory} />
 
             <SubjectPicker subjects={subjects} value={subjectId} onChange={handleSubjectChange} />
+            </>
+            )}
           </>
         )}
 

@@ -61,6 +61,13 @@ class NotificationFactoryTest {
         assertEquals(NotificationType.CLASS, new ClassNotificationFactory().type());
     }
 
+    @Test
+    void reminderMessageIsTheTextTheUserWrote() {
+        assertEquals("Llamar al banco",
+                message(new PersonalReminderNotificationFactory(), "Llamar al banco", LocalDateTime.of(2026, 11, 9, 8, 0)));
+        assertEquals(NotificationType.REMINDER, new PersonalReminderNotificationFactory().type());
+    }
+
     private static String message(NotificationFactory factory, String subject, LocalDateTime when) {
         return factory.create(new NotificationRequest(factory.type(), "u1", "ref1", subject, when), NOW).getMessage();
     }
@@ -85,7 +92,7 @@ class NotificationFactoryTest {
     @Test
     void everyNotificationStartsUnreadWithCommonFields() {
         for (NotificationFactory factory : new NotificationFactory[]{
-                new DeadlineNotificationFactory(), new HabitNotificationFactory(), new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory(), new ClassNotificationFactory()}) {
+                new DeadlineNotificationFactory(), new HabitNotificationFactory(), new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory(), new ClassNotificationFactory(), new PersonalReminderNotificationFactory()}) {
             Notification n = build(factory, null);
 
             assertNotNull(n.getId());

@@ -14,6 +14,7 @@ public class NotificationPreferences {
     private boolean exam = true;
     private boolean atRisk = true;
     private boolean classReminder = true;
+    private boolean reminder = true;
 
     public static NotificationPreferences defaultsFor(String userId) {
         NotificationPreferences preferences = new NotificationPreferences();
@@ -29,6 +30,7 @@ public class NotificationPreferences {
             case EXAM -> exam;
             case AT_RISK -> atRisk;
             case CLASS -> classReminder;
+            case REMINDER -> reminder;
         };
     }
 
@@ -41,6 +43,9 @@ public class NotificationPreferences {
         this.classReminder = classReminder;
     }
 
+    /** Aparte de {@link #update} para que un cliente anterior a los recordatorios no los apague sin querer. */
+    public void setReminder(boolean reminder) { this.reminder = reminder; }
+
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
     public boolean isDeadline() { return deadline; }
@@ -49,4 +54,5 @@ public class NotificationPreferences {
     public boolean isExam() { return exam; }
     public boolean isAtRisk() { return atRisk; }
     public boolean isClassReminder() { return classReminder; }
+    public boolean isReminder() { return reminder; }
 }

@@ -26,8 +26,9 @@ class ClassReminderSchedulerTest {
 
     private final ClassReminderService classes = mock(ClassReminderService.class);
     private final EventReminderService events = mock(EventReminderService.class);
+    private final PersonalReminderService personal = mock(PersonalReminderService.class);
     private final UserZoneService userZone = mock(UserZoneService.class);
-    private final ClassReminderScheduler scheduler = new ClassReminderScheduler(classes, events, userZone);
+    private final ClassReminderScheduler scheduler = new ClassReminderScheduler(classes, events, personal, userZone);
 
     private UserLocalTime user(String id, String zone) {
         return new UserLocalTime(id, INSTANT.atZone(ZoneId.of(zone)));
@@ -42,6 +43,8 @@ class ClassReminderSchedulerTest {
         verify(classes).publishClassesStartingSoon("bogota", LocalDateTime.of(2026, 11, 9, 8, 0), 30);
         verify(classes).publishClassesStartingSoon("tokio", LocalDateTime.of(2026, 11, 9, 22, 0), 30);
         verify(events).publishEventsStarting("bogota", LocalDateTime.of(2026, 11, 9, 8, 0), 5);
+        verify(personal).fireDue("bogota", LocalDateTime.of(2026, 11, 9, 8, 0));
+        verify(personal).fireDue("tokio", LocalDateTime.of(2026, 11, 9, 22, 0));
     }
 
     @Test
@@ -52,6 +55,7 @@ class ClassReminderSchedulerTest {
         scheduler.run();
 
         verify(events).publishEventsStarting(eq("a"), any(), anyInt());
+        verify(personal).fireDue(eq("a"), any());
         verify(classes).publishClassesStartingSoon(eq("b"), any(), anyInt());
     }
 
