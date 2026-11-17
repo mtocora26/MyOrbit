@@ -125,8 +125,12 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
             ? <EmptyState title="Todo leído" sub="No tienes notificaciones pendientes de leer." action="Ver todas" onAction={() => setFilter("todas")} />
             : <EmptyState title="Sin notificaciones" sub="Aquí aparecerán los avisos de fechas límite, hábitos, parciales, materias en riesgo y clases." />
         ) : (
+          <div className="flex flex-col gap-4">
+          {groupByDay(visible).map((group) => (
+          <section key={group.key} aria-label={group.label} className="flex flex-col gap-1.5">
+          <h2 className="px-1 font-display text-[18px] font-semibold leading-none text-ink-2">{group.label}</h2>
           <ul className="overflow-hidden rounded-md border border-line bg-card">
-            {visible.map((notification, index) => {
+            {group.items.map((notification, index) => {
               const style = TYPE_STYLE[notification.type] ?? LEGACY_STYLE;
               return (
                 <li key={notification.id} className={index > 0 ? "border-t border-line" : ""}>
@@ -145,8 +149,33 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
               );
             })}
           </ul>
+          </section>
+          ))}
+          </div>
         )}
       </div>
     </div>
   );
+}
+
+const localDayKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+/** Agrupa por día local, en el orden recibido: «Hoy», «Ayer» o la fecha. */
+function groupByDay(list: AppNotification[]): { key: string; label: string; items: AppNotification[] }[] {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const groups: { key: string; label: string; items: AppNotification[] }[] = [];
+  list.forEach((item) => {
+    const date = new Date(item.createdAt);
+    const key = Number.isNaN(date.getTime()) ? "sin-fecha" : localDayKey(date);
+    let group = groups.find((entry) => entry.key === key);
+    if (!group) {
+      const label = key === "sin-fecha" ? "Sin fecha" : key === localDayKey(today) ? "Hoy" : key === localDayKey(yesterday) ? "Ayer" : date.toLocaleDateString("es-CO", { day: "numeric", month: "long" });
+      group = { key, label, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  });
+  return groups;
 }
