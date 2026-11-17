@@ -19,6 +19,7 @@ import NotificationsScreen from "./screens/NotificationsScreen";
 import type { Subject } from "./services/subjectsApi";
 import { useUnreadNotifications } from "./hooks/useUnreadNotifications";
 import QuickAddSheet from "./components/QuickAddSheet";
+import QuickEventSheet from "./components/QuickEventSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
 import { hideSplash, useBackHandler } from "./hooks/useNativeApp";
@@ -42,6 +43,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<MainTab>("home");
   const [subScreen, setSubScreen] = useState<SubScreen>(null);
   const [fabOpen, setFabOpen] = useState(false);
+  const [eventOpen, setEventOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [tasksRefreshTick, setTasksRefreshTick] = useState(0);
@@ -149,7 +151,8 @@ export default function App() {
           </div>
       </div>
       {/* Fuera del área de contenido: el sheet y su velo cubren también la barra inferior. */}
-      <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} />
+      <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} onEventRequested={() => setEventOpen(true)} />
+      <QuickEventSheet open={eventOpen} onClose={() => setEventOpen(false)} onSaved={() => setTasksRefreshTick((prev) => prev + 1)} />
     </div>
   );
 }
