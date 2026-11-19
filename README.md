@@ -21,6 +21,8 @@ cp application-local.properties.example application-local.properties   # ajusta 
 ./mvnw test                                                             # tests (Testcontainers levanta su Mongo)
 ```
 
+Con el backend corriendo, la referencia interactiva está en http://localhost:8080/swagger-ui.html y el JSON OpenAPI en `/v3/api-docs`. Pulsa **Authorize** y pega el token de `/api/auth/login`.
+
 Propiedades útiles (en `application-local.properties`): `myorbit.admin-emails`, `myorbit.session-ttl`, `myorbit.cors.allowed-origins`.
 
 ## Frontend
