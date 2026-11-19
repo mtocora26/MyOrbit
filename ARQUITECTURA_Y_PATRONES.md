@@ -7,7 +7,7 @@ Este documento organiza MyOrbit en 3 niveles de patrones para mantener decisione
 Define como se despliega y se comunica el sistema a nivel de servicios.
 
 ### Patron elegido
-- Microservicios orientados a APIs REST.
+- Monolito modular con API REST (decisión: [ADR 0001](docs/adr/0001-monolito-modular.md)). Los servicios de abajo son módulos del mismo backend; los microservicios y el API Gateway quedan descartados por ahora.
 
 ### Que se trabaja aqui
 - Separacion por servicios de negocio:
@@ -105,7 +105,7 @@ Define patrones de codigo para resolver problemas repetitivos dentro de servicio
 
 ## Decision actual del proyecto (estado objetivo)
 
-- Infraestructura: Microservicios + API Gateway.
+- Infraestructura: Monolito modular, sin API Gateway (ver [ADR 0001](docs/adr/0001-monolito-modular.md)).
 - Arquitectura por servicio: Capas con enfoque Clean ligero.
 - Patrones GoF prioritarios para implementar primero:
   1. Strategy (calificaciones)
@@ -151,7 +151,7 @@ El flag `--add-host` solo hace falta fuera de Docker Compose (nginx resuelve el 
 
 ## Orden de implementacion sugerido
 
-1. Gateway + Auth + Tasks.
+1. Auth + Tasks.
 2. Academic (materias/calificaciones).
 3. Habits.
 4. Notifications.
