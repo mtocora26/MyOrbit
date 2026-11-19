@@ -1,5 +1,6 @@
 package com.app.myorbit.users.api;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import com.app.myorbit.users.application.AuthService;
 import com.app.myorbit.users.domain.User;
@@ -22,12 +23,14 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @SecurityRequirements
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
+    @SecurityRequirements
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
