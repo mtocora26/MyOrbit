@@ -25,6 +25,7 @@ import AuthScreen from "./screens/AuthScreen";
 import { hideSplash, useBackHandler } from "./hooks/useNativeApp";
 import { useResume } from "./hooks/useResume";
 import BootScreen from "./components/BootScreen";
+import { clearLocalReminders, syncLocalReminders } from "./services/localReminders";
 import { ensureTimeZone, getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 /** Lo máximo que la animación de arranque retiene la app esperando al servidor. */
@@ -88,6 +89,14 @@ export default function App() {
 
   useEffect(() => { hideSplash(); }, []);
 
+  // En Android, el teléfono programa sus propios avisos (clases, recordatorios, fechas límite): se recalculan al
+  // iniciar sesión, al volver a la app y cada vez que cambian los datos. Sin sesión no deben quedar avisos.
+  const signedIn = session !== null;
+  useEffect(() => {
+    if (!signedIn || booting) return;
+    syncLocalReminders().catch(() => undefined);
+  }, [signedIn, booting, tasksRefreshTick, habitsRefreshTick]);
+
   // Al recuperar la conexión, las pantallas vuelven a pedir sus datos.
   useEffect(() => {
     const refreshAll = () => { setTasksRefreshTick((prev) => prev + 1); setHabitsRefreshTick((prev) => prev + 1); };
@@ -110,6 +119,7 @@ export default function App() {
 
   async function handleLogout() {
     await logout();
+    clearLocalReminders().catch(() => undefined);
     setSession(null);
     setSubScreen(null);
     setActiveTab("home");
