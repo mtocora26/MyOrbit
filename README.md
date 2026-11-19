@@ -57,4 +57,5 @@ El detalle de materias está en [docs/API.md](docs/API.md).
 - [docs/BACKLOG.md](docs/BACKLOG.md): hitos y tareas
 - [docs/BUENAS_PRACTICAS.md](docs/BUENAS_PRACTICAS.md): estructura y convenciones
 - [docs/ANDROID.md](docs/ANDROID.md): app Android con Capacitor (compilar el APK, CORS, firma)
+- [docs/adr/0001-monolito-modular.md](docs/adr/0001-monolito-modular.md): decisión monolito modular vs microservicios
 - [ARQUITECTURA_Y_PATRONES.md](ARQUITECTURA_Y_PATRONES.md)
