@@ -20,13 +20,15 @@ public class NotificationService {
     private final NotificationPreferencesService preferences;
     private final UserZoneService userZone;
     private final Clock clock;
+    private final PushService push;
     private final Map<NotificationType, NotificationFactory> factories = new EnumMap<>(NotificationType.class);
 
-    public NotificationService(NotificationRepository repository, NotificationPreferencesService preferences, UserZoneService userZone, Clock clock, List<NotificationFactory> factories) {
+    public NotificationService(NotificationRepository repository, NotificationPreferencesService preferences, UserZoneService userZone, Clock clock, PushService push, List<NotificationFactory> factories) {
         this.repository = repository;
         this.preferences = preferences;
         this.userZone = userZone;
         this.clock = clock;
+        this.push = push;
         for (NotificationFactory factory : factories) {
             if (this.factories.put(factory.type(), factory) != null) {
                 throw new IllegalStateException("Hay más de una fábrica para el tipo " + factory.type());
@@ -46,7 +48,9 @@ public class NotificationService {
      */
     public Notification notify(NotificationRequest request) {
         if (!preferences.isEnabled(request.userId(), request.type())) return null;
-        return repository.save(factories.get(request.type()).create(request, Instant.now(clock)));
+        Notification saved = repository.save(factories.get(request.type()).create(request, Instant.now(clock)));
+        push.deliver(saved);
+        return saved;
     }
 
     /**
