@@ -13,6 +13,11 @@ export function remember<T>(key: string, value: T): T {
   return value;
 }
 
+/** Todo lo guardado cuya clave empieza por `prefix` (p. ej. todas las listas de tareas con distintos filtros). */
+export function peekMatching<T>(prefix: string): T[] {
+  return [...store.entries()].filter(([key]) => key.startsWith(prefix)).map(([, value]) => value as T);
+}
+
 export function clearCache(): void {
   store.clear();
 }

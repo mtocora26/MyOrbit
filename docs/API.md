@@ -381,6 +381,20 @@ Una tarea puede vincularse a una materia registrada (campo opcional `subjectId`)
 - **Categoría Universidad:** al vincular una materia a una tarea **sin categoría** (al crearla, o al editarla), la tarea queda en la categoría raíz «Universidad» del usuario, si la tiene (no se crea una). Una categoría pedida en la misma petición, o ya asignada, **no se cambia**. Quitar la materia tampoco cambia la categoría.
 - **Al eliminar una materia** sus tareas **no se borran ni se bloquea la operación**: solo pierden el vínculo (`subjectId: null`) y conservan su categoría. El módulo académico publica un `SubjectDeletedEvent` y el de tareas lo escucha, como con `CategoryDeletedEvent`.
 
+## Tareas creadas y editadas sin conexión
+
+La app guarda en el teléfono los cambios que el usuario hace sin red y los envía al volver (#216). Para que reenviar no duplique ni pise cambios más nuevos:
+
+| Qué | Cómo |
+|---|---|
+| `POST /api/tasks` con `id` | `id` opcional (UUID generado por el cliente). Si ya existe una tarea **del mismo usuario** con ese `id`, se devuelve esa tarea (`201`, sin crear otra ni publicar eventos). Si el `id` es de otro usuario: `400`. Un `id` que no es UUID: `400`. |
+| `PUT /api/tasks/{id}` y `PATCH /api/tasks/{id}/status` con `clientTime` | `clientTime` opcional (instante ISO-8601): cuándo hizo el usuario el cambio. Si la tarea se modificó **después** de ese momento, responde `409` y no aplica nada; si no, el cambio se aplica y la tarea queda sellada con `clientTime`. Sin `clientTime` el cambio es «de ahora» y siempre se aplica. |
+| `updatedAt` en la respuesta | Instante lógico del último cambio (`null` en tareas anteriores a este campo). |
+
+- **Regla de conflicto: gana la última escritura, medida por la hora en que se hizo el cambio**, no por cuándo llegó. Así los cambios hechos sin conexión que llegan en orden no se estorban entre sí, y uno de otro dispositivo que se hizo después no se pierde. El reloj del dispositivo manda: un `clientTime` más de 5 minutos en el futuro se toma como «ahora».
+- **Borrar:** `DELETE /api/tasks/{id}` no mira la hora: borrar gana siempre. Si la tarea ya no existe responde `404`; el cliente lo toma como borrado hecho.
+- Las subtareas **no** se pueden cambiar sin conexión.
+
 ## Editar y eliminar categorías (`/api/categories/{id}`)
 
 | Método | Ruta | Body | Respuesta |

@@ -16,9 +16,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -113,6 +116,30 @@ class TaskControllerTest {
         mockMvc.perform(get("/api/tasks").header("Authorization", AUTH)
                         .param("dueFrom", "2026-12-01T00:00")
                         .param("dueTo", "2026-10-01T00:00"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void anOfflineChangeOlderThanTheSavedOneAnswers409() throws Exception {
+        when(taskService.updateStatus(eq("u1"), eq("t1"), any()))
+                .thenThrow(new com.app.myorbit.shared.error.ConflictException("La tarea cambió en otro dispositivo"));
+
+        mockMvc.perform(patch("/api/tasks/t1/status").header("Authorization", AUTH)
+                        .contentType("application/json")
+                        .content("{\"done\":true,\"clientTime\":\"2026-11-21T14:00:00Z\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("La tarea cambió en otro dispositivo"));
+    }
+
+    @Test
+    void createAcceptsAnIdChosenByTheClientAndRejectsOnesThatAreNotUuids() throws Exception {
+        when(taskService.create(eq("u1"), any())).thenReturn(task());
+
+        mockMvc.perform(post("/api/tasks").header("Authorization", AUTH).contentType("application/json")
+                        .content("{\"title\":\"Estudiar\",\"id\":\"3f2b8c1e-5d4a-4b7e-9c10-0a1b2c3d4e5f\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/tasks").header("Authorization", AUTH).contentType("application/json")
+                        .content("{\"title\":\"Estudiar\",\"id\":\"no-es-un-uuid\"}"))
                 .andExpect(status().isBadRequest());
     }
 }
