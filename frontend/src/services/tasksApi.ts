@@ -1,5 +1,9 @@
-import { cacheKeys, peek, remember } from "./cache";
-import { authHeaders } from "./authApi";
+import { cacheKeys, peek, peekMatching, remember } from "./cache";
+import { enqueue, hasPendingOps, pendingOps, type OutboxOp } from "./outbox";
+import { cacheKeyFor, loadResponse } from "./offlineStore";
+import { isUnreachableStatus } from "./connection";
+import { authHeaders, getSession } from "./authApi";
+import { NETWORK_ERROR_MESSAGE } from "./apiError";
 import { formatTaskDue } from "./taskDue";
 import { API_BASE_URL } from "./apiConfig";
 
@@ -17,6 +21,8 @@ export interface UiTask {
   subjectId: string | null;
   done: boolean;
   subtasks: Subtask[];
+  /** true si el cambio se hizo sin conexión y aún no llega al servidor. */
+  pending?: boolean;
 }
 
 export interface Subtask {
@@ -37,6 +43,10 @@ export interface ApiTask {
   subjectId?: string | null;
   done: boolean;
   subtasks?: Subtask[];
+  /** Momento lógico del último cambio (lo pone el servidor). */
+  updatedAt?: string | null;
+  /** true si es una tarea creada o cambiada sin conexión que aún no llega al servidor. */
+  pending?: boolean;
 }
 
 export interface CreateTaskInput {
@@ -85,6 +95,7 @@ export function toUiTask(task: ApiTask): UiTask {
     subjectId: task.subjectId ?? null,
     done: task.done,
     subtasks: normalizeSubtasks(task.subtasks),
+    pending: task.pending,
   };
 }
 
@@ -136,23 +147,148 @@ export async function fetchTasks(filters: TaskFilters = {}): Promise<ApiTask[]> 
   if (!response.ok) {
     throw new Error(`No fue posible cargar tareas (${response.status})`);
   }
-  return remember(cacheKeys.tasks(query), await response.json());
+  const tasks = remember<ApiTask[]>(cacheKeys.tasks(query), await response.json());
+  // Lo guardado queda limpio; lo que se ve lleva encima los cambios que esperan conexión.
+  return applyPending(tasks, await pendingOps(), filters);
+}
+
+// ─── Cambios sin conexión (#216) ──────────────────────────────────────────────
+
+/** Una petición no llegó al servidor: sin red (el `fetch` global ya tradujo el error). */
+function didNotReachServer(error: unknown): boolean {
+  return error instanceof Error && error.message === NETWORK_ERROR_MESSAGE;
+}
+
+/** ¿Cumple la tarea los filtros? Mismo criterio que el servidor, para mostrar bien lo creado sin conexión. */
+function matchesFilters(task: ApiTask, filters: TaskFilters): boolean {
+  if (filters.done !== undefined && task.done !== filters.done) return false;
+  if (filters.priority && task.priority !== filters.priority) return false;
+  if (filters.categoryId && task.categoryId !== filters.categoryId) return false;
+  if (filters.uncategorized && task.categoryId) return false;
+  if (filters.subjectId && task.subjectId !== filters.subjectId) return false;
+  if (filters.dueFrom && (!task.due || task.due < filters.dueFrom)) return false;
+  if (filters.dueTo && (!task.due || task.due > filters.dueTo)) return false;
+  return true;
+}
+
+function byDue(a: ApiTask, b: ApiTask): number {
+  if (!a.due && !b.due) return 0;
+  if (!a.due) return 1;
+  if (!b.due) return -1;
+  return a.due.localeCompare(b.due);
+}
+
+/** Pone encima de `tasks` los cambios pendientes, en el orden en que se hicieron. No modifica `tasks`. */
+export function applyPending(tasks: ApiTask[], ops: OutboxOp[], filters: TaskFilters = {}): ApiTask[] {
+  if (ops.length === 0) return tasks;
+  const byId = new Map(tasks.map((task) => [task.id, task]));
+  let created = false;
+  for (const op of ops) {
+    const current = byId.get(op.taskId);
+    if (op.kind === "createTask") {
+      if (!current) {
+        byId.set(op.taskId, { ...taskFromCreatePayload(op), pending: true });
+        created = true;
+      }
+    } else if (op.kind === "deleteTask") {
+      byId.delete(op.taskId);
+    } else if (current) {
+      const next = op.kind === "updateTask" ? mergeUpdate(current, op.payload) : markDone(current, op.payload.done === true);
+      byId.set(op.taskId, { ...next, pending: true });
+    }
+  }
+  const merged = [...byId.values()].filter((task) => !task.pending || matchesFilters(task, filters));
+  return created ? merged.sort(byDue) : merged;
+}
+
+function taskFromCreatePayload(op: OutboxOp): ApiTask {
+  const payload = op.payload as { title: string; due?: string; priority?: string; categoryId?: string | null; subjectId?: string | null };
+  return {
+    id: op.taskId,
+    userId: op.userId,
+    title: payload.title,
+    due: payload.due ? payload.due : null,
+    priority: payload.priority ?? "media",
+    categoryId: payload.categoryId ?? null,
+    subjectId: payload.subjectId ?? null,
+    done: false,
+    subtasks: [],
+    updatedAt: op.at,
+  };
+}
+
+function mergeUpdate(task: ApiTask, payload: Record<string, unknown>): ApiTask {
+  const next = { ...task };
+  if (typeof payload.title === "string" && payload.title.trim()) next.title = payload.title.trim();
+  if (typeof payload.due === "string") next.due = payload.due ? payload.due : null;
+  if (typeof payload.priority === "string") next.priority = payload.priority;
+  if ("categoryId" in payload) next.categoryId = (payload.categoryId as string | null) || null;
+  if ("subjectId" in payload) next.subjectId = (payload.subjectId as string | null) || null;
+  return next;
+}
+
+function markDone(task: ApiTask, done: boolean): ApiTask {
+  const mark = (subtask: Subtask): Subtask => ({ ...subtask, done, subtasks: subtask.subtasks?.map(mark) });
+  return { ...task, done, subtasks: task.subtasks?.map(mark) };
+}
+
+/** Tarea mínima para cuando no se conoce la real (nunca vista en esta app): solo para pintar el cambio. */
+function stub(taskId: string): ApiTask {
+  return { id: taskId, userId: getSession()?.id ?? "", title: "Tarea", due: null, priority: "media", categoryId: null, subjectId: null, done: false, subtasks: [] };
+}
+
+/** La tarea tal como se conoce ahora: memoria, o la última copia guardada de la lista. */
+async function knownTask(taskId: string): Promise<ApiTask | undefined> {
+  for (const list of peekMatching<ApiTask[]>("tasks")) {
+    const found = list.find((task) => task.id === taskId);
+    if (found) return found;
+  }
+  const key = cacheKeyFor("GET", `${API_BASE_URL}/api/tasks`);
+  const saved = key ? await loadResponse(key) : null;
+  if (!saved) return undefined;
+  try {
+    return (JSON.parse(saved) as ApiTask[]).find((task) => task.id === taskId);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Guarda un cambio para enviarlo después y devuelve la tarea como quedará, para pintarla ya. */
+async function queueChange(kind: OutboxOp["kind"], task: ApiTask, payload: Record<string, unknown>): Promise<ApiTask> {
+  const at = new Date().toISOString();
+  await enqueue({ kind, taskId: task.id, label: task.title, payload, at });
+  return { ...task, pending: true, updatedAt: at };
+}
+
+function createBody(input: CreateTaskInput) {
+  return {
+    userId: input.userId,
+    title: input.title,
+    due: input.due ?? "",
+    priority: input.priority ?? "media",
+    categoryId: input.categoryId ?? null,
+    subjectId: input.subjectId || null,
+  };
 }
 
 export async function createTask(input: CreateTaskInput): Promise<ApiTask> {
-  const response = await fetch(`${API_BASE_URL}/api/tasks`, {
-    method: "POST",
-    headers: requestHeaders(),
-    body: JSON.stringify({
-      userId: input.userId,
-      title: input.title,
-      due: input.due ?? "",
-      priority: input.priority ?? "media",
-      categoryId: input.categoryId ?? null,
-      subjectId: input.subjectId || null,
-    }),
-  });
-
+  // El id lo elige el cliente: reenviar el mismo cambio nunca duplica la tarea.
+  const id = crypto.randomUUID();
+  const body = createBody(input);
+  const queued = (): Promise<ApiTask> => {
+    const at = new Date().toISOString();
+    const task = taskFromCreatePayload({ kind: "createTask", taskId: id, userId: getSession()?.id ?? "", label: input.title, payload: body, at, attempts: 0 });
+    return queueChange("createTask", task, body);
+  };
+  if (await hasPendingOps()) return queued();
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/tasks`, { method: "POST", headers: requestHeaders(), body: JSON.stringify({ ...body, id }) });
+  } catch (error) {
+    if (didNotReachServer(error)) return queued();
+    throw error;
+  }
+  if (isUnreachableStatus(response.status)) return queued();
   if (!response.ok) {
     throw new Error(`No fue posible crear la tarea (${response.status})`);
   }
@@ -160,20 +296,38 @@ export async function createTask(input: CreateTaskInput): Promise<ApiTask> {
 }
 
 export async function fetchTaskById(taskId: string): Promise<ApiTask> {
-  const response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}`, { headers: authHeaders() });
-  if (!response.ok) {
-    throw new Error(`No fue posible cargar el detalle de la tarea (${response.status})`);
+  const pending = await pendingOps();
+  const own = pending.filter((op) => op.taskId === taskId);
+  const notSentYet = own.some((op) => op.kind === "createTask");
+  let task: ApiTask | undefined;
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}`, { headers: authHeaders() });
+    if (response.ok) task = await response.json();
+    else if (!notSentYet) throw new Error(`No fue posible cargar el detalle de la tarea (${response.status})`);
+  } catch (error) {
+    // Una tarea creada sin conexión no existe todavía en el servidor: se arma con lo pendiente.
+    if (!notSentYet) throw error;
   }
-  return response.json();
+  const result = applyPending(task ? [task] : [], own).find((candidate) => candidate.id === taskId);
+  if (!result) throw new Error("No fue posible cargar el detalle de la tarea (404)");
+  return result;
 }
 
 export async function updateTaskStatus(taskId: string, done: boolean): Promise<ApiTask> {
-  const response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}/status`, {
-    method: "PATCH",
-    headers: requestHeaders(),
-    body: JSON.stringify({ done }),
-  });
-
+  const queued = async () => queueChange("setTaskDone", markDone((await knownTask(taskId)) ?? stub(taskId), done), { done });
+  if (await hasPendingOps()) return queued();
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}/status`, {
+      method: "PATCH",
+      headers: requestHeaders(),
+      body: JSON.stringify({ done }),
+    });
+  } catch (error) {
+    if (didNotReachServer(error)) return queued();
+    throw error;
+  }
+  if (isUnreachableStatus(response.status)) return queued();
   if (!response.ok) {
     throw new Error(`No fue posible actualizar estado (${response.status})`);
   }
@@ -181,18 +335,27 @@ export async function updateTaskStatus(taskId: string, done: boolean): Promise<A
 }
 
 export async function updateTask(taskId: string, input: UpdateTaskInput): Promise<ApiTask> {
-  const response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}`, {
-    method: "PUT",
-    headers: requestHeaders(),
-    body: JSON.stringify({
-      title: input.title,
-      due: input.due,
-      priority: input.priority,
-      categoryId: input.categoryId,
-      ...(input.subjectId === undefined ? {} : { subjectId: input.subjectId ?? "" }),
-    }),
-  });
-
+  const body = {
+    title: input.title,
+    due: input.due,
+    priority: input.priority,
+    categoryId: input.categoryId,
+    ...(input.subjectId === undefined ? {} : { subjectId: input.subjectId ?? "" }),
+  };
+  const queued = async () => queueChange("updateTask", mergeUpdate((await knownTask(taskId)) ?? stub(taskId), body), body);
+  if (await hasPendingOps()) return queued();
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}`, {
+      method: "PUT",
+      headers: requestHeaders(),
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    if (didNotReachServer(error)) return queued();
+    throw error;
+  }
+  if (isUnreachableStatus(response.status)) return queued();
   if (!response.ok) {
     throw new Error(`No fue posible guardar cambios de la tarea (${response.status})`);
   }
@@ -200,11 +363,22 @@ export async function updateTask(taskId: string, input: UpdateTaskInput): Promis
 }
 
 export async function deleteTask(taskId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-
+  const queued = async () => {
+    const task = (await knownTask(taskId)) ?? stub(taskId);
+    await enqueue({ kind: "deleteTask", taskId, label: task.title, payload: {}, at: new Date().toISOString() });
+  };
+  if (await hasPendingOps()) return queued();
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/tasks/${encodeURIComponent(taskId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+  } catch (error) {
+    if (didNotReachServer(error)) return queued();
+    throw error;
+  }
+  if (isUnreachableStatus(response.status)) return queued();
   if (!response.ok) {
     throw new Error(`No fue posible eliminar la tarea (${response.status})`);
   }

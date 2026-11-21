@@ -8,6 +8,8 @@ import MoreScreen from "./screens/MoreScreen";
 import BottomNav from "./components/BottomNav";
 import SideNav from "./components/SideNav";
 import OfflineBanner from "./components/OfflineBanner";
+import { PendingChangesBar, PendingChangesSheet } from "./components/PendingChanges";
+import { startOutboxSync } from "./services/outbox";
 import TaskDetailScreen from "./screens/TaskDetailScreen";
 import SubjectDetailScreen from "./screens/SubjectDetailScreen";
 import GradesScreen from "./screens/GradesScreen";
@@ -119,8 +121,20 @@ export default function App() {
   useEffect(() => {
     const refreshAll = () => { setTasksRefreshTick((prev) => prev + 1); setHabitsRefreshTick((prev) => prev + 1); };
     window.addEventListener("myorbit:recovered", refreshAll);
-    return () => window.removeEventListener("myorbit:recovered", refreshAll);
+    // También cuando termina de enviarse lo que se hizo sin conexión: las listas se piden de nuevo ya con lo del servidor.
+    window.addEventListener("myorbit:synced", refreshAll);
+    return () => {
+      window.removeEventListener("myorbit:recovered", refreshAll);
+      window.removeEventListener("myorbit:synced", refreshAll);
+    };
   }, []);
+
+  // Los cambios hechos sin conexión (crear, editar, marcar, borrar tareas) se envían solos al volver la red.
+  const [changesOpen, setChangesOpen] = useState(false);
+  useEffect(() => {
+    if (!signedIn || booting) return;
+    return startOutboxSync();
+  }, [signedIn, booting]);
 
   const goBack = () => {
     const wasTaskDetail = subScreen === "taskDetail";
@@ -160,6 +174,7 @@ export default function App() {
           <SideNav active={activeTab} userName={session.name} onChange={(t) => navigate(t)} onFab={() => setFabOpen(true)} onProfile={() => { navigate("more"); setSubScreen("profile"); }} unreadCount={unread.count} onNotifications={() => setSubScreen("notifications")} />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <OfflineBanner />
+          <PendingChangesBar onOpen={() => setChangesOpen(true)} />
           <div className="relative min-h-0 flex-1 overflow-hidden">
             <div className={`h-full w-full lg:mx-auto ${subScreen === null ? "lg:max-w-[1180px]" : "lg:max-w-[820px] lg:mx-0"}`}>
             {/* Cada cambio de pestaña o subpantalla entra con un movimiento corto (fundido o empuje lateral). */}
@@ -207,6 +222,7 @@ export default function App() {
       {/* Fuera del área de contenido: el sheet y su velo cubren también la barra inferior. */}
       <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} onEventRequested={() => setEventOpen(true)} />
       <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />
+      <PendingChangesSheet open={changesOpen} onClose={() => setChangesOpen(false)} />
       <QuickEventSheet open={eventOpen} onClose={() => setEventOpen(false)} onSaved={() => setTasksRefreshTick((prev) => prev + 1)} />
     </div>
   );

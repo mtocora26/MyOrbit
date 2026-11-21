@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
+import { CategoryBadge, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
 import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
@@ -367,6 +367,7 @@ function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, on
                   {task.due}
                 </button>
               )}
+            {task.pending && <PendingMark />}
             {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
             <CategoryBadge name={categoryName} color={categoryColor} />
             {subtaskInfo && <span className="num text-[14px] font-semibold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total} pasos</span>}

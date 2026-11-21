@@ -11,9 +11,11 @@
  */
 
 const DB_NAME = "myorbit-offline";
-/** Súbela cuando cambie la forma de lo guardado: la copia anterior se descarta en vez de romper la app. */
-const DB_VERSION = 1;
+/** Súbela al añadir un almacén. Las copias de lecturas se pueden volver a pedir, pero la cola de cambios no: nunca se descarta. */
+const DB_VERSION = 2;
 const STORE = "responses";
+/** Cambios hechos sin conexión que aún no llegan al servidor (ver `outbox.ts`). Nunca se borra con la copia. */
+export const OUTBOX_STORE = "outbox";
 const MAX_ENTRIES = 150;
 const SESSION_KEY = "myorbit.session";
 const LAST_SYNC_KEY = "myorbit.lastSync";
@@ -28,7 +30,7 @@ interface StoredResponse {
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 let savesSinceTrim = 0;
 
-function openDb(): Promise<IDBDatabase | null> {
+export function openOfflineDb(): Promise<IDBDatabase | null> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve) => {
     if (typeof indexedDB === "undefined") return resolve(null);
@@ -36,8 +38,8 @@ function openDb(): Promise<IDBDatabase | null> {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onupgradeneeded = () => {
         const db = request.result;
-        if (db.objectStoreNames.contains(STORE)) db.deleteObjectStore(STORE);
-        db.createObjectStore(STORE, { keyPath: "key" });
+        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: "key" });
+        if (!db.objectStoreNames.contains(OUTBOX_STORE)) db.createObjectStore(OUTBOX_STORE, { keyPath: "seq", autoIncrement: true });
       };
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => resolve(null);
@@ -49,7 +51,7 @@ function openDb(): Promise<IDBDatabase | null> {
   return dbPromise;
 }
 
-function done(transaction: IDBTransaction): Promise<void> {
+export function done(transaction: IDBTransaction): Promise<void> {
   return new Promise((resolve) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => resolve();
@@ -57,7 +59,7 @@ function done(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-function requestResult<T>(request: IDBRequest<T>): Promise<T | undefined> {
+export function requestResult<T>(request: IDBRequest<T>): Promise<T | undefined> {
   return new Promise((resolve) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(undefined);
@@ -85,7 +87,7 @@ export function cacheKeyFor(method: string, url: string): string | null {
 }
 
 export async function saveResponse(key: string, body: string): Promise<void> {
-  const db = await openDb();
+  const db = await openOfflineDb();
   if (!db) return;
   try {
     const transaction = db.transaction(STORE, "readwrite");
@@ -102,7 +104,7 @@ export async function saveResponse(key: string, body: string): Promise<void> {
 }
 
 export async function loadResponse(key: string): Promise<string | null> {
-  const db = await openDb();
+  const db = await openOfflineDb();
   if (!db) return null;
   try {
     const stored = await requestResult<StoredResponse>(db.transaction(STORE, "readonly").objectStore(STORE).get(key));
@@ -128,7 +130,7 @@ async function trimOldEntries(db: IDBDatabase): Promise<void> {
 /** Borra toda la copia. Se llama al cerrar sesión y al entrar con otra cuenta. */
 export async function clearOfflineData(): Promise<void> {
   try { localStorage.removeItem(LAST_SYNC_KEY); } catch { /* nada que borrar */ }
-  const db = await openDb();
+  const db = await openOfflineDb();
   if (!db) return;
   try {
     const transaction = db.transaction(STORE, "readwrite");
