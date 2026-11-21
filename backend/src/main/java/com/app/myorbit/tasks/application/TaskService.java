@@ -7,6 +7,7 @@ import com.app.myorbit.categories.application.CategoryService;
 import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.categories.domain.CategoryDeletedEvent;
 import com.app.myorbit.shared.error.BusinessRuleException;
+import com.app.myorbit.shared.error.ConflictException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
 import com.app.myorbit.tasks.api.CreateTaskRequest;
@@ -25,9 +26,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -110,8 +114,17 @@ public class TaskService {
         if (request.title() == null || request.title().isBlank()) {
             throw new BusinessRuleException("El titulo de la tarea es obligatorio");
         }
+        String clientId = request.id() == null || request.id().isBlank() ? null : request.id().trim().toLowerCase();
+        if (clientId != null) {
+            Optional<Task> existing = taskRepository.findById(clientId);
+            if (existing.isPresent()) {
+                // Reenvío del mismo cambio (p. ej. se perdió la respuesta): se devuelve lo ya creado, sin duplicar.
+                if (!existing.get().getUserId().equals(userId)) throw new BusinessRuleException("El identificador de la tarea ya esta en uso");
+                return existing.get();
+            }
+        }
         Task task = new Task();
-        task.setId(UUID.randomUUID().toString());
+        task.setId(clientId != null ? clientId : UUID.randomUUID().toString());
         task.setUserId(userId);
         task.setTitle(request.title().trim());
         task.setDue(DueDate.parse(request.due()));
@@ -120,15 +133,16 @@ public class TaskService {
         task.setSubjectId(resolveSubject(userId, request.subjectId()));
         if (task.getSubjectId() != null && task.getCategoryId() == null) task.setCategoryId(universityCategoryId(userId));
         task.setDone(false);
-        Task saved = taskRepository.save(task);
+        Task saved = persist(task, null);
         events.publishEvent(new TaskCreatedEvent(userId, saved.getId(), saved.getTitle(), saved.getDue()));
         return saved;
     }
 
     public Task updateStatus(String userId, String id, UpdateTaskStatusRequest request) {
         Task task = getOwned(userId, id);
+        requireNotStale(task, request.getClientTime());
         task.markAll(request.isDone());
-        return taskRepository.save(task);
+        return persist(task, request.getClientTime());
     }
 
     public Task addSubtask(String userId, String taskId, CreateSubtaskRequest request) {
@@ -136,7 +150,7 @@ public class TaskService {
         requireSubtaskTitle(request);
         task.getSubtasks().add(newSubtask(request));
         task.setDone(false);
-        return taskRepository.save(task);
+        return persist(task, null);
     }
 
     public Task addNestedSubtask(String userId, String taskId, String parentSubtaskId, CreateSubtaskRequest request) {
@@ -146,7 +160,7 @@ public class TaskService {
                 .orElseThrow(() -> new BusinessRuleException("La subtarea padre no existe"));
         parent.getSubtasks().add(newSubtask(request));
         task.synchronizeCompletion();
-        return taskRepository.save(task);
+        return persist(task, null);
     }
 
     public Task updateSubtask(String userId, String taskId, String subtaskId, UpdateSubtaskRequest request) {
@@ -159,7 +173,7 @@ public class TaskService {
         if (request.due() != null) {
             subtask.setDue(DueDate.parse(request.due()));
         }
-        return taskRepository.save(task);
+        return persist(task, null);
     }
 
     public Task updateSubtaskStatus(String userId, String taskId, String subtaskId, UpdateSubtaskStatusRequest request) {
@@ -167,7 +181,7 @@ public class TaskService {
         Subtask subtask = requireSubtask(task, subtaskId);
         subtask.markTree(request.done());
         task.synchronizeCompletion();
-        return taskRepository.save(task);
+        return persist(task, null);
     }
 
     public Task deleteSubtask(String userId, String taskId, String subtaskId) {
@@ -176,11 +190,12 @@ public class TaskService {
             throw new NotFoundException("Subtarea no encontrada");
         }
         task.synchronizeCompletion();
-        return taskRepository.save(task);
+        return persist(task, null);
     }
 
     public Task update(String userId, String id, UpdateTaskRequest request) {
         Task task = getOwned(userId, id);
+        requireNotStale(task, request.clientTime());
 
         task.setTitle(request.title() == null || request.title().isBlank() ? task.getTitle() : request.title().trim());
         // due: null = no cambiar; cadena vacia = quitar la fecha.
@@ -193,6 +208,30 @@ public class TaskService {
             task.setSubjectId(resolveSubject(userId, request.subjectId()));
             if (task.getSubjectId() != null && task.getCategoryId() == null) task.setCategoryId(universityCategoryId(userId));
         }
+        return persist(task, request.clientTime());
+    }
+
+    /** Cuánto adelante del reloj del servidor se tolera la hora de un cliente antes de tomarla como «ahora». */
+    private static final Duration CLOCK_SKEW = Duration.ofMinutes(5);
+
+    /**
+     * Un cambio hecho sin conexión no pisa a uno más reciente: si la tarea se modificó después del momento en que el
+     * usuario hizo este cambio, se rechaza con 409 (gana la última escritura, medida por la hora del cambio).
+     */
+    private void requireNotStale(Task task, Instant clientTime) {
+        if (clientTime != null && task.getUpdatedAt() != null && task.getUpdatedAt().isAfter(clientTime)) {
+            throw new ConflictException("La tarea cambió en otro dispositivo después de este cambio, por eso no se aplicó");
+        }
+    }
+
+    /**
+     * Guarda sellando el momento lógico del cambio: la hora del cliente si vino (así los cambios que se hicieron sin
+     * conexión y llegan en orden no se estorban entre sí), acotada a «ahora» si es del futuro.
+     */
+    private Task persist(Task task, Instant clientTime) {
+        Instant now = Instant.now();
+        Instant at = clientTime == null || clientTime.isAfter(now.plus(CLOCK_SKEW)) ? now : clientTime;
+        task.setUpdatedAt(at);
         return taskRepository.save(task);
     }
 

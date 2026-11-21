@@ -15,6 +15,11 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ProblemDetail conflict(ConflictException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
     @ExceptionHandler(BusinessRuleException.class)
     public ProblemDetail badRequest(BusinessRuleException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());

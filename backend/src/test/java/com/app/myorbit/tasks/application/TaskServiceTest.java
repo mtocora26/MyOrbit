@@ -6,6 +6,7 @@ import com.app.myorbit.categories.application.CategoryService;
 import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.categories.domain.CategoryDeletedEvent;
 import com.app.myorbit.shared.error.BusinessRuleException;
+import com.app.myorbit.shared.error.ConflictException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.tasks.api.CreateSubtaskRequest;
 import com.app.myorbit.tasks.api.CreateTaskRequest;
@@ -25,9 +26,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -125,6 +128,103 @@ class TaskServiceTest {
 
         assertEquals("Estudiar", task.getTitle());
         assertEquals(com.app.myorbit.tasks.domain.Priority.MEDIUM, task.getPriority());
+    }
+
+    private static final String CLIENT_ID = "3f2b8c1e-5d4a-4b7e-9c10-0a1b2c3d4e5f";
+
+    @Test
+    void createUsesTheIdChosenByTheClient() {
+        when(repository.findById(CLIENT_ID)).thenReturn(Optional.empty());
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+
+        Task task = service.create("u1", new CreateTaskRequest("Estudiar", null, null, null, null, CLIENT_ID));
+
+        assertEquals(CLIENT_ID, task.getId());
+        assertNotNull(task.getUpdatedAt());
+    }
+
+    @Test
+    void createReplayWithTheSameIdReturnsTheExistingTaskWithoutDuplicating() {
+        Task existing = taskOf("u1");
+        existing.setId(CLIENT_ID);
+        when(repository.findById(CLIENT_ID)).thenReturn(Optional.of(existing));
+
+        Task task = service.create("u1", new CreateTaskRequest("Estudiar", null, null, null, null, CLIENT_ID));
+
+        assertSame(existing, task);
+        verify(repository, never()).save(org.mockito.ArgumentMatchers.any(Task.class));
+        verify(events, never()).publishEvent(org.mockito.ArgumentMatchers.any(Object.class));
+    }
+
+    @Test
+    void createRejectsAnIdThatBelongsToAnotherUser() {
+        Task other = taskOf("u2");
+        other.setId(CLIENT_ID);
+        when(repository.findById(CLIENT_ID)).thenReturn(Optional.of(other));
+
+        assertThrows(BusinessRuleException.class,
+                () -> service.create("u1", new CreateTaskRequest("Estudiar", null, null, null, null, CLIENT_ID)));
+        verify(repository, never()).save(org.mockito.ArgumentMatchers.any(Task.class));
+    }
+
+    @Test
+    void updateStatusRejectsAChangeOlderThanTheLastOneSaved() {
+        Task task = taskOf("u1");
+        task.setUpdatedAt(java.time.Instant.parse("2026-11-21T15:00:00Z"));
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest();
+        request.setDone(true);
+        request.setClientTime(java.time.Instant.parse("2026-11-21T14:00:00Z"));
+
+        assertThrows(ConflictException.class, () -> service.updateStatus("u1", "t1", request));
+        verify(repository, never()).save(org.mockito.ArgumentMatchers.any(Task.class));
+    }
+
+    @Test
+    void updateStatusStampsTheMomentTheUserMadeTheChange() {
+        Task task = taskOf("u1");
+        task.setUpdatedAt(java.time.Instant.parse("2026-11-21T13:00:00Z"));
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest();
+        request.setDone(true);
+        request.setClientTime(java.time.Instant.parse("2026-11-21T14:00:00Z"));
+
+        Task saved = service.updateStatus("u1", "t1", request);
+
+        assertTrue(saved.isDone());
+        assertEquals(java.time.Instant.parse("2026-11-21T14:00:00Z"), saved.getUpdatedAt());
+    }
+
+    @Test
+    void changesMadeOfflineInOrderDoNotBlockEachOther() {
+        Task task = taskOf("u1");
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        java.time.Instant first = java.time.Instant.parse("2026-11-21T14:00:00Z");
+        java.time.Instant second = java.time.Instant.parse("2026-11-21T14:05:00Z");
+
+        service.update("u1", "t1", new com.app.myorbit.tasks.api.UpdateTaskRequest("Nuevo", null, null, null, null, first));
+        UpdateTaskStatusRequest done = new UpdateTaskStatusRequest();
+        done.setDone(true);
+        done.setClientTime(second);
+        Task saved = service.updateStatus("u1", "t1", done);
+
+        assertEquals(second, saved.getUpdatedAt());
+    }
+
+    @Test
+    void aClientTimeFromTheFutureIsTreatedAsNow() {
+        Task task = taskOf("u1");
+        when(repository.findById("t1")).thenReturn(Optional.of(task));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest();
+        request.setDone(true);
+        request.setClientTime(java.time.Instant.now().plus(java.time.Duration.ofDays(2)));
+
+        Task saved = service.updateStatus("u1", "t1", request);
+
+        assertTrue(saved.getUpdatedAt().isBefore(java.time.Instant.now().plus(java.time.Duration.ofMinutes(1))));
     }
 
     private Task taskWithSubtask(String due) {

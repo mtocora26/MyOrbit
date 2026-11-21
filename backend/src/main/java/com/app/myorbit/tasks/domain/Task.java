@@ -3,6 +3,7 @@ package com.app.myorbit.tasks.domain;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,11 @@ public class Task {
     private String subjectId;
     private boolean done;
     private List<Subtask> subtasks = new ArrayList<>();
+    /**
+     * Momento lógico del último cambio. Si el cambio se hizo sin conexión es el instante en que el usuario lo hizo
+     * (no cuando llegó al servidor); null en tareas anteriores a este campo.
+     */
+    private Instant updatedAt;
 
     public String getId() {
         return id;
@@ -85,6 +91,9 @@ public class Task {
     public void setDone(boolean done) {
         this.done = done;
     }
+
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
     public List<Subtask> getSubtasks() { return subtasks; }
     public void setSubtasks(List<Subtask> subtasks) { this.subtasks = subtasks == null ? new ArrayList<>() : subtasks; }
