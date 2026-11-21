@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
+import { ChoiceChip, EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
 import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import { fetchAcademicOverview, fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
@@ -94,10 +94,10 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         {semesters.length > 0 && (
           <div role="radiogroup" aria-label="Semestre" className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
             {semesters.map((option) => (
-              <button key={option} type="button" role="radio" aria-checked={option === activeSemester} onClick={() => setSemester(option)} className={`num min-h-[44px] flex-shrink-0 rounded-md border px-3 text-[14px] font-semibold ${option === activeSemester ? "border-ink bg-wash text-ink" : "border-line-control text-ink-2"}`}>{option}</button>
+              <ChoiceChip key={option} selected={option === activeSemester} onClick={() => setSemester(option)} className="num">{option}</ChoiceChip>
             ))}
-            {activeRecord && <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="min-h-[44px] flex-shrink-0 rounded-md border border-line px-3 text-[14px] font-semibold text-ink-2">Editar</button>}
-            <button type="button" onClick={() => setSemesterSheet({ semester: null })} aria-label="Nuevo semestre" className="min-h-[44px] flex-shrink-0 rounded-md border border-dashed border-line px-3 text-[14px] font-semibold text-ink-2">+ Semestre</button>
+            {activeRecord && <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="min-h-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink">Editar</button>}
+            <button type="button" onClick={() => setSemesterSheet({ semester: null })} aria-label="Nuevo semestre" className="min-h-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink">+ Semestre</button>
           </div>
         )}
       </header>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton } from "../components/shared";
+import { ChoiceChip, ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton } from "../components/shared";
 import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
 import { createHabit, deleteHabit, fetchHabitSummaries, fetchHabits, toLocalKey, todayKey, updateHabit, updateHabitCompletion, completeLabel, type Habit, type HabitType, type HabitStats, type HabitSummary, type MonthlyGoal } from "../services/habitsApi";
@@ -182,9 +182,9 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
           {habits.length > 0 && (
             <div className="mt-4 flex items-center justify-between gap-3">
               <span id="stats-window-label" className="text-[13px] font-semibold text-ink-2">Estadísticas de los últimos</span>
-              <div role="radiogroup" aria-labelledby="stats-window-label" className="flex flex-shrink-0 rounded-md bg-wash p-1">
+              <div role="radiogroup" aria-labelledby="stats-window-label" className="flex flex-shrink-0 gap-1.5">
                 {STATS_WINDOWS.map((days) => (
-                  <button key={days} type="button" role="radio" aria-checked={statsWindow === days} onClick={() => setStatsWindow(days)} className="num min-h-[44px] min-w-[44px] whitespace-nowrap rounded-[4px] px-2.5 text-[14px] font-semibold" style={{ background: statsWindow === days ? "var(--color-card)" : "transparent", color: statsWindow === days ? "var(--color-ink)" : "var(--color-ink-2)" }}>{days} d</button>
+                  <ChoiceChip key={days} selected={statsWindow === days} onClick={() => setStatsWindow(days)} className="num min-w-[44px] whitespace-nowrap px-2.5">{days} d</ChoiceChip>
                 ))}
               </div>
             </div>

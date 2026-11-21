@@ -252,6 +252,9 @@ Status lines under a grade (`GradeStatusLine`) are text with a mark and the tone
 ### Inputs / Fields
 `card` fill, 1px `line` border, 6px radius, 12px padding, 16px text; focus shifts the border to coral. Category picker pairs a select with a 44px "+" and an 8-swatch colour radiogroup of 3px-radius squares.
 
+### Choice Chip
+One language for picking an option among a few (date presets, priority, category, semester, task filters, notification filter, habit stats window, Agenda day): `ChoiceChip` in `shared.tsx`. **No border.** Unselected is a `wash` fill with `ink-2` text; selected is `coral-wash` with `coral-ink` text. Same shape and size in both states, 6px radius, 44px minimum height, presses to 0.97. Never `strong` (near-white in dark mode, the brightest thing on screen), never an ink border, never a per-option colour. Secondary actions next to chips ("Editar", "+ Semestre") are plain `coral-ink` text, not boxed chips. In the Agenda strip the selected day is `coral-wash`; today, when not selected, is `coral-ink` text only.
+
 ### Navigation
 Bottom bar on `card` with a top hairline: Hoy, Tareas, [add], Agenda, Uni, Más. Inactive icons and labels `ink-3`, active label `ink` with coral-ink icon and a 3px coral bar sliding in from the centre (300ms). Central add is a 56px coral circle raised 20px with a 4px card-coloured ring. Icons are 22px stroke SVG at 1.9 weight.
 

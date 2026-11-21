@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BottomSheet, CategoryPicker, PriorityDot } from "./shared";
+import { BottomSheet, CategoryPicker, PriorityDot, choiceChip, choiceChipOn, choiceChipOff } from "./shared";
 import { IconPencil, IconCalendar, IconHabit, IconClock, IconBell } from "./icons";
 import { createReminder, REMINDER_MAX_LENGTH } from "../services/remindersApi";
 import { requestLocalReminderPermission, syncLocalReminders } from "../services/localReminders";
@@ -50,9 +50,9 @@ function preferredCategory(categories: Category[]): string {
   return (stored && categories.some((category) => category.id === stored) ? stored : "") || categories.find((category) => category.name === "Personal")?.id || categories[0]?.id || "";
 }
 
-const chip = "flex h-11 flex-shrink-0 items-center gap-1.5 rounded-md border px-3 text-[14px] font-semibold";
-const chipOn = "border-ink bg-wash text-ink";
-const chipOff = "border-line-control text-ink-2";
+const chip = choiceChip;
+const chipOn = choiceChipOn;
+const chipOff = choiceChipOff;
 
 export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCreated, onEventRequested }: Props) {
   const [mode, setMode] = useState<Mode>("tarea");
@@ -155,12 +155,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
                 role="radio"
                 aria-checked={selected}
                 onClick={() => { if (m.id === "evento") { closeSheet(); onEventRequested(); return; } setMode(m.id); setError(null); setTime(m.id === "aviso" ? nextHourValue() : "23:59"); }}
-                className="flex h-11 min-w-0 items-center justify-center gap-1 rounded-md px-1 text-[14px] font-semibold"
-                style={{
-                  background: selected ? m.bg : "transparent",
-                  color: selected ? m.color : "var(--color-ink-3)",
-                  boxShadow: selected ? `inset 0 0 0 1.5px color-mix(in srgb, ${m.color} 50%, transparent)` : "inset 0 0 0 1px var(--color-line)",
-                }}
+                className={`${choiceChip} min-w-0 gap-1 px-1 [&>svg]:flex-shrink-0 ${selected ? choiceChipOn : choiceChipOff}`}
               >
                 {m.icon}
                 {m.label}

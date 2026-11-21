@@ -229,11 +229,11 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
                 onClick={() => { setDirection(key < selected ? -1 : 1); setSelected(key); }}
                 aria-pressed={isSelected}
                 aria-label={date.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })}
-                className={`flex min-h-[56px] flex-1 flex-col items-center justify-center rounded-md ${isSelected ? "bg-strong text-on-strong" : isToday ? "bg-coral-wash text-coral-ink" : "text-ink"}`}
+                className={`flex min-h-[56px] flex-1 flex-col items-center justify-center rounded-md ${isSelected ? "bg-coral-wash text-coral-ink" : isToday ? "text-coral-ink" : "text-ink"}`}
               >
-                <span className={`text-[13px] font-semibold ${isSelected ? "opacity-70" : "text-ink-3"}`}>{DAYS[i]}</span>
+                <span className={`text-[13px] font-semibold ${isSelected ? "" : "text-ink-3"}`}>{DAYS[i]}</span>
                 <span className="num text-[18px] font-semibold leading-none">{date.getDate()}</span>
-                <span className="mt-1 h-1 w-1 rounded-full" style={{ background: pending ? (isSelected ? "currentColor" : "var(--color-coral)") : "transparent" }} aria-hidden="true" />
+                <span className="mt-1 h-1 w-1 rounded-full" style={{ background: pending ? ("var(--color-coral)") : "transparent" }} aria-hidden="true" />
               </button>
             );
           })}
