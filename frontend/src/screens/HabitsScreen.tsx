@@ -217,7 +217,7 @@ function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySu
         <button type="button" onClick={() => setOpen((current) => !current)} aria-expanded={open} aria-controls={panelId} className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-md py-2 text-left active:bg-wash">
           <span className="h-3 w-3 flex-shrink-0 rounded-[3px]" style={{ background: habit.color }} aria-hidden="true" />
           <span className="min-w-0 flex-1">
-            <span className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{habit.title}</span>
+            <span className="line-clamp-2 text-[16px] font-semibold leading-snug text-ink">{habit.title}</span>
             <span className="num block truncate text-[13px] text-ink-2">{quick}</span>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-ink-3 transition-transform duration-200 ${open ? "rotate-90" : ""}`} aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
