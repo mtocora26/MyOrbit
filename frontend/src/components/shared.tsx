@@ -16,6 +16,23 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   bg?: string;
 }
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+/** Iniciales de las dos primeras palabras del nombre («Manuel Tocora» → «MT»). */
+export function initials(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "?";
+}
+
+const AVATAR_SIZES = { sm: "h-10 w-10 text-[15px]", md: "h-11 w-11 text-[20px]", lg: "h-14 w-14 text-[22px]" } as const;
+
+/** La persona: placa cuadrada de 6 px con sus iniciales. Una sola forma en toda la app; `color` solo para distinguir cuentas en listas. */
+export function Avatar({ name, size = "md", color = "var(--color-coral)" }: { name: string; size?: keyof typeof AVATAR_SIZES; color?: string }) {
+  return (
+    <span className={`flex flex-shrink-0 items-center justify-center rounded-md font-display font-semibold text-night ${AVATAR_SIZES[size]}`} style={{ background: color }} aria-hidden="true">
+      {initials(name)}
+    </span>
+  );
+}
+
 export function ScreenHeader({ title, subtitle, onBack, right, bg = "var(--color-paper)" }: ScreenHeaderProps) {
   return (
     <header className="flex items-center justify-between gap-3 px-4 py-3 flex-shrink-0 border-b border-line lg:px-8" style={{ background: bg }}>

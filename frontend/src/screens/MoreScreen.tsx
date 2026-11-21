@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Avatar } from "../components/shared";
 import { IconHabit, IconUser, IconShield, IconTag, IconBell } from "../components/icons";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 
@@ -13,7 +14,6 @@ interface Props {
   isAdmin: boolean;
 }
 
-const initials = (name: string) => name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
 export default function MoreScreen({ userName, onHabits, onProfile, onCategories, onNotifications, unreadCount, onAdmin, isAdmin }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -39,7 +39,7 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
 
       <div className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-3 lg:mx-0 lg:max-w-[640px] lg:px-8 [&>*]:shrink-0">
         <button onClick={onProfile} className="flex min-h-[64px] items-center gap-3 rounded-md bg-card p-3 text-left active:bg-wash">
-          <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-coral font-display text-[20px] font-semibold text-night" aria-hidden="true">{initials(userName)}</span>
+          <Avatar name={userName} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[16px] font-semibold text-ink">{userName}</span>
             <span className="block truncate text-[14px] text-ink-2">{detail || "Completa tu perfil"}</span>

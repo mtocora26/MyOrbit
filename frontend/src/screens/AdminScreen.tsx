@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScreenHeader, Badge, BottomSheet, InputField, Skeleton } from "../components/shared";
+import { ScreenHeader, Badge, BottomSheet, InputField, Skeleton, Avatar } from "../components/shared";
 import { IconSearch } from "../components/icons";
 import { createAdminUser, deleteAdminUser, fetchAdminUsers, updateAdminUser, type AdminUser, type UserRole } from "../services/adminApi";
 import { getSession } from "../services/authApi";
@@ -7,10 +7,6 @@ import { getSession } from "../services/authApi";
 interface Props { onBack: () => void; }
 
 const AVATAR_COLORS = ["var(--color-violet)", "var(--color-coral)", "var(--color-blue)", "var(--color-amber)", "var(--color-green)"];
-
-function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "?";
-}
 
 function avatarColor(id: string): string {
   let hash = 0;
@@ -125,7 +121,7 @@ export default function AdminScreen({ onBack }: Props) {
               return (
                 <li key={user.id} className="overflow-hidden rounded-md bg-card">
                   <button className="flex w-full items-center gap-3.5 px-4 py-3 text-left" onClick={() => { setExpanded(open ? null : user.id); setConfirmDelete(null); }} aria-expanded={open}>
-                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md text-[15px] font-semibold text-night" style={{ background: avatarColor(user.id) }} aria-hidden="true">{initials(user.name)}</span>
+                    <Avatar name={user.name} size="sm" color={avatarColor(user.id)} />
                     <span className="min-w-0 flex-1">
                       <span className={`block truncate text-[16px] font-semibold ${user.active ? "text-ink" : "text-ink-3"}`}>{user.name}{isMe && <span className="ml-2 text-[13px] font-medium text-ink-2">(tú)</span>}</span>
                       <span className="block truncate text-[14px] text-ink-2">{user.email}</span>
