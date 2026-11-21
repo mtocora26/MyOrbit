@@ -4,7 +4,7 @@ import { fetchTasks, peekTasks, toUiTask, updateTaskStatus, type UiTask } from "
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { fromTaskDue } from "../services/taskDue";
 import { describeClassNow, fetchAgendaEvaluations, fetchClasses, fetchClassesNow, formatGrade, type AgendaEvaluation, type ClassNow, type ClassOccurrence } from "../services/academicApi";
-import { CategoryBadge, EmptyState, PriorityDot, Station, ErrorBanner } from "../components/shared";
+import { CategoryBadge, EmptyState, PriorityDot, Station, ErrorBanner, PageTitle } from "../components/shared";
 import EventFormSheet from "../components/EventFormSheet";
 import { coversDay, dayOfEvent, daysBetween, fetchEvents, type CalendarEvent } from "../services/eventsApi";
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
@@ -117,7 +117,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
   }, [classes]);
 
   const eventColor = (event: CalendarEvent) =>
-    subjects.find((subject) => subject.id === event.subjectId)?.color ?? categories.find((category) => category.id === event.categoryId)?.color ?? "#FF6B4A";
+    subjects.find((subject) => subject.id === event.subjectId)?.color ?? categories.find((category) => category.id === event.categoryId)?.color ?? "var(--color-coral)";
 
   // Franjas de la semana: cada evento cubre desde su primer hasta su último día visible; se apilan en filas sin cruzarse.
   const weekKey = dayKey(weekStart);
@@ -151,7 +151,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     // Un evento con hora la muestra solo el primer día; el resto de sus días (y los sin hora) cuentan como «todo el día» y van primero.
     ...events.filter((event) => coversDay(event, selected)).map((event): DayItem => ({ kind: "event", event, time: event.startDate === selected ? event.startTime ?? "" : "" })),
   ].sort((a, b) => a.time.localeCompare(b.time));
-  const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
+  const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "var(--color-coral)";
   const nameOf = (task: UiTask) => {
     const category = categories.find((item) => item.id === task.categoryId);
     return category ? categoryLabel(category, categories) : task.categoryId ? "Categoría" : "Sin categoría";
@@ -207,7 +207,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
     <div className="flex h-full flex-col bg-paper">
       <div className="flex-shrink-0 border-b border-line">
         <div className="flex items-center justify-between px-4 pt-3 pb-1 lg:px-8 lg:pt-8">
-          <h1 className="min-w-0 truncate font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">{monthName}<span className="num ml-2 text-[16px] font-medium tracking-normal text-ink-3">{monthYear}</span></h1>
+          <PageTitle className="min-w-0 truncate">{monthName}<span className="num ml-2 text-[16px] font-medium tracking-normal text-ink-3">{monthYear}</span></PageTitle>
           <div className="-mr-2 flex flex-shrink-0 items-center">
             <button onClick={() => openEventSheet(null)} aria-label="Añadir evento" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-coral-ink active:bg-wash">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
@@ -286,7 +286,7 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
           </div>
 
           {classBanner && selected === todayKey && (
-            <p className="mb-3 inline-flex items-center gap-2 rounded-[4px] px-2 py-1.5 text-[14px] font-semibold" style={{ background: "var(--color-blue-wash)", color: "var(--color-blue-ink)" }}>
+            <p className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-blue-ink">
               <span aria-hidden="true" className="num">{classNow?.current ? "●" : "→"}</span>
               <span>{classBanner}{classNow?.current ? ` · ${classNow.current.subjectName}${classNow.current.room ? ` · ${classNow.current.room}` : ""}` : classNow?.next ? ` · ${classNow.next.subjectName}${classNow.next.room ? ` · ${classNow.next.room}` : ""}` : ""}</span>
             </p>

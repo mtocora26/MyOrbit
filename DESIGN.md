@@ -196,14 +196,17 @@ Dark-theme values for the remaining tokens are in `src/index.css`; the frontmatt
 **Character:** Station-signage condensed headings over a friendly humanist body. Times and counts use condensed tabular figures (`.num`), like a departures board.
 
 ### Hierarchy
-- **Display** (600, 26px, 1, tracking-tight): screen titles in ScreenHeader. Larger hero figures (32-56px) are condensed numerals on Home and Grades.
+- **Display** (600, 26px, 1, tracking-tight): every screen title, tabs included, through `PageTitle` / `ScreenHeader` (44px on desktop). One size, never 30 or 34. Larger hero figures (32-56px) are condensed numerals on Home and Grades.
 - **Headline** (600, 20-24px, 1): section titles, sheet titles, empty-state titles (22px).
 - **Title** (600, 15-17px, ~1.25): row titles and button text.
 - **Body** (400, 14px, 1.375): descriptions; inputs are 16px (forced on phones to stop iOS zoom).
 - **Label** (600, 13px): meta, category names, nav labels. 13px is the floor.
 - **Route Code** (Barlow Condensed 600, 13px, uppercase, +0.025em): the square badge text.
 
+**Size scale.** 13, 14, 15, 16, 18, 20, 22, 24, 26, 32, 44, 56. Nothing between (17, 19, 25, 28, 30, 34 are retired); a new size needs a reason in this file.
+
 ### Named Rules
+**The Left Edge Rule.** Everything on a screen starts at the same 16px margin: titles, section titles (no `px-1`), panels and lines of text. A collapsible section puts its chevron after the title, never before it. Notices (next class, subjects at risk) are a full-width line of text with a mark and the tone colour, never an `inline-flex` tinted box, so the right edge stays straight.
 **The Departure Board Rule.** Times, dates and counts use condensed tabular numerals (`.num`).
 **The Thirteen Floor Rule.** No text under 13px.
 

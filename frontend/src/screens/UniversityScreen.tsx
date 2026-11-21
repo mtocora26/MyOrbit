@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChoiceChip, EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
+import { ChoiceChip, PageTitle, EmptyState, ListSkeleton, ErrorBanner } from "../components/shared";
 import SemesterFormSheet from "../components/SemesterFormSheet";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import { fetchAcademicOverview, fetchAcademicSummary, formatGrade, gradeStatus, type AcademicSummary, type SubjectStanding } from "../services/academicApi";
@@ -66,7 +66,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
       <header className="flex-shrink-0 border-b border-line px-4 pt-5 pb-4 lg:px-8 lg:pt-8">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="font-display text-[34px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Universidad</h1>
+            <PageTitle>Universidad</PageTitle>
             <p className="mt-1.5 text-[14px] text-ink-2">{activeSemester ? `Semestre ${activeSemester}${activeRecord?.current ? " · en curso" : ""}` : "Tus materias del semestre"}</p>
             {activeRecord?.missingDates && (
               <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="mt-1 min-h-[44px] text-left text-[14px] font-semibold text-coral-ink">Falta la fecha de inicio o fin · Completar</button>
@@ -83,7 +83,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
             <Stat label="Créditos" value={String(totalCredits)} />
           </dl>
           {summary && summary.atRisk.length > 0 && (
-            <p className="mt-2 inline-flex items-center gap-2 rounded-[4px] bg-danger-wash px-2 py-1.5 text-[14px] font-semibold text-danger">
+            <p className="mt-2 flex items-center gap-2 text-[14px] font-semibold text-danger">
               <span aria-hidden="true" className="num">!</span>
               {summary.atRisk.length === 1 ? "1 materia en riesgo" : `${summary.atRisk.length} materias en riesgo`}
             </p>
@@ -111,7 +111,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
           <EmptyState title="Aún no tienes materias" sub="Agrega las materias del semestre para seguir tus evaluaciones y notas." action="Crear materia" onAction={() => setCreating(true)} />
         ) : (
           <>
-            <h2 className="px-1 font-display text-[20px] font-semibold leading-none text-ink">Materias ({visible.length})</h2>
+            <h2 className="font-display text-[20px] font-semibold leading-none text-ink">Materias ({visible.length})</h2>
             <ul className="overflow-hidden rounded-md bg-card lg:max-w-[760px]">
               {visible.map((subject, index) => (
                 <li key={subject.id} className={index > 0 ? "border-t border-line" : ""}>
@@ -162,7 +162,7 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
     <div className="px-3 py-3">
       <dt className="text-[13px] font-medium text-ink-2">{label}</dt>
       <dd className="mt-1 flex items-baseline gap-0.5">
-        <span className={`num text-[28px] font-semibold leading-none ${accent ? "text-coral-ink" : "text-ink"}`}>{value}</span>
+        <span className={`num text-[26px] font-semibold leading-none ${accent ? "text-coral-ink" : "text-ink"}`}>{value}</span>
         {sub && <span className="num text-[14px] text-ink-3">{sub}</span>}
       </dd>
     </div>

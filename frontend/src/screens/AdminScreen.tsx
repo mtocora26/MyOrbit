@@ -90,7 +90,7 @@ export default function AdminScreen({ onBack }: Props) {
           {stats.map((stat) => (
             <div key={stat.label} className="px-3 py-3">
               <dt className="text-[13px] font-medium text-ink-2">{stat.label}</dt>
-              <dd className="num mt-1 text-[28px] font-semibold leading-none text-ink">{loading ? "–" : stat.value}</dd>
+              <dd className="num mt-1 text-[26px] font-semibold leading-none text-ink">{loading ? "–" : stat.value}</dd>
             </div>
           ))}
         </dl>
@@ -108,7 +108,7 @@ export default function AdminScreen({ onBack }: Props) {
 
         {error && <p role="alert" className="rounded-md border border-danger-line bg-danger-wash px-3 py-2 text-[14px] font-medium text-danger">{error}</p>}
 
-        <h2 className="px-1 font-display text-[20px] font-semibold leading-none text-ink">Cuentas ({filtered.length})</h2>
+        <h2 className="font-display text-[20px] font-semibold leading-none text-ink">Cuentas ({filtered.length})</h2>
 
         {loading ? (
           <div className="flex flex-col gap-2" aria-busy="true">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-[68px]" />)}</div>

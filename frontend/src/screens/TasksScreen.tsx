@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, ChoiceChip, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
+import { CategoryBadge, ChoiceChip, PageTitle, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
 import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
@@ -209,7 +209,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
     <div className="h-full min-h-0 flex flex-col bg-paper">
       <div className="px-4 pt-3 pb-0 bg-paper flex-shrink-0 border-b border-line lg:px-8 lg:pt-8">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Tareas</h1>
+          <PageTitle>Tareas</PageTitle>
           <div className="-mr-2 flex items-center">
           <button
             onClick={() => { if (searching) setQuery(""); setSearching(!searching); }}
@@ -304,7 +304,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
 function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, onDelete, onReschedule, onRename }: { task: UiTask; categoryColor?: string; categoryName: string; last: boolean; onTap: () => void; onToggle: () => void; onDelete: () => void; onReschedule: () => void; onRename: (title: string) => void }) {
   const overdue = !task.done && isOverdue(task.rawDue);
   const subtaskInfo = task.subtasks.length ? getSubtaskProgress(task.subtasks) : null;
-  const color = categoryColor ?? "#FF6B4A";
+  const color = categoryColor ?? "var(--color-coral)";
   const [renaming, setRenaming] = useState(false);
   // En pantallas táctiles no hay doble clic: tocar el título abre el detalle. El renombrado en línea queda para el ratón.
   const touch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;

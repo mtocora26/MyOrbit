@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Avatar } from "../components/shared";
+import { Avatar, PageTitle } from "../components/shared";
 import { IconHabit, IconUser, IconShield, IconTag, IconBell } from "../components/icons";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 
@@ -34,7 +34,7 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
   return (
     <div className="flex h-full flex-col bg-paper">
       <header className="flex-shrink-0 px-4 pt-3 pb-2 lg:px-8 lg:pt-8">
-        <h1 className="font-display text-[30px] font-semibold leading-none tracking-tight text-ink lg:text-[44px]">Más</h1>
+        <PageTitle>Más</PageTitle>
       </header>
 
       <div className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-3 lg:mx-0 lg:max-w-[640px] lg:px-8 [&>*]:shrink-0">

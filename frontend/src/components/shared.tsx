@@ -16,6 +16,7 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   bg?: string;
 }
+<<<<<<< HEAD
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 /** Iniciales de las dos primeras palabras del nombre («Manuel Tocora» → «MT»). */
 export function initials(name: string): string {
@@ -31,6 +32,11 @@ export function Avatar({ name, size = "md", color = "var(--color-coral)" }: { na
       {initials(name)}
     </span>
   );
+=======
+/** Título de pantalla: 26 px en el móvil (44 en escritorio). El único tamaño de título de toda la app. */
+export function PageTitle({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <h1 className={`font-display text-[26px] font-semibold leading-none tracking-tight text-ink lg:text-[44px] ${className}`}>{children}</h1>;
+>>>>>>> main
 }
 
 export function ScreenHeader({ title, subtitle, onBack, right, bg = "var(--color-paper)" }: ScreenHeaderProps) {
@@ -114,7 +120,7 @@ export function ChoiceChip({ selected, onClick, children, className = "", role =
 }
 
 export function CategoryBadge({ name, color }: { name: string; color?: string }) {
-  const hex = color || "#667085";
+  const hex = color || "var(--color-ink-3)";
   return (
     <span className="inline-flex items-center gap-1.5 text-[13px] font-medium leading-none text-ink-2">
       <span className="h-2.5 w-2.5 flex-shrink-0 rounded-[2px]" style={{ background: hex }} aria-hidden="true" />
@@ -177,7 +183,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
   const labelOf = (category: CategoryOption) => categoryLabel(category, categories);
 
   if (variant === "chips") {
-    const options = value && !categories.some((category) => category.id === value) ? [...ordered, { id: value, name: value, color: "#667085" }] : ordered;
+    const options = value && !categories.some((category) => category.id === value) ? [...ordered, { id: value, name: value, color: "var(--color-ink-3)" }] : ordered;
     return (
       <div role="radiogroup" aria-label="Categoría" className={`no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 ${className}`}>
         {options.map((category) => {
@@ -570,8 +576,9 @@ export function CollapsibleSection({ id, title, summary, action, defaultOpen = f
     <section aria-labelledby={`${panelId}-title`} className="flex flex-col">
       <div className="flex min-h-[44px] items-center gap-2">
         <button type="button" onClick={toggle} aria-expanded={open} aria-controls={panelId} className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-md text-left active:bg-wash">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-ink-2 transition-transform duration-200 ${open ? "rotate-90" : ""}`} aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+          {/* El título arranca en el margen de la pantalla; el chevron va detrás, no delante. */}
           <span id={`${panelId}-title`} className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">{title}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-ink-2 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           {!open && summary && <span className="num min-w-0 truncate text-[14px] text-ink-2">{summary}</span>}
         </button>
         {action}
