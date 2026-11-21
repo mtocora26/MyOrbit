@@ -16,6 +16,24 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   bg?: string;
 }
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+/** Iniciales de las dos primeras palabras del nombre («Manuel Tocora» → «MT»). */
+export function initials(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "?";
+}
+
+const AVATAR_SIZES = { sm: "h-10 w-10 text-[15px]", md: "h-11 w-11 text-[20px]", lg: "h-14 w-14 text-[22px]" } as const;
+
+/** La persona: placa cuadrada de 6 px con sus iniciales. Una sola forma en toda la app; `color` solo para distinguir cuentas en listas. */
+export function Avatar({ name, size = "md", color = "var(--color-coral)" }: { name: string; size?: keyof typeof AVATAR_SIZES; color?: string }) {
+  return (
+    <span className={`flex flex-shrink-0 items-center justify-center rounded-md font-display font-semibold text-night ${AVATAR_SIZES[size]}`} style={{ background: color }} aria-hidden="true">
+      {initials(name)}
+    </span>
+  );
+}
+
 /** Título de pantalla: 26 px en el móvil (44 en escritorio). El único tamaño de título de toda la app. */
 export function PageTitle({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <h1 className={`font-display text-[26px] font-semibold leading-none tracking-tight text-ink lg:text-[44px] ${className}`}>{children}</h1>;

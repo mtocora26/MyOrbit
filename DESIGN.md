@@ -255,6 +255,11 @@ Status lines under a grade (`GradeStatusLine`) are text with a mark and the tone
 ### Inputs / Fields
 `card` fill, 1px `line` border, 6px radius, 12px padding, 16px text; focus shifts the border to coral. Category picker pairs a select with a 44px "+" and an 8-swatch colour radiogroup of 3px-radius squares.
 
+### Avatar
+One `Avatar` (`shared.tsx`) for the person everywhere (Más, Perfil, Admin): a square 6px plate with the initials of the first two words of the name (`initials()`, "Manuel Tocora" is always "MT"), coral with `night` text; sizes 40, 44 and 56px. Only the Admin account list passes a route colour per user, to tell accounts apart. No circles (circles are for stations), no black plate, no second initials function.
+
+Settings rows (`ToggleRow`) are label, one-line description and the switch: no leading icon. An icon that repeats on every row (and is the same bell in a different hue) carries no information.
+
 ### Choice Chip
 One language for picking an option among a few (date presets, priority, category, semester, task filters, notification filter, habit stats window, Agenda day): `ChoiceChip` in `shared.tsx`. **No border.** Unselected is a `wash` fill with `ink-2` text; selected is `coral-wash` with `coral-ink` text. Same shape and size in both states, 6px radius, 44px minimum height, presses to 0.97. Never `strong` (near-white in dark mode, the brightest thing on screen), never an ink border, never a per-option colour. Secondary actions next to chips ("Editar", "+ Semestre") are plain `coral-ink` text, not boxed chips. In the Agenda strip the selected day is `coral-wash`; today, when not selected, is `coral-ink` text only.
 
