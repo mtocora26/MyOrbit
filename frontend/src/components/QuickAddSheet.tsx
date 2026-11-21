@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BottomSheet, CategoryPicker, PriorityDot } from "./shared";
 import { IconPencil, IconCalendar, IconHabit, IconClock, IconBell } from "./icons";
 import { createReminder, REMINDER_MAX_LENGTH } from "../services/remindersApi";
+import { requestLocalReminderPermission, syncLocalReminders } from "../services/localReminders";
 import { createTask, type TaskPriority } from "../services/tasksApi";
 import { todayInputValue, tomorrowInputValue, toTaskDue } from "../services/taskDue";
 import { createHabit } from "../services/habitsApi";
@@ -109,6 +110,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
       setError(null);
       if (mode === "tarea") {
         await createTask({ title: name.trim(), due: toTaskDue(date, time), priority, categoryId: categoryId || null, subjectId: subjectId || null });
+        syncLocalReminders().catch(() => undefined);
         onTaskCreated();
       } else if (mode === "aviso") {
         if (date < today || (date === today && time <= nowTimeValue())) {
@@ -116,6 +118,8 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
           return;
         }
         await createReminder(name.trim(), date, time);
+        // Momento oportuno para pedir el permiso de avisos del teléfono: el usuario acaba de pedir uno.
+        requestLocalReminderPermission().then(syncLocalReminders).catch(() => undefined);
       } else {
         await createHabit({ title: name.trim(), frequency: "diaria", daysOfWeek: [1, 2, 3, 4, 5, 6, 7], color: "var(--color-violet-ink)", icon: "target" });
         onHabitCreated();

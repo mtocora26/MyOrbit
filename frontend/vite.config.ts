@@ -66,6 +66,8 @@ export default defineConfig(({ mode }) => ({
         navigateFallback: '/index.html',
         // La API nunca pasa por el service worker: ni fallback ni caché de respuestas.
         navigateFallbackDenylist: [/^\/api\//],
+        // Avisos Web Push (#142): el manejador vive en public/push-sw.js.
+        importScripts: ['push-sw.js'],
       },
     }),
   ],
