@@ -174,7 +174,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
       <ScreenHeader title="Hábitos" subtitle="Tu constancia, un día a la vez" onBack={onBack} right={<button onClick={startCreate} aria-label="Crear hábito" className="flex h-11 w-11 items-center justify-center rounded-md bg-coral text-[24px] font-semibold text-night">+</button>} />
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-8 flex flex-col gap-4 lg:px-8 lg:pt-6 lg:max-w-[760px] [&>*]:shrink-0">
-        <div className="rounded-md border border-line bg-card p-4">
+        <div className="rounded-md bg-card p-4">
           {habitsKnown
             ? <p className="num text-[44px] font-semibold leading-none text-ink">{doneToday}<span className="text-[24px] text-ink-3">/{habits.length}</span> <span className="text-[16px] font-medium text-ink-2">hábitos hoy</span></p>
             : loading ? <Skeleton className="h-[44px] w-44" /> : <p className="flex h-[44px] items-center text-[16px] font-medium text-ink-2">Hábitos de hoy no disponibles</p>}
@@ -212,7 +212,7 @@ function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySu
     goal ? `Meta ${goal.completedDays}/${goal.requiredDays}` : null,
   ].filter(Boolean).join(" · ");
   return (
-    <div className="rounded-md border border-line bg-card pl-4 pr-2">
+    <div className="rounded-md bg-card pl-4 pr-2">
       <div className="flex items-center gap-1">
         <button type="button" onClick={() => setOpen((current) => !current)} aria-expanded={open} aria-controls={panelId} className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-md py-2 text-left active:bg-wash">
           <span className="h-3 w-3 flex-shrink-0 rounded-[3px]" style={{ background: habit.color }} aria-hidden="true" />
@@ -358,7 +358,7 @@ function HabitListSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-busy="true" aria-label="Cargando hábitos">
       {[0, 1, 2].map((index) => (
-        <div key={index} className="rounded-md border border-line bg-card px-4 pt-3 pb-4" aria-hidden="true">
+        <div key={index} className="rounded-md bg-card px-4 pt-3 pb-4" aria-hidden="true">
           <div className="flex h-11 items-center gap-2"><Skeleton className="h-3 w-3" /><Skeleton className="h-[17px] w-40" /></div>
           <Skeleton className="mt-1 h-[14px] w-16" />
           <div className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3">

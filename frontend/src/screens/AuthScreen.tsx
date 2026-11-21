@@ -38,7 +38,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
         <div className="absolute -top-28 -right-20 w-[440px] h-[440px] rounded-full border border-white/15" />
         <div className="absolute top-16 right-24 w-[280px] h-[280px] rounded-full border border-white/10" />
         <div className="relative max-w-lg">
-          <LogoMark size={48} className="rounded-lg" />
+          <LogoMark size={48} className="rounded-md" />
           <h1 className="mt-8 font-display text-[56px] leading-none font-semibold text-white">MyOrbit</h1>
           <p className="mt-3 text-[18px] leading-relaxed text-ink-3">Tu espacio personal para organizar lo importante y avanzar a tu ritmo.</p>
         </div>
@@ -47,7 +47,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
       <section className="flex items-center justify-center px-5 py-10">
         <form onSubmit={handleSubmit} className="w-full max-w-md">
           <div className="lg:hidden mb-10">
-            <LogoMark size={44} className="rounded-lg" />
+            <LogoMark size={44} className="rounded-md" />
             <p className="mt-4 font-display text-[32px] font-semibold leading-none tracking-tight text-ink">MyOrbit</p>
           </div>
           <p className="font-display text-[34px] font-semibold leading-none text-ink">{mode === "login" ? "Bienvenida de nuevo" : "Crea tu espacio"}</p>
@@ -55,7 +55,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
 
           <div className="mt-7 flex rounded-md bg-line p-1">
             {(["login", "register"] as const).map((item) => (
-              <button key={item} type="button" onClick={() => { setMode(item); setError(null); }} className="flex-1 rounded-lg min-h-[44px] py-2 text-[13px] font-bold" style={{ background: mode === item ? "var(--color-card)" : "transparent", color: mode === item ? "var(--color-ink)" : "var(--color-ink-2)" }}>
+              <button key={item} type="button" onClick={() => { setMode(item); setError(null); }} className="flex-1 rounded-md min-h-[44px] py-2 text-[13px] font-bold" style={{ background: mode === item ? "var(--color-card)" : "transparent", color: mode === item ? "var(--color-ink)" : "var(--color-ink-2)" }}>
                 {item === "login" ? "Iniciar sesión" : "Crear cuenta"}
               </button>
             ))}

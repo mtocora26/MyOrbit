@@ -77,7 +77,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
 
         {visible.length > 0 && (
           <>
-          <dl className="mt-4 grid grid-cols-3 divide-x divide-line rounded-md border border-line bg-card lg:max-w-[560px]">
+          <dl className="mt-4 grid grid-cols-3 divide-x divide-line rounded-md bg-card lg:max-w-[560px]">
             <Stat label="Promedio" value={summary?.weightedAverage != null ? formatGrade(summary.weightedAverage) : "–"} sub="/5" />
             <Stat label="Meta" value={summary ? formatGrade(summary.targetGrade) : "–"} sub="/5" accent />
             <Stat label="Créditos" value={String(totalCredits)} />
@@ -112,7 +112,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         ) : (
           <>
             <h2 className="px-1 font-display text-[20px] font-semibold leading-none text-ink">Materias ({visible.length})</h2>
-            <ul className="overflow-hidden rounded-md border border-line bg-card lg:max-w-[760px]">
+            <ul className="overflow-hidden rounded-md bg-card lg:max-w-[760px]">
               {visible.map((subject, index) => (
                 <li key={subject.id} className={index > 0 ? "border-t border-line" : ""}>
                   <button onClick={() => onSubjectTap(subject)} className="flex min-h-[64px] w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-wash">

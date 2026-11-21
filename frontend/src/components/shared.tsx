@@ -192,14 +192,15 @@ export function ProgressRing({ value, size = 60, stroke = 5, color = "var(--colo
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 // Panel plano con línea fina. Si es pulsable, se comporta como botón.
-export function Card({ children, className = "", onClick, padding = "p-4" }: { children: ReactNode; className?: string; onClick?: () => void; padding?: string; }) {
+/** Panel plano: fondo `card` sin borde. `outlined` solo cuando el panel no se distingue del fondo por sí mismo. */
+export function Card({ children, className = "", onClick, padding = "p-4", outlined = false }: { children: ReactNode; className?: string; onClick?: () => void; padding?: string; outlined?: boolean; }) {
   return (
     <div
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
-      className={`rounded-md border border-line bg-card ${padding} ${onClick ? "cursor-pointer transition-transform duration-150 ease-out active:scale-[0.985]" : ""} ${className}`}
+      className={`rounded-md bg-card ${outlined ? "border border-line" : ""} ${padding} ${onClick ? "cursor-pointer transition-transform duration-150 ease-out active:scale-[0.985]" : ""} ${className}`}
     >
       {children}
     </div>

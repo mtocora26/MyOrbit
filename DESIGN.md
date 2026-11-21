@@ -223,7 +223,7 @@ Hybrid app: one design, two shells.
 Flat. Depth comes from tonal layering (paper, card, wash) and 1px hairlines; there are no box shadows or gradients anywhere in the source. The only layering effects are the bottom sheet over a `night/60` scrim and the FAB's 4px card-coloured ring that cuts it out of the nav.
 
 ### Named Rules
-**The Hairline Rule.** Separate with a 1px `line` border, never a shadow.
+**The Hairline Rule.** Separate with a 1px `line` hairline between rows, never a shadow, and never an outline around a panel that its fill already separates.
 
 ## Shapes
 
@@ -245,7 +245,9 @@ The **órbita de ruta**: a full orbit (the 3px route line closed into a ring) ca
 - **Focus:** global 2px coral outline, 2px offset.
 
 ### Cards / Containers
-6px radius, 1px `line` border, `card` fill, 16px padding, no shadow. Clickable cards are keyboard-operable and press to 0.985.
+**One treatment per level.** A container is told apart from the ground by its `card` fill alone: 6px radius, 16px padding, **no border** and no shadow. Lists are one `card` panel with `divide-y divide-line` (or `border-t border-line`) hairlines between rows and no outer border. Sections sit on `paper` with no box at all, separated by space or a top hairline. Never nest a coloured fill (wash, route wash, another card) inside a card except a control (button, field) or a status mark; never draw border, fill and inner divider on the same box. Rows inside a sheet (already `card`) use a `wash` fill instead of a border. `Card` takes `outlined` only for the rare panel that cannot be told apart by fill. Fields keep their `line-control` outline: there the border is the only cue (WCAG 1.4.11). Clickable cards are keyboard-operable and press to 0.985.
+
+Status lines under a grade (`GradeStatusLine`) are text with a mark and the tone colour, never a tinted box.
 
 ### Inputs / Fields
 `card` fill, 1px `line` border, 6px radius, 12px padding, 16px text; focus shifts the border to coral. Category picker pairs a select with a 44px "+" and an 8-swatch colour radiogroup of 3px-radius squares.

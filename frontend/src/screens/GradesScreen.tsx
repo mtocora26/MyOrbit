@@ -55,7 +55,7 @@ export default function GradesScreen({ subject, onBack }: Props) {
 
         {summary && status && (
           <>
-            <section aria-label="Resumen" className="rounded-md border border-line bg-card p-4">
+            <section aria-label="Resumen" className="rounded-md bg-card p-4">
               <dl className="grid grid-cols-3 divide-x divide-line">
                 <Figure label="Actual" value={summary.currentGrade === null ? "–" : formatGrade(summary.currentGrade)} />
                 <Figure label="Meta" value={formatGrade(summary.targetGrade)} accent />
@@ -74,7 +74,7 @@ export default function GradesScreen({ subject, onBack }: Props) {
 
             {hasPending && (
               <CollapsibleSection id="grades-simulator" title="Simulador" defaultOpen summary={`Proyectada ${formatGrade(projected)}`}>
-              <div className="rounded-md border border-line bg-card p-4">
+              <div className="rounded-md bg-card p-4">
                 <p className="text-[14px] text-ink-2">¿Qué promedio sacarías en el {formatNumber(summary.remainingPercentage)}% restante?</p>
                 <div className="mt-3 flex items-center gap-3">
                   <input type="range" min={0} max={MAX_GRADE} step={0.1} value={expected} onChange={(e) => setExpected(Number(e.target.value))} aria-label="Promedio esperado en lo que falta" className="h-11 min-w-0 flex-1" style={{ accentColor: "var(--color-coral)" }} />
@@ -100,7 +100,7 @@ export default function GradesScreen({ subject, onBack }: Props) {
               {evaluations.length === 0 ? (
                 <p className="rounded-md border border-dashed border-line-strong px-4 py-6 text-center text-[14px] text-ink-2">Agrega evaluaciones en el detalle de la materia para ver tus notas.</p>
               ) : (
-                <ul className="overflow-hidden rounded-md border border-line bg-card">
+                <ul className="overflow-hidden rounded-md bg-card">
                   {evaluations.map((evaluation, index) => {
                     const graded = evaluation.grade !== null;
                     const provisional = !graded && evaluation.provisionalGrade !== null ? evaluation.provisionalGrade : null;

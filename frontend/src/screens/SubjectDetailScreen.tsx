@@ -145,7 +145,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
 
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
         {summary && status && (
-          <section aria-label="Notas de la materia" className="rounded-md border border-line bg-card p-4">
+          <section aria-label="Notas de la materia" className="rounded-md bg-card p-4">
             <div className="flex items-center gap-4">
               <ProgressRing value={((summary.currentGrade ?? 0) / MAX_GRADE) * 100} size={72} stroke={6} color={subject.color}>
                 <span className="num text-[22px] font-semibold leading-none text-ink">{summary.currentGrade === null ? "–" : formatGrade(summary.currentGrade)}</span>
@@ -184,15 +184,16 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
             </div>
           ) : evaluations.length > 0 && (
             <>
-              <div className="rounded-md border border-line bg-card p-3">
+              {/* Al 100 % el reparto ya se lee en el resumen de la sección: la caja solo aparece mientras falte o sobre. */}
+              {assigned !== MAX_PERCENTAGE && <div className="rounded-md bg-card p-3">
                 <p className="flex items-baseline justify-between text-[14px] text-ink-2">
                   <span>Porcentaje repartido</span>
                   <span className="num text-[18px] font-semibold text-ink">{formatNumber(assigned)}%<span className="text-[14px] font-normal text-ink-3"> de {MAX_PERCENTAGE}%</span></span>
                 </p>
                 <div className="mt-2"><ProgressBar value={Math.min(assigned, MAX_PERCENTAGE)} color={subject.color} height={4} /></div>
                 {remaining > 0 && <p className="num mt-1.5 text-[13px] text-ink-2">Falta repartir {formatNumber(remaining)}%</p>}
-              </div>
-              <ul className="overflow-hidden rounded-md border border-line bg-card">
+              </div>}
+              <ul className="overflow-hidden rounded-md bg-card">
                 {sortedEvaluations.map((evaluation, index) => {
                   const graded = evaluation.complete;
                   return (
@@ -219,7 +220,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
         </CollapsibleSection>
         {pendingTasks.length > 0 && (
           <CollapsibleSection id="subject-tasks" title="Tareas pendientes" summary={`${pendingTasks.length}`}>
-            <ul className="overflow-hidden rounded-md border border-line bg-card">
+            <ul className="overflow-hidden rounded-md bg-card">
               {pendingTasks.map((task, index) => (
                 <li key={task.id} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
                   <span className="h-[14px] w-[14px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color }} aria-hidden="true" />
@@ -233,7 +234,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
 
         {subject.schedule.length > 0 && (
           <CollapsibleSection id="subject-schedule" title="Horario" summary={scheduleSummary(subject.schedule)}>
-            <ul className="overflow-hidden rounded-md border border-line bg-card">
+            <ul className="overflow-hidden rounded-md bg-card">
               {sortSlots(subject.schedule).map((slot, index) => (
                 <li key={`${slot.dayOfWeek}-${slot.start}`} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
                   <span className="w-[88px] flex-shrink-0 text-[15px] font-semibold text-ink">{DAY_NAMES[slot.dayOfWeek - 1]}</span>

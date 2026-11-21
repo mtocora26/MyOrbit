@@ -336,14 +336,14 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
         {error && <ErrorBanner message={error} onRetry={() => setRetryTick((tick) => tick + 1)} />}
 
         {!loading && !task && !error && (
-          <div className="bg-card rounded-lg p-4">
+          <div className="bg-card rounded-md p-4">
             <p className="text-[14px] text-ink-2">Selecciona una tarea desde la lista para ver su detalle.</p>
           </div>
         )}
 
         {task && (
           <>
-            <div className="bg-card rounded-lg p-4">
+            <div className="bg-card rounded-md p-4">
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: task.priority === "alta" ? "var(--color-coral)" : task.priority === "media" ? "var(--color-amber)" : "var(--color-green)" }} />
                 <Badge label={PRIORITY_BADGE[task.priority].label} color={PRIORITY_BADGE[task.priority].color} />
@@ -410,7 +410,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                   onChange={(event) => setQuickTitle(event.target.value)}
                   onBlur={commitQuickRename}
                   onKeyDown={(event) => { if (event.key === "Enter") commitQuickRename(); if (event.key === "Escape") setRenamingTitle(false); }}
-                  className="w-full rounded-lg border border-coral bg-card px-2 py-1 text-[18px] font-bold text-ink outline-none"
+                  className="w-full rounded-md border border-coral bg-card px-2 py-1 text-[18px] font-bold text-ink outline-none"
                 />
               ) : (
                 <h2
@@ -423,7 +423,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               )}
             </div>
 
-            <div className="bg-card rounded-lg p-4">
+            <div className="bg-card rounded-md p-4">
               <div className="grid grid-cols-2 gap-4">
                 <MetaField icon={<IconCalendar size={13} color={overdue ? "var(--color-danger)" : "var(--color-ink-3)"} />} label="Fecha limite" value={task.due} valueClassName={overdue ? "text-danger" : undefined} />
                 <MetaField icon={<StatusIcon />} label="Estado" value={task.done ? "Completada" : overdue ? "Vencida" : "En progreso"} valueClassName={overdue && !task.done ? "text-danger" : undefined} />
@@ -432,7 +432,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               </div>
             </div>
 
-            <div className="bg-card rounded-lg p-4">
+            <div className="bg-card rounded-md p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[14px] font-bold text-ink">Progreso</p>
                 <span className="text-[14px] font-bold text-coral-ink tabular-nums">{progress}%</span>
@@ -443,7 +443,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               </p>
             </div>
 
-            <div className="bg-card rounded-lg p-4">
+            <div className="bg-card rounded-md p-4">
               <div className="flex items-center justify-between gap-3"><div><p className="text-[14px] font-bold text-ink">Subtareas</p><p className="mt-0.5 text-[13px] text-ink-3">Cada paso puede contener otros pasos.</p></div><span className="rounded-full bg-wash px-2.5 py-1 text-[13px] font-bold text-ink-2">{getSubtaskProgress(task.subtasks).completed}/{getSubtaskProgress(task.subtasks).total}</span></div>
               <div className="mt-4 flex flex-col gap-2">
                 {task.subtasks.map((subtask) => <SubtaskItem key={subtask.id} subtask={subtask} depth={0} saving={saving} onToggle={handleToggleSubtask} onDelete={handleDeleteSubtask} onAddChild={handleAddSubtask} onUpdateDue={handleUpdateSubtaskDue} onRename={handleRenameSubtask} />)}
@@ -468,7 +468,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
         <button
           onClick={handleToggleCompleted}
           disabled={!task || saving || editing || (task?.subtasks.length ?? 0) > 0}
-          className="w-full py-3.5 rounded-lg text-[15px] font-bold text-white transition-transform active:scale-[0.98]"
+          className="w-full py-3.5 rounded-md text-[15px] font-bold text-white transition-transform active:scale-[0.98]"
           style={{
             background: !task
               ? "var(--color-line-strong)"
@@ -558,7 +558,7 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
               onChange={(event) => setDraftTitle(event.target.value)}
               onBlur={commitRename}
               onKeyDown={(event) => { if (event.key === "Enter") commitRename(); if (event.key === "Escape") { setDraftTitle(subtask.title); setRenaming(false); } }}
-              className="min-w-0 flex-1 rounded-lg border border-blue bg-card px-2 py-1 text-[13px] font-semibold text-ink outline-none"
+              className="min-w-0 flex-1 rounded-md border border-blue bg-card px-2 py-1 text-[13px] font-semibold text-ink outline-none"
             />
           ) : (
             <p

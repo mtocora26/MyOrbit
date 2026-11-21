@@ -256,7 +256,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               <p className="mt-0.5 text-[14px] text-ink-2">{habits.length ? "Descansa o revisa tu plan semanal." : "Crea uno pequeño y corre junto a tus entregas."}</p>
             </button>
           ) : (
-            <div className="rounded-md border border-line bg-card px-3 pt-3 pb-3">
+            <div className="rounded-md bg-card px-3 pt-3 pb-3">
               <div className="relative">
                 <span className="absolute left-4 right-4 top-[22px] h-[3px] -translate-y-1/2 bg-line-strong" />
                 <ul className="relative flex gap-1 overflow-x-auto no-scrollbar">

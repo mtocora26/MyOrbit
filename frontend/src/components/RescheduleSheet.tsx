@@ -52,7 +52,7 @@ export default function RescheduleSheet({ task, onClose, onPick }: Props) {
             key={option.label}
             type="button"
             onClick={() => onPick(option.date)}
-            className="flex min-h-[56px] items-center justify-between rounded-md border border-line px-4 text-left text-[16px] font-semibold text-ink transition-[background-color,transform] duration-150 ease-out active:scale-[0.985] active:bg-wash"
+            className="flex min-h-[56px] items-center justify-between rounded-md bg-wash px-4 text-left text-[16px] font-semibold text-ink transition-[background-color,transform] duration-150 ease-out active:scale-[0.985] active:bg-wash"
           >
             <span>{option.label}</span>
             <span className="num text-[14px] font-medium text-ink-2">{shortDate(option.date)}</span>
@@ -81,7 +81,7 @@ export default function RescheduleSheet({ task, onClose, onPick }: Props) {
           <button
             type="button"
             onClick={() => setPicking(true)}
-            className="flex min-h-[56px] items-center justify-between rounded-md border border-line px-4 text-left text-[16px] font-semibold text-ink transition-[background-color,transform] duration-150 ease-out active:scale-[0.985] active:bg-wash"
+            className="flex min-h-[56px] items-center justify-between rounded-md bg-wash px-4 text-left text-[16px] font-semibold text-ink transition-[background-color,transform] duration-150 ease-out active:scale-[0.985] active:bg-wash"
           >
             <span>Elegir fecha</span>
             <span className="text-[14px] font-medium text-ink-2">Calendario</span>
