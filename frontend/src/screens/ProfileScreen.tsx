@@ -7,6 +7,7 @@ import type { AuthSession } from "../services/authApi";
 import { updateName, changePassword, updateTimeZone, availableTimeZones, detectTimeZone } from "../services/authApi";
 import { isNativeApp } from "../hooks/useNativeApp";
 import { localReminderPermission, localRemindersEnabled, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
+import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "../services/pushApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 
 interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
@@ -17,6 +18,10 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   // Avisos que el propio teléfono programa (solo en la app de Android).
   const [deviceOn, setDeviceOn] = useState(false);
   const [deviceMessage, setDeviceMessage] = useState<string | null>(null);
+  // Avisos push del navegador o la PWA (no aplica dentro del APK).
+  const [webPush, setWebPush] = useState<WebPushState | null>(null);
+  const [webPushBusy, setWebPushBusy] = useState(false);
+  const [webPushMessage, setWebPushMessage] = useState<string | null>(null);
   const [prefsError, setPrefsError] = useState<string | null>(null);
   const [zoneError, setZoneError] = useState<string | null>(null);
   const [savingZone, setSavingZone] = useState(false);
@@ -128,6 +133,31 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     if (!isNativeApp) return;
     localReminderPermission().then((permission) => setDeviceOn(permission === "granted" && localRemindersEnabled()));
   }, []);
+
+  useEffect(() => {
+    if (isNativeApp) return;
+    webPushState().then(setWebPush);
+  }, []);
+
+  async function changeWebPush() {
+    if (webPushBusy) return;
+    setWebPushBusy(true);
+    setWebPushMessage(null);
+    try {
+      if (webPush === "on") {
+        await disableWebPush();
+        setWebPush("off");
+      } else {
+        const next = await enableWebPush();
+        setWebPush(next);
+        if (next === "unavailable") setWebPushMessage("El servidor aún no tiene avisos push configurados.");
+      }
+    } catch (err) {
+      setWebPushMessage(err instanceof Error ? err.message : "No fue posible cambiar los avisos push");
+    } finally {
+      setWebPushBusy(false);
+    }
+  }
 
   async function changeDevice() {
     setDeviceMessage(null);
@@ -267,6 +297,14 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
                   {deviceMessage && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{deviceMessage}</p>}
                 </>
               )}
+              {!isNativeApp && (webPush === "on" || webPush === "off" || webPush === "denied") && (
+                <>
+                  <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Avisos push en este dispositivo" sub="Llegan aunque la app esté cerrada" on={webPush === "on"} onChange={changeWebPush} />
+                  {webPush === "denied" && <p className="px-4 py-2 text-[14px] text-ink-2">El navegador bloqueó las notificaciones. Permítelas en los ajustes del sitio.</p>}
+                </>
+              )}
+              {!isNativeApp && webPush === "needs-install" && <p className="px-4 py-3 text-[14px] text-ink-2">En iPhone, instala MyOrbit en la pantalla de inicio para recibir avisos push.</p>}
+              {webPushMessage && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{webPushMessage}</p>}
               <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Fechas límite" sub="Al crear una tarea con fecha, 1 día y 1 hora antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
               <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Hábitos pendientes" sub="Recordatorio al final del día de lo que falta" on={prefs.habit} onChange={() => changePref("habit")} />
               <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Tareas vencidas" sub="Resumen cada mañana de lo que se pasó de fecha" on={prefs.overdue} onChange={() => changePref("overdue")} />
