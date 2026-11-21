@@ -16,7 +16,7 @@ interface ScreenHeaderProps {
   right?: ReactNode;
   bg?: string;
 }
-<<<<<<< HEAD
+
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 /** Iniciales de las dos primeras palabras del nombre («Manuel Tocora» → «MT»). */
 export function initials(name: string): string {
@@ -32,11 +32,11 @@ export function Avatar({ name, size = "md", color = "var(--color-coral)" }: { na
       {initials(name)}
     </span>
   );
-=======
+}
+
 /** Título de pantalla: 26 px en el móvil (44 en escritorio). El único tamaño de título de toda la app. */
 export function PageTitle({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <h1 className={`font-display text-[26px] font-semibold leading-none tracking-tight text-ink lg:text-[44px] ${className}`}>{children}</h1>;
->>>>>>> main
 }
 
 export function ScreenHeader({ title, subtitle, onBack, right, bg = "var(--color-paper)" }: ScreenHeaderProps) {
