@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "../components/ThemeToggle";
 import NotificationBell from "../components/NotificationBell";
 import AcademicGlance from "../components/AcademicGlance";
-import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner, Skeleton } from "../components/shared";
+import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner, Skeleton, PageTitle } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, completeLabel, type Habit } from "../services/habitsApi";
@@ -144,7 +144,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
     }
   }
 
-  const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "#FF6B4A";
+  const colorOf = (task: UiTask) => categories.find((category) => category.id === task.categoryId)?.color ?? "var(--color-coral)";
   const nameOf = (task: UiTask) => {
     const category = categories.find((item) => item.id === task.categoryId);
     return category ? categoryLabel(category, categories) : task.categoryId ? "Categoría" : "Sin categoría";
@@ -155,9 +155,9 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
       <header className="px-4 pt-3 pb-3 lg:px-8 lg:pt-8 lg:pb-6">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <h1 className="truncate font-display text-[30px] font-semibold leading-[1.05] tracking-tight text-ink lg:text-[44px]">
+            <PageTitle className="truncate leading-[1.05]">
               {greeting()}, {userName.split(" ")[0]}
-            </h1>
+            </PageTitle>
             <p className="mt-0.5 text-[14px] text-ink-2">{currentDateLabel()}</p>
           </div>
           <div className="-mr-2 flex flex-shrink-0 items-center">
@@ -181,7 +181,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               : `${pendingTasks} por llegar · vas a tiempo`}
         </div>
         {classBanner && (
-          <button type="button" onClick={onAgenda} className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-[4px] bg-blue-wash px-2 py-1.5 text-left text-[14px] font-semibold leading-snug text-blue-ink">
+          <button type="button" onClick={onAgenda} className="mt-1 flex min-h-[44px] w-full items-center gap-2 text-left text-[14px] font-semibold leading-snug text-blue-ink">
             <span aria-hidden="true" className="num flex-shrink-0">{classNow?.current ? "●" : "→"}</span>
             <span>{classBanner}{classDetail}</span>
           </button>
@@ -235,7 +235,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                         </div>
                       </div>
                       <div className="flex flex-shrink-0 flex-col items-end gap-2 pt-0.5">
-                        <span className={`num text-[17px] font-semibold leading-none ${overdue ? "text-danger" : "text-ink"}`}>{task.due}</span>
+                        <span className={`num text-[16px] font-semibold leading-none ${overdue ? "text-danger" : "text-ink"}`}>{task.due}</span>
                         <PriorityDot level={task.priority} />
                       </div>
                     </button>

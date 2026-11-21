@@ -142,7 +142,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
 
         {scheduled.length > 0 && (
           <section aria-label="Recordatorios programados" className="flex flex-col gap-1.5">
-            <h2 className="px-1 font-display text-[18px] font-semibold leading-none text-ink-2">Programados</h2>
+            <h2 className="font-display text-[18px] font-semibold leading-none text-ink-2">Programados</h2>
             <ul className="overflow-hidden rounded-md bg-card">
               {scheduled.map((reminder, index) => (
                 <li key={reminder.id} className={`flex items-center gap-3 pl-4 ${index > 0 ? "border-t border-line" : ""}`}>
@@ -167,7 +167,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
           <div className="flex flex-col gap-4">
           {groupByDay(visible).map((group) => (
           <section key={group.key} aria-label={group.label} className="flex flex-col gap-1.5">
-          <h2 className="px-1 font-display text-[18px] font-semibold leading-none text-ink-2">{group.label}</h2>
+          <h2 className="font-display text-[18px] font-semibold leading-none text-ink-2">{group.label}</h2>
           <ul className="overflow-hidden rounded-md bg-card">
             {group.items.map((notification, index) => {
               const style = TYPE_STYLE[notification.type] ?? LEGACY_STYLE;

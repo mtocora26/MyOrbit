@@ -50,7 +50,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
             <LogoMark size={44} className="rounded-md" />
             <p className="mt-4 font-display text-[32px] font-semibold leading-none tracking-tight text-ink">MyOrbit</p>
           </div>
-          <p className="font-display text-[34px] font-semibold leading-none text-ink">{mode === "login" ? "Bienvenida de nuevo" : "Crea tu espacio"}</p>
+          <p className="font-display text-[32px] font-semibold leading-none text-ink">{mode === "login" ? "Bienvenida de nuevo" : "Crea tu espacio"}</p>
           <p className="mt-2 text-[14px] leading-relaxed text-ink-2">{mode === "login" ? "Ingresa para continuar con tu organización." : "Tu cuenta separa tus tareas y configuración personal."}</p>
 
           <div className="mt-7 flex rounded-md bg-line p-1">
