@@ -57,7 +57,7 @@ export function PendingChangesSheet({ open, onClose }: { open: boolean; onClose:
       ) : (
         <ul className="flex flex-col gap-2">
           {failed.map((op) => (
-            <li key={op.seq} className="rounded-lg border border-line px-3 py-3">
+            <li key={op.seq} className="rounded-md bg-wash px-3 py-3">
               <p className="text-[13px] font-semibold uppercase tracking-wide text-ink-3">{VERB[op.kind]}</p>
               <p className="mt-0.5 break-words text-[16px] font-semibold text-ink">{op.label}</p>
               <p className="mt-1 text-[14px] leading-snug text-danger">{op.error}</p>
