@@ -89,6 +89,24 @@ Con el emulador o un teléfono en modo depuración: abre `chrome://inspect` en C
 3. `./gradlew bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`.
 4. Sube a Play Console. Sube el `versionCode`/`versionName` de `app/build.gradle` en cada publicación.
 
-## Notificaciones y estado de red
+## Avisos en el teléfono (notificaciones locales)
 
-Fuera de este alcance: las notificaciones nativas son #142, y el aviso de conexión con `@capacitor/network` es la parte B de #178.
+La app programa sus propios avisos con `@capacitor/local-notifications` (`frontend/src/services/localReminders.ts`): Android los dispara a su hora **sin internet y con la app cerrada**, sin Firebase ni servidor. Se programan los próximos 7 días (máximo 60) para:
+
+| Aviso | Cuándo suena | Preferencia que lo controla |
+|---|---|---|
+| Clase | 30 min antes | Clases y eventos |
+| Evento con hora | A su hora de inicio | Clases y eventos |
+| Recordatorio personal | A su hora | Recordatorios personales |
+| Fecha límite de una tarea | 1 día y 1 hora antes | Fechas límite |
+| Parcial o presentación (evaluación con fecha) | 1 día antes, 1 hora antes y a la hora exacta | Parciales próximos |
+
+- Se recalculan al iniciar sesión, al volver a la app, al cambiar tareas/hábitos/recordatorios y al cambiar las preferencias. Sin conexión se conserva lo ya programado; al cerrar sesión se cancela todo.
+- El permiso de notificaciones se pide al crear el primer recordatorio, o con el interruptor «Avisos en este teléfono» del Perfil. Nunca al abrir la app.
+- Para que suenen a la hora exacta, Android 12+ exige el permiso «Alarmas y recordatorios». La app lo pide al activar «Avisos en este teléfono» y el Perfil muestra un botón «Permitir» mientras falte. Sin él el sistema puede retrasar los avisos varios minutos; algunos fabricantes (Xiaomi, Huawei...) además retrasan avisos con el ahorro de batería agresivo.
+- Un cambio hecho desde otro dispositivo (la web) llega al teléfono cuando la app se abre; los avisos no se actualizan solos en segundo plano.
+- Quedan fuera: hábitos pendientes, tareas vencidas, parciales y materias en riesgo (siguen llegando a la bandeja), y FCM (push remoto).
+
+## Estado de red
+
+El aviso de conexión con `@capacitor/network` es la parte B de #178.

@@ -24,7 +24,10 @@ import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
 import { hideSplash, useBackHandler } from "./hooks/useNativeApp";
 import { useResume } from "./hooks/useResume";
+import ReminderSetupSheet from "./components/ReminderSetupSheet";
+import { reminderSetupSteps } from "./services/devicePermissions";
 import BootScreen from "./components/BootScreen";
+import { clearLocalReminders, syncLocalReminders } from "./services/localReminders";
 import { ensureTimeZone, getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 /** Lo máximo que la animación de arranque retiene la app esperando al servidor. */
@@ -88,6 +91,30 @@ export default function App() {
 
   useEffect(() => { hideSplash(); }, []);
 
+  // En Android, el teléfono programa sus propios avisos (clases, recordatorios, fechas límite): se recalculan al
+  // iniciar sesión, al volver a la app y cada vez que cambian los datos. Sin sesión no deben quedar avisos.
+  const signedIn = session !== null;
+  useEffect(() => {
+    if (!signedIn || booting) return;
+    syncLocalReminders().catch(() => undefined);
+  }, [signedIn, booting, tasksRefreshTick, habitsRefreshTick]);
+
+  // En Android, al entrar se revisa que el teléfono deje sonar los avisos con la app cerrada; si falta algo, se explica
+  // y se lleva al ajuste. «Ahora no» lo deja para la próxima vez que se abra la app.
+  const [setupOpen, setSetupOpen] = useState(false);
+  useEffect(() => {
+    if (!signedIn || booting) return;
+    reminderSetupSteps().then((steps) => { if (steps.some((step) => !step.done)) setSetupOpen(true); }).catch(() => undefined);
+  }, [signedIn, booting]);
+
+  // Cambios hechos fuera de la app (otro dispositivo) o parciales editados: al volver a verla se reprograma.
+  useEffect(() => {
+    if (!signedIn || booting) return;
+    const onVisible = () => { if (document.visibilityState === "visible") syncLocalReminders().catch(() => undefined); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [signedIn, booting]);
+
   // Al recuperar la conexión, las pantallas vuelven a pedir sus datos.
   useEffect(() => {
     const refreshAll = () => { setTasksRefreshTick((prev) => prev + 1); setHabitsRefreshTick((prev) => prev + 1); };
@@ -110,6 +137,7 @@ export default function App() {
 
   async function handleLogout() {
     await logout();
+    clearLocalReminders().catch(() => undefined);
     setSession(null);
     setSubScreen(null);
     setActiveTab("home");
@@ -178,6 +206,7 @@ export default function App() {
       </div>
       {/* Fuera del área de contenido: el sheet y su velo cubren también la barra inferior. */}
       <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} onEventRequested={() => setEventOpen(true)} />
+      <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />
       <QuickEventSheet open={eventOpen} onClose={() => setEventOpen(false)} onSaved={() => setTasksRefreshTick((prev) => prev + 1)} />
     </div>
   );

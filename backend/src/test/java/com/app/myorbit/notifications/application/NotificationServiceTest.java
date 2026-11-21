@@ -39,7 +39,7 @@ class NotificationServiceTest {
 
     @Test
     void notifyUsesTheFactoryOfTheTypeAndSaves() {
-        NotificationService service = new NotificationService(repository, preferences, userZone, clock, allFactories);
+        NotificationService service = new NotificationService(repository, preferences, userZone, clock, mock(PushService.class), allFactories);
         when(repository.save(any(Notification.class))).then(returnsFirstArg());
 
         Notification saved = service.notify(new NotificationRequest(NotificationType.HABIT, "u1", "h1", "Leer", null));
@@ -54,7 +54,7 @@ class NotificationServiceTest {
     void failsAtStartupWhenATypeHasNoFactory() {
         List<NotificationFactory> incomplete = List.of(new DeadlineNotificationFactory(), new HabitNotificationFactory());
 
-        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, incomplete));
+        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, mock(PushService.class), incomplete));
     }
 
     @Test
@@ -62,7 +62,7 @@ class NotificationServiceTest {
         List<NotificationFactory> duplicated = List.of(new DeadlineNotificationFactory(), new DeadlineNotificationFactory(), new HabitNotificationFactory(),
                 new OverdueNotificationFactory(), new ExamNotificationFactory(), new AtRiskNotificationFactory(), new ClassNotificationFactory(), new PersonalReminderNotificationFactory());
 
-        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, duplicated));
+        assertThrows(IllegalStateException.class, () -> new NotificationService(repository, preferences, userZone, clock, mock(PushService.class), duplicated));
     }
 
     private Notification notificationOf(String userId, boolean read) {
@@ -74,7 +74,7 @@ class NotificationServiceTest {
     }
 
     private NotificationService service() {
-        return new NotificationService(repository, preferences, userZone, clock, allFactories);
+        return new NotificationService(repository, preferences, userZone, clock, mock(PushService.class), allFactories);
     }
 
     @Test

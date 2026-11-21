@@ -585,6 +585,19 @@ Evaluaciones de **todas** las materias del usuario que tienen fecha, de la más 
 ```
 
 
+## Notificaciones push (`/api/push`)
+
+Los avisos se guardan en la bandeja y, además, se envían a los dispositivos registrados de la cuenta (varios por usuario). Se respetan las preferencias de cada tipo de aviso. El envío corre en segundo plano y nunca hace fallar la acción que lo originó; si un dispositivo ya no existe (`404`/`410` del servicio push), se borra solo.
+
+| Método | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| `GET` | `/api/push/config` | | `200` `{webPublicKey, webAvailable, fcmAvailable}`: la clave VAPID para suscribirse y qué canales tiene el servidor |
+| `GET` | `/api/push/subscriptions` | | `200` dispositivos de la cuenta |
+| `POST` | `/api/push/subscriptions` | `{channel: WEB\|FCM, address, p256dh?, auth?}` | `201` dispositivo · `400` (en `WEB` faltan `p256dh` o `auth`) |
+| `DELETE` | `/api/push/subscriptions?address=` | | `204` (idempotente) |
+
+`address` es el endpoint de la suscripción en `WEB` o el token del dispositivo en `FCM`. Registrar de nuevo el mismo `address` lo actualiza; si era de otra cuenta, pasa a la actual. Web Push se activa con `myorbit.push.vapid.public-key` y `myorbit.push.vapid.private-key` (variables `MYORBIT_PUSH_VAPID_PUBLIC_KEY` y `MYORBIT_PUSH_VAPID_PRIVATE_KEY`); sin ellas el canal `WEB` no está disponible y el resto funciona igual.
+
 ## Zona horaria de la cuenta (`PUT /api/auth/me/timezone`)
 
 Los recordatorios, el «hoy» de los hábitos y el día en que se agrupan los avisos se calculan con la zona horaria de cada usuario, no con la del servidor (en la nube suele ser UTC).

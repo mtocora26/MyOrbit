@@ -5,6 +5,10 @@ import { useTheme } from "../hooks/useTheme";
 import { IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../components/icons";
 import type { AuthSession } from "../services/authApi";
 import { updateName, changePassword, updateTimeZone, availableTimeZones, detectTimeZone } from "../services/authApi";
+import { isNativeApp } from "../hooks/useNativeApp";
+import { localReminderPermission, localRemindersEnabled, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
+import ReminderSetupSheet from "../components/ReminderSetupSheet";
+import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "../services/pushApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 
 interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
@@ -12,6 +16,14 @@ interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; o
 export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }: Props) {
   const { theme, toggle: toggleTheme } = useTheme();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
+  // Avisos que el propio teléfono programa (solo en la app de Android).
+  const [deviceOn, setDeviceOn] = useState(false);
+  const [deviceMessage, setDeviceMessage] = useState<string | null>(null);
+  const [setupOpen, setSetupOpen] = useState(false);
+  // Avisos push del navegador o la PWA (no aplica dentro del APK).
+  const [webPush, setWebPush] = useState<WebPushState | null>(null);
+  const [webPushBusy, setWebPushBusy] = useState(false);
+  const [webPushMessage, setWebPushMessage] = useState<string | null>(null);
   const [prefsError, setPrefsError] = useState<string | null>(null);
   const [zoneError, setZoneError] = useState<string | null>(null);
   const [savingZone, setSavingZone] = useState(false);
@@ -119,6 +131,54 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
 
   useEffect(() => { loadPrefs(); }, []);
 
+  useEffect(() => {
+    if (!isNativeApp) return;
+    localReminderPermission().then((permission) => setDeviceOn(permission === "granted" && localRemindersEnabled()));
+  }, []);
+
+  useEffect(() => {
+    if (isNativeApp) return;
+    webPushState().then(setWebPush);
+  }, []);
+
+  async function changeWebPush() {
+    if (webPushBusy) return;
+    setWebPushBusy(true);
+    setWebPushMessage(null);
+    try {
+      if (webPush === "on") {
+        await disableWebPush();
+        setWebPush("off");
+      } else {
+        const next = await enableWebPush();
+        setWebPush(next);
+        if (next === "unavailable") setWebPushMessage("El servidor aún no tiene avisos push configurados.");
+      }
+    } catch (err) {
+      setWebPushMessage(err instanceof Error ? err.message : "No fue posible cambiar los avisos push");
+    } finally {
+      setWebPushBusy(false);
+    }
+  }
+
+  async function changeDevice() {
+    setDeviceMessage(null);
+    if (deviceOn) {
+      setLocalRemindersEnabled(false);
+      setDeviceOn(false);
+      syncLocalReminders().catch(() => undefined);
+      return;
+    }
+    const permission = await requestLocalReminderPermission();
+    if (permission !== "granted") {
+      setDeviceMessage("Android no dio el permiso. Actívalo en Ajustes → Aplicaciones → MyOrbit → Notificaciones.");
+      return;
+    }
+    setLocalRemindersEnabled(true);
+    setDeviceOn(true);
+    syncLocalReminders().catch(() => undefined);
+  }
+
   // Se muestra el cambio al instante y se revierte si el servidor no lo guarda.
   async function changeZone(zone: string) {
     if (savingZone) return;
@@ -142,6 +202,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     setSavingPrefs(true);
     try {
       setPrefs(await updateNotificationPreferences(next));
+      syncLocalReminders().catch(() => undefined);
     } catch (err) {
       setPrefs(previous);
       setPrefsError(err instanceof Error ? err.message : "No fue posible guardar tus preferencias");
@@ -232,6 +293,24 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         <Section id="notifications" title="Notificaciones" summary={prefs ? `${Object.values(prefs).filter(Boolean).length} de ${Object.values(prefs).length} activas` : undefined}>
           {prefs ? (
             <>
+              {isNativeApp && (
+                <>
+                  <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Avisos en este teléfono" sub="Suenan a su hora aunque la app esté cerrada y sin internet" on={deviceOn} onChange={changeDevice} />
+                  <button onClick={() => setSetupOpen(true)} className="flex min-h-[44px] w-full items-center justify-between gap-3 px-4 py-2 text-left">
+                    <span className="text-[14px] text-ink-2">Comprobar que los avisos lleguen con la app cerrada</span>
+                    <span className="flex-shrink-0 text-[14px] font-semibold text-coral-ink">Revisar</span>
+                  </button>
+                  {deviceMessage && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{deviceMessage}</p>}
+                </>
+              )}
+              {!isNativeApp && (webPush === "on" || webPush === "off" || webPush === "denied") && (
+                <>
+                  <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Avisos push en este dispositivo" sub="Llegan aunque la app esté cerrada" on={webPush === "on"} onChange={changeWebPush} />
+                  {webPush === "denied" && <p className="px-4 py-2 text-[14px] text-ink-2">El navegador bloqueó las notificaciones. Permítelas en los ajustes del sitio.</p>}
+                </>
+              )}
+              {!isNativeApp && webPush === "needs-install" && <p className="px-4 py-3 text-[14px] text-ink-2">En iPhone, instala MyOrbit en la pantalla de inicio para recibir avisos push.</p>}
+              {webPushMessage && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{webPushMessage}</p>}
               <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Fechas límite" sub="Al crear una tarea con fecha, 1 día y 1 hora antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
               <ToggleRow icon={<IconBell size={16} color="var(--color-violet)" />} iconBg="var(--color-violet-wash)" label="Hábitos pendientes" sub="Recordatorio al final del día de lo que falta" on={prefs.habit} onChange={() => changePref("habit")} />
               <ToggleRow icon={<IconBell size={16} color="var(--color-amber)" />} iconBg="var(--color-amber-wash)" label="Tareas vencidas" sub="Resumen cada mañana de lo que se pasó de fecha" on={prefs.overdue} onChange={() => changePref("overdue")} />
@@ -275,6 +354,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           Cerrar sesión
         </button>
       </div>
+      <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />
     </div>
   );
 }
