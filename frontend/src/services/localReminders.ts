@@ -1,6 +1,6 @@
 import { LocalNotifications, type LocalNotificationSchema } from "@capacitor/local-notifications";
 import { isNativeApp } from "../hooks/useNativeApp";
-import { fetchClasses } from "./academicApi";
+import { fetchAgendaEvaluations, fetchClasses } from "./academicApi";
 import { fetchEvents } from "./eventsApi";
 import { fetchNotificationPreferences } from "./notificationsApi";
 import { fetchReminders } from "./remindersApi";
@@ -21,6 +21,12 @@ const CLASS_LEAD_MS = 30 * 60_000;
 const DEADLINE_LEADS = [
   { ms: 24 * 60 * 60_000, label: "mañana" },
   { ms: 60 * 60_000, label: "en una hora" },
+];
+/** Parciales y presentaciones: un día antes, una hora antes y a la hora exacta. */
+const EXAM_LEADS = [
+  { ms: 24 * 60 * 60_000, label: "mañana" },
+  { ms: 60 * 60_000, label: "en una hora" },
+  { ms: 0, label: "ahora" },
 ];
 const STORAGE_KEY = "myorbit.localReminders";
 
@@ -84,15 +90,39 @@ export async function requestLocalReminderPermission(): Promise<LocalReminderPer
   }
 }
 
+/**
+ * Android 12+ solo dispara a la hora exacta si el usuario permite «Alarmas y recordatorios»; sin eso el sistema
+ * puede retrasar el aviso varios minutos. En versiones anteriores siempre es true.
+ */
+export async function exactAlarmsAllowed(): Promise<boolean> {
+  if (!isNativeApp) return false;
+  try {
+    return (await LocalNotifications.checkExactNotificationSetting()).exact_alarm === "granted";
+  } catch {
+    return false;
+  }
+}
+
+/** Abre el ajuste del sistema para permitir alarmas exactas. Llámalo desde un toque del usuario. */
+export async function requestExactAlarms(): Promise<boolean> {
+  if (!isNativeApp) return false;
+  try {
+    return (await LocalNotifications.changeExactNotificationSetting()).exact_alarm === "granted";
+  } catch {
+    return false;
+  }
+}
+
 async function planReminders(): Promise<PlannedReminder[] | null> {
   const from = todayInputValue();
   const to = addDaysInputValue(HORIZON_DAYS);
-  const [preferences, classes, events, reminders, tasks] = await Promise.all([
+  const [preferences, classes, events, reminders, tasks, evaluations] = await Promise.all([
     fetchNotificationPreferences(),
     fetchClasses(from, to),
     fetchEvents(from, to),
     fetchReminders(),
     fetchTasks({ done: false }),
+    fetchAgendaEvaluations(),
   ]);
 
   const planned: PlannedReminder[] = [];
@@ -135,6 +165,25 @@ async function planReminders(): Promise<PlannedReminder[] | null> {
           at: new Date(due.getTime() - lead.ms),
           title: "Fecha límite",
           body: `La tarea "${task.title}" vence ${lead.label}`,
+        });
+      }
+    }
+  }
+
+  if (preferences.exam) {
+    for (const evaluation of evaluations) {
+      const due = localDate(evaluation.due);
+      if (!due) continue;
+      const hasTime = evaluation.due.includes("T") && !evaluation.due.includes("T00:00");
+      const label = `${evaluation.name} (${evaluation.subjectName})`;
+      for (const lead of EXAM_LEADS) {
+        // Sin hora definida solo tiene sentido avisar con un día de antelación.
+        if (!hasTime && lead.ms < 24 * 60 * 60_000) continue;
+        planned.push({
+          key: `exam:${evaluation.id}:${lead.ms}`,
+          at: new Date(due.getTime() - lead.ms),
+          title: lead.ms === 0 ? "Es ahora" : "Parcial próximo",
+          body: lead.ms === 0 ? `Empieza ${label}` : `${label} es ${lead.label}`,
         });
       }
     }

@@ -99,10 +99,11 @@ La app programa sus propios avisos con `@capacitor/local-notifications` (`fronte
 | Evento con hora | A su hora de inicio | Clases y eventos |
 | Recordatorio personal | A su hora | Recordatorios personales |
 | Fecha límite de una tarea | 1 día y 1 hora antes | Fechas límite |
+| Parcial o presentación (evaluación con fecha) | 1 día antes, 1 hora antes y a la hora exacta | Parciales próximos |
 
 - Se recalculan al iniciar sesión, al volver a la app, al cambiar tareas/hábitos/recordatorios y al cambiar las preferencias. Sin conexión se conserva lo ya programado; al cerrar sesión se cancela todo.
 - El permiso de notificaciones se pide al crear el primer recordatorio, o con el interruptor «Avisos en este teléfono» del Perfil. Nunca al abrir la app.
-- Android 12+ puede entregar los avisos con unos minutos de retraso si el usuario no concede «Alarmas y recordatorios»; algunos fabricantes (Xiaomi, Huawei...) además retrasan avisos con el ahorro de batería agresivo.
+- Para que suenen a la hora exacta, Android 12+ exige el permiso «Alarmas y recordatorios». La app lo pide al activar «Avisos en este teléfono» y el Perfil muestra un botón «Permitir» mientras falte. Sin él el sistema puede retrasar los avisos varios minutos; algunos fabricantes (Xiaomi, Huawei...) además retrasan avisos con el ahorro de batería agresivo.
 - Un cambio hecho desde otro dispositivo (la web) llega al teléfono cuando la app se abre; los avisos no se actualizan solos en segundo plano.
 - Quedan fuera: hábitos pendientes, tareas vencidas, parciales y materias en riesgo (siguen llegando a la bandeja), y FCM (push remoto).
 

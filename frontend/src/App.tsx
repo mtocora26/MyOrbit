@@ -97,6 +97,14 @@ export default function App() {
     syncLocalReminders().catch(() => undefined);
   }, [signedIn, booting, tasksRefreshTick, habitsRefreshTick]);
 
+  // Cambios hechos fuera de la app (otro dispositivo) o parciales editados: al volver a verla se reprograma.
+  useEffect(() => {
+    if (!signedIn || booting) return;
+    const onVisible = () => { if (document.visibilityState === "visible") syncLocalReminders().catch(() => undefined); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [signedIn, booting]);
+
   // Al recuperar la conexión, las pantallas vuelven a pedir sus datos.
   useEffect(() => {
     const refreshAll = () => { setTasksRefreshTick((prev) => prev + 1); setHabitsRefreshTick((prev) => prev + 1); };

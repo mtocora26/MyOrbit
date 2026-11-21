@@ -6,7 +6,7 @@ import { IconMoon, IconBell, IconKey, IconUser, IconSettings } from "../componen
 import type { AuthSession } from "../services/authApi";
 import { updateName, changePassword, updateTimeZone, availableTimeZones, detectTimeZone } from "../services/authApi";
 import { isNativeApp } from "../hooks/useNativeApp";
-import { localReminderPermission, localRemindersEnabled, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
+import { exactAlarmsAllowed, requestExactAlarms, localReminderPermission, localRemindersEnabled, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
 import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "../services/pushApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 
@@ -18,6 +18,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   // Avisos que el propio teléfono programa (solo en la app de Android).
   const [deviceOn, setDeviceOn] = useState(false);
   const [deviceMessage, setDeviceMessage] = useState<string | null>(null);
+  const [exactOk, setExactOk] = useState(true);
   // Avisos push del navegador o la PWA (no aplica dentro del APK).
   const [webPush, setWebPush] = useState<WebPushState | null>(null);
   const [webPushBusy, setWebPushBusy] = useState(false);
@@ -132,6 +133,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   useEffect(() => {
     if (!isNativeApp) return;
     localReminderPermission().then((permission) => setDeviceOn(permission === "granted" && localRemindersEnabled()));
+    exactAlarmsAllowed().then(setExactOk);
   }, []);
 
   useEffect(() => {
@@ -174,6 +176,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     }
     setLocalRemindersEnabled(true);
     setDeviceOn(true);
+    if (!(await exactAlarmsAllowed())) setExactOk(await requestExactAlarms());
     syncLocalReminders().catch(() => undefined);
   }
 
@@ -294,6 +297,12 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
               {isNativeApp && (
                 <>
                   <ToggleRow icon={<IconBell size={16} color="var(--color-coral)" />} iconBg="var(--color-coral-wash)" label="Avisos en este teléfono" sub="Suenan a su hora aunque la app esté cerrada y sin internet" on={deviceOn} onChange={changeDevice} />
+                  {deviceOn && !exactOk && (
+                    <div className="flex items-center justify-between gap-3 px-4 py-2">
+                      <p className="text-[14px] text-ink-2">Sin «Alarmas y recordatorios», Android puede retrasar los avisos varios minutos.</p>
+                      <button onClick={async () => { setExactOk(await requestExactAlarms()); syncLocalReminders().catch(() => undefined); }} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Permitir</button>
+                    </div>
+                  )}
                   {deviceMessage && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{deviceMessage}</p>}
                 </>
               )}
