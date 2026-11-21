@@ -92,3 +92,14 @@ Con el emulador o un teléfono en modo depuración: abre `chrome://inspect` en C
 ## Notificaciones y estado de red
 
 Fuera de este alcance: las notificaciones nativas son #142, y el aviso de conexión con `@capacitor/network` es la parte B de #178.
+
+## Datos sin conexión (lectura)
+
+La app y la PWA guardan una copia de cada lectura de la API (`GET`) en IndexedDB (`frontend/src/services/offlineStore.ts`, enganchada al `fetch` global en `apiError.ts`). Si después no hay red o el servidor no responde (502/503/504), ese mismo `GET` devuelve la última copia y las pantallas siguen mostrando lo último que se vio, con el aviso «Mostrando lo guardado el …».
+
+- **Por usuario:** la clave lleva el id de la sesión. Cerrar sesión o entrar con otra cuenta borra toda la copia.
+- **Qué no se guarda:** `/api/auth`, `/api/push`, `/api/admin`, ni respuestas que no sean JSON correcto. Un 401 o un 4xx nunca se reemplaza por la copia.
+- **Solo lectura:** crear, editar o borrar sin red sigue fallando con «No se pudo conectar con el servidor». Escribir sin conexión es el issue #216.
+- **Tope y versión:** máximo 150 copias (se descartan las más viejas); si cambia `DB_VERSION` la copia anterior se descarta.
+- **Límite conocido:** si el servidor está dormido (Render tarda ~30 s en despertar) y la petición no falla, sino que tarda, se ve el esqueleto hasta que responde. La copia solo entra cuando la petición falla.
+- Sirve también a los avisos locales: `localReminders.ts` planifica con la copia cuando el servidor no responde.

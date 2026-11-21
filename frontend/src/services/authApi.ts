@@ -1,6 +1,7 @@
 import { readErrorMessage } from "./apiError";
 import { API_BASE_URL } from "./apiConfig";
 import { clearCache } from "./cache";
+import { clearOfflineData } from "./offlineStore";
 
 export interface AuthSession {
   token: string;
@@ -41,6 +42,7 @@ async function submit(path: string, body: Record<string, string>): Promise<AuthS
   }
   const session = await response.json() as AuthSession;
   clearCache();
+  await clearOfflineData();
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
 }
@@ -56,6 +58,7 @@ export function register(name: string, email: string, password: string): Promise
 export function clearSession(): void {
   localStorage.removeItem(SESSION_KEY);
   clearCache();
+  void clearOfflineData();
 }
 
 export async function logout(): Promise<void> {
