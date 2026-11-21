@@ -24,6 +24,8 @@ import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
 import { hideSplash, useBackHandler } from "./hooks/useNativeApp";
 import { useResume } from "./hooks/useResume";
+import ReminderSetupSheet from "./components/ReminderSetupSheet";
+import { reminderSetupSteps } from "./services/devicePermissions";
 import BootScreen from "./components/BootScreen";
 import { clearLocalReminders, syncLocalReminders } from "./services/localReminders";
 import { ensureTimeZone, getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
@@ -96,6 +98,14 @@ export default function App() {
     if (!signedIn || booting) return;
     syncLocalReminders().catch(() => undefined);
   }, [signedIn, booting, tasksRefreshTick, habitsRefreshTick]);
+
+  // En Android, al entrar se revisa que el teléfono deje sonar los avisos con la app cerrada; si falta algo, se explica
+  // y se lleva al ajuste. «Ahora no» lo deja para la próxima vez que se abra la app.
+  const [setupOpen, setSetupOpen] = useState(false);
+  useEffect(() => {
+    if (!signedIn || booting) return;
+    reminderSetupSteps().then((steps) => { if (steps.some((step) => !step.done)) setSetupOpen(true); }).catch(() => undefined);
+  }, [signedIn, booting]);
 
   // Cambios hechos fuera de la app (otro dispositivo) o parciales editados: al volver a verla se reprograma.
   useEffect(() => {
@@ -196,6 +206,7 @@ export default function App() {
       </div>
       {/* Fuera del área de contenido: el sheet y su velo cubren también la barra inferior. */}
       <QuickAddSheet open={fabOpen} onClose={() => setFabOpen(false)} onTaskCreated={() => setTasksRefreshTick((prev) => prev + 1)} onHabitCreated={() => setHabitsRefreshTick((prev) => prev + 1)} onEventRequested={() => setEventOpen(true)} />
+      <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />
       <QuickEventSheet open={eventOpen} onClose={() => setEventOpen(false)} onSaved={() => setTasksRefreshTick((prev) => prev + 1)} />
     </div>
   );

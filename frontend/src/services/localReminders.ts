@@ -28,6 +28,8 @@ const EXAM_LEADS = [
   { ms: 60 * 60_000, label: "en una hora" },
   { ms: 0, label: "ahora" },
 ];
+/** Canal creado en MainActivity.java con sonido, vibración y prioridad alta. */
+const CHANNEL_ID = "avisos";
 const STORAGE_KEY = "myorbit.localReminders";
 
 interface PlannedReminder {
@@ -241,6 +243,7 @@ async function runSync(): Promise<void> {
       id: notificationId(item.key),
       title: item.title,
       body: item.body,
+      channelId: CHANNEL_ID,
       schedule: { at: item.at, allowWhileIdle: true },
     }));
     await LocalNotifications.schedule({ notifications });
