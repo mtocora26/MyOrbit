@@ -105,8 +105,22 @@ La app programa sus propios avisos con `@capacitor/local-notifications` (`fronte
 - El permiso de notificaciones se pide al crear el primer recordatorio, o con el interruptor «Avisos en este teléfono» del Perfil. Nunca al abrir la app.
 - Para que suenen a la hora exacta, Android 12+ exige el permiso «Alarmas y recordatorios». La app lo pide al activar «Avisos en este teléfono» y el Perfil muestra un botón «Permitir» mientras falte. Sin él el sistema puede retrasar los avisos varios minutos; algunos fabricantes (Xiaomi, Huawei...) además retrasan avisos con el ahorro de batería agresivo.
 - Un cambio hecho desde otro dispositivo (la web) llega al teléfono cuando la app se abre; los avisos no se actualizan solos en segundo plano.
-- Quedan fuera: hábitos pendientes, tareas vencidas, parciales y materias en riesgo (siguen llegando a la bandeja), y FCM (push remoto).
+- Quedan fuera: hábitos pendientes, tareas vencidas y materias en riesgo (siguen llegando a la bandeja), y FCM (push remoto).
+
+- Al iniciar sesión, una hoja («Que tus avisos lleguen») revisa notificaciones, alarmas exactas, batería sin restricciones y el inicio automático del fabricante (Tecno, Xiaomi, Huawei, Oppo, Vivo), y lleva directo a cada ajuste. Se reabre desde Perfil → Notificaciones. Sin el inicio automático, capas como HiOS (Griffin) matan la app al cerrarla y la alarma se pierde.
+- Los avisos usan el canal nativo `avisos` (`MainActivity.java`) con prioridad alta, sonido y vibración; el canal por defecto del plugin no sonaba.
 
 ## Estado de red
 
 El aviso de conexión con `@capacitor/network` es la parte B de #178.
+
+## Datos sin conexión (lectura)
+
+La app y la PWA guardan una copia de cada lectura de la API (`GET`) en IndexedDB (`frontend/src/services/offlineStore.ts`, enganchada al `fetch` global en `apiError.ts`). Si después no hay red o el servidor no responde (502/503/504), ese mismo `GET` devuelve la última copia y las pantallas siguen mostrando lo último que se vio, con el aviso «Mostrando lo guardado el …».
+
+- **Por usuario:** la clave lleva el id de la sesión. Cerrar sesión o entrar con otra cuenta borra toda la copia.
+- **Qué no se guarda:** `/api/auth`, `/api/push`, `/api/admin`, ni respuestas que no sean JSON correcto. Un 401 o un 4xx nunca se reemplaza por la copia.
+- **Solo lectura:** crear, editar o borrar sin red sigue fallando con «No se pudo conectar con el servidor». Escribir sin conexión es el issue #216.
+- **Tope y versión:** máximo 150 copias (se descartan las más viejas); si cambia `DB_VERSION` la copia anterior se descarta.
+- **Límite conocido:** si el servidor está dormido (Render tarda ~30 s en despertar) y la petición no falla, sino que tarda, se ve el esqueleto hasta que responde. La copia solo entra cuando la petición falla.
+- Sirve también a los avisos locales: `localReminders.ts` planifica con la copia cuando el servidor no responde.
