@@ -16,7 +16,7 @@ export default function WelcomeOnboarding({ name, onClose, onCreateTask, onConfi
           <div className="absolute right-14 top-5 h-28 w-28 rounded-full border border-white/10" />
           <div className="relative flex items-start justify-between gap-5">
             <div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-coral text-[19px] font-bold">O</div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-coral text-[19px] font-bold">O</div>
               <h1 id="welcome-title" className="mt-5 text-[25px] font-bold leading-tight">Bienvenida a tu órbita, {name}</h1>
               <p className="mt-2 max-w-md text-[14px] leading-relaxed text-ink-3">No necesitas configurar todo ahora. Empieza por lo que te resulte útil y completa tu espacio cuando quieras.</p>
             </div>
@@ -40,7 +40,7 @@ export default function WelcomeOnboarding({ name, onClose, onCreateTask, onConfi
 
 function StartOption({ icon, color, background, title, description, onClick }: { icon: React.ReactNode; color: string; background: string; title: string; description: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="rounded-lg border border-line p-4 text-left transition-all hover:-translate-y-0.5 hover:border-line-strong hover:">
+    <button onClick={onClick} className="rounded-md bg-wash p-4 text-left transition-transform duration-150 ease-out active:scale-[0.97]">
       <div className="flex h-9 w-9 items-center justify-center rounded-md" style={{ color, background }}>{icon}</div>
       <p className="mt-4 text-[14px] font-bold text-ink">{title}</p>
       <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{description}</p>

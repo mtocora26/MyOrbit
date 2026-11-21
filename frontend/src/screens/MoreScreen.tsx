@@ -38,7 +38,7 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
       </header>
 
       <div className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-3 lg:mx-0 lg:max-w-[640px] lg:px-8 [&>*]:shrink-0">
-        <button onClick={onProfile} className="flex min-h-[64px] items-center gap-3 rounded-md border border-line bg-card p-3 text-left active:bg-wash">
+        <button onClick={onProfile} className="flex min-h-[64px] items-center gap-3 rounded-md bg-card p-3 text-left active:bg-wash">
           <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-coral font-display text-[20px] font-semibold text-night" aria-hidden="true">{initials(userName)}</span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[16px] font-semibold text-ink">{userName}</span>
@@ -49,7 +49,7 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
 
         <div className="grid grid-cols-2 gap-3">
           {tiles.map((tile) => (
-            <button key={tile.label} onClick={tile.action} className="flex min-h-[96px] flex-col items-start justify-between rounded-md border border-line bg-card p-3.5 text-left active:bg-wash">
+            <button key={tile.label} onClick={tile.action} className="flex min-h-[96px] flex-col items-start justify-between rounded-md bg-card p-3.5 text-left active:bg-wash">
               <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: tile.bg, color: tile.color }}>{tile.icon}</span>
               <span className="flex w-full items-center justify-between gap-2">
                 <span className="text-[16px] font-semibold text-ink">{tile.label}</span>

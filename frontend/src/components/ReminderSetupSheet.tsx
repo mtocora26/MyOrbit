@@ -46,7 +46,7 @@ export default function ReminderSetupSheet({ open, onClose }: Props) {
       </p>
       <ul className="flex flex-col gap-2">
         {steps?.map((step) => (
-          <li key={step.id} className="flex items-center gap-3 rounded-lg border border-line px-3 py-3">
+          <li key={step.id} className="flex items-center gap-3 rounded-md bg-wash px-3 py-3">
             <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center ${step.done ? "text-green" : "text-ink-3"}`} aria-hidden="true">
               {step.done ? <IconCheckCircle size={22} /> : <span className="h-5 w-5 rounded-full border-2 border-current" />}
             </span>

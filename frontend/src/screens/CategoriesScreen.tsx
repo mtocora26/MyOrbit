@@ -132,7 +132,7 @@ export default function CategoriesScreen({ onBack }: Props) {
         ) : sorted.length === 0 && !loadError ? (
           <EmptyState title="Aún no tienes categorías" sub="Agrupa tus tareas por materia, proyecto o ámbito de tu vida." action="Crear categoría" onAction={() => openForm(null)} />
         ) : (
-          <ul className="overflow-hidden rounded-md border border-line bg-card">
+          <ul className="overflow-hidden rounded-md bg-card">
             {sorted.map((category, index) => {
               const isChild = !!category.parentId && categories.some((item) => item.id === category.parentId);
               return (

@@ -90,7 +90,7 @@ export default function AdminScreen({ onBack }: Props) {
       />
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-8 flex flex-col gap-4 lg:px-8 [&>*]:shrink-0">
-        <dl className="grid grid-cols-3 divide-x divide-line rounded-md border border-line bg-card">
+        <dl className="grid grid-cols-3 divide-x divide-line rounded-md bg-card">
           {stats.map((stat) => (
             <div key={stat.label} className="px-3 py-3">
               <dt className="text-[13px] font-medium text-ink-2">{stat.label}</dt>
@@ -123,7 +123,7 @@ export default function AdminScreen({ onBack }: Props) {
               const open = expanded === user.id;
               const busy = busyId === user.id;
               return (
-                <li key={user.id} className="overflow-hidden rounded-md border border-line bg-card">
+                <li key={user.id} className="overflow-hidden rounded-md bg-card">
                   <button className="flex w-full items-center gap-3.5 px-4 py-3 text-left" onClick={() => { setExpanded(open ? null : user.id); setConfirmDelete(null); }} aria-expanded={open}>
                     <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md text-[15px] font-semibold text-night" style={{ background: avatarColor(user.id) }} aria-hidden="true">{initials(user.name)}</span>
                     <span className="min-w-0 flex-1">

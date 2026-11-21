@@ -350,7 +350,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           <ToggleRow icon={<IconMoon size={16} color="var(--color-ink)" />} iconBg="var(--color-wash)" label="Modo oscuro" sub="Tema oscuro de la interfaz" on={theme === "dark"} onChange={toggleTheme} />
         </Section>
 
-        <button onClick={onLogout} className="w-full py-3.5 rounded-lg border-2 border-line text-[14px] font-bold text-ink-2 active:scale-[0.98] transition-transform mt-2">
+        <button onClick={onLogout} className="w-full min-h-[44px] py-3 rounded-md bg-wash text-[14px] font-bold text-ink-2 active:scale-[0.98] transition-transform mt-2">
           Cerrar sesión
         </button>
       </div>
@@ -363,7 +363,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
 function Section({ id, title, summary, forceOpen, children }: { id: string; title: string; summary?: string; forceOpen?: boolean; children: React.ReactNode }) {
   return (
     <CollapsibleSection id={`profile-${id}`} title={title} summary={summary} forceOpen={forceOpen}>
-      <div className="bg-card rounded-lg overflow-hidden divide-y divide-paper">
+      <div className="bg-card rounded-md overflow-hidden divide-y divide-line">
         {children}
       </div>
     </CollapsibleSection>
