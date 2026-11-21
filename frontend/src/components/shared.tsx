@@ -73,6 +73,29 @@ export function PendingMark({ className = "" }: { className?: string }) {
   );
 }
 
+// ─── ChoiceChip ───────────────────────────────────────────────────────────────
+// Un solo lenguaje para elegir una opción entre varias (fecha, prioridad, categoría, semestre, filtros): relleno
+// `wash` sin borde; la elegida pasa a `coral-wash` con texto `coral-ink`. Misma forma en ambos estados, así nada salta.
+export const choiceChip = "flex min-h-[44px] flex-shrink-0 items-center justify-center gap-1.5 rounded-md px-3 text-[14px] font-semibold transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.97]";
+export const choiceChipOn = "bg-coral-wash text-coral-ink";
+export const choiceChipOff = "bg-wash text-ink-2";
+
+export function ChoiceChip({ selected, onClick, children, className = "", role = "radio", ...rest }: { selected: boolean; onClick: () => void; children: ReactNode; className?: string; role?: "radio" | "button"; "aria-label"?: string }) {
+  return (
+    <button
+      type="button"
+      role={role === "radio" ? "radio" : undefined}
+      aria-checked={role === "radio" ? selected : undefined}
+      aria-pressed={role === "button" ? selected : undefined}
+      onClick={onClick}
+      className={`${choiceChip} ${selected ? choiceChipOn : choiceChipOff} ${className}`}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function CategoryBadge({ name, color }: { name: string; color?: string }) {
   const hex = color || "#667085";
   return (
@@ -149,14 +172,14 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
               role="radio"
               aria-checked={selected}
               onClick={() => onChange(category.id)}
-              className={`flex h-11 flex-shrink-0 items-center gap-2 rounded-md border px-3 text-[14px] font-semibold ${selected ? "border-ink bg-wash text-ink" : "border-line text-ink-2"}`}
+              className={`${choiceChip} ${selected ? choiceChipOn : choiceChipOff}`}
             >
               <span className="h-2.5 w-2.5 flex-shrink-0 rounded-[2px]" style={{ background: category.color }} aria-hidden="true" />
               {labelOf(category)}
             </button>
           );
         })}
-        <button type="button" onClick={() => setCreating(true)} aria-label="Nueva categoría" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md border border-dashed border-line-strong text-ink-2">
+        <button type="button" onClick={() => setCreating(true)} aria-label="Nueva categoría" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-wash text-ink-2">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         </button>
       </div>

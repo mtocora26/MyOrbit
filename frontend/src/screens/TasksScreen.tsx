@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
+import { CategoryBadge, ChoiceChip, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
 import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
@@ -249,15 +249,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
         )}
         <div className="flex gap-2 pb-3 overflow-x-auto no-scrollbar">
           {DATE_PRESETS.map(({ id: f, label }) => (
-            <button
-              key={f}
-              onClick={() => setDatePreset(f)}
-              aria-pressed={datePreset === f}
-              className="flex-shrink-0 min-h-[44px] rounded-md px-4 text-[14px] font-semibold transition-colors duration-150"
-              style={{ background: datePreset === f ? "var(--color-strong)" : "var(--color-wash)", color: datePreset === f ? "var(--color-on-strong)" : "var(--color-ink-2)" }}
-            >
-              {label}
-            </button>
+            <ChoiceChip key={f} role="button" selected={datePreset === f} onClick={() => setDatePreset(f)} className="px-4">{label}</ChoiceChip>
           ))}
           <select value={doneFilter} onChange={(e) => setDoneFilter(e.target.value as DoneFilter)} aria-label="Filtrar por estado" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
             <option value="todas">Estado: todas</option>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
+import { ChoiceChip, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
 import { IconBell, IconCalendar, IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification, type NotificationType } from "../services/notificationsApi";
 import { deleteReminder, fetchReminders, type PersonalReminder } from "../services/remindersApi";
@@ -132,9 +132,9 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
       />
 
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
-        <div role="radiogroup" aria-label="Filtrar notificaciones" className="flex self-start rounded-md bg-wash p-1">
+        <div role="radiogroup" aria-label="Filtrar notificaciones" className="flex gap-2">
           {([["todas", "Todas"], ["sin-leer", "Sin leer"]] as const).map(([value, label]) => (
-            <button key={value} type="button" role="radio" aria-checked={filter === value} onClick={() => setFilter(value)} className="min-h-[44px] rounded-[4px] px-4 text-[14px] font-semibold" style={{ background: filter === value ? "var(--color-card)" : "transparent", color: filter === value ? "var(--color-ink)" : "var(--color-ink-2)" }}>{label}</button>
+            <ChoiceChip key={value} selected={filter === value} onClick={() => setFilter(value)} className="flex-1">{label}</ChoiceChip>
           ))}
         </div>
 
