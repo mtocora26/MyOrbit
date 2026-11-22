@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChoiceChip, ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton } from "../components/shared";
 import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
+import { flushPending, runUndoable } from "../services/undo";
 import { createHabit, deleteHabit, fetchHabitSummaries, fetchHabits, toLocalKey, todayKey, updateHabit, updateHabitCompletion, completeLabel, type Habit, type HabitType, type HabitStats, type HabitSummary, type MonthlyGoal } from "../services/habitsApi";
 
 interface Props { onBack: () => void; refreshTick: number; }
@@ -72,14 +73,6 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
   // Sin la lista real no se afirma «0/0 hábitos hoy».
   const habitsKnown = !loading && !(error && habits.length === 0);
   const completion = habits.length ? Math.round((doneToday / habits.length) * 100) : 0;
-  const weekDates = useMemo(() => {
-    const today = new Date();
-    const offset = today.getDay() === 0 ? -6 : 1 - today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + offset);
-    return DAYS.map((_, index) => { const date = new Date(monday); date.setDate(monday.getDate() + index); return date; });
-  }, []);
-
   async function toggleHabit(habit: Habit) {
     const completed = habit.completedDates.includes(todayKey());
     try {
@@ -93,6 +86,26 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
       setSaving(false);
     }
   }
+
+  // Un día del calendario del mes: se ve al instante y se confirma al vencer el plazo de «Deshacer».
+  function toggleHabitDay(habit: Habit, date: string, completed: boolean) {
+    const withDay = (item: Habit) => item.id !== habit.id ? item : { ...item, completedDates: [...new Set([...item.completedDates, date])] };
+    const withoutDay = (item: Habit) => item.id !== habit.id ? item : { ...item, completedDates: item.completedDates.filter((day) => day !== date) };
+    const label = new Date(`${date}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short" });
+    runUndoable({
+      message: completed ? `Marcado: ${label}` : `Desmarcado: ${label}`,
+      apply: () => setHabits((current) => current.map(completed ? withDay : withoutDay)),
+      restore: () => setHabits((current) => current.map(completed ? withoutDay : withDay)),
+      commit: async () => {
+        const updated = await updateHabitCompletion(habit.id, completed, date);
+        setHabits((current) => current.map((item) => item.id === updated.id ? updated : item));
+        setSummaryTick((tick) => tick + 1);
+      },
+    });
+  }
+
+  // Al salir de la pantalla lo que espera «Deshacer» se confirma en el servidor.
+  useEffect(() => flushPending, []);
 
   async function submitHabit(event: React.FormEvent) {
     event.preventDefault();
@@ -243,13 +256,13 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
         )}
 
         {error && <ErrorBanner message={error} onRetry={loadHabits} />}
-        {loading ? <HabitListSkeleton /> : habits.length === 0 && error ? null : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : <div className="overflow-hidden rounded-md bg-card divide-y divide-line">{habits.map((habit) => <HabitCard key={habit.id} habit={habit} weekDates={weekDates} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}{!creating && <button onClick={startCreate} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nuevo hábito</button>}</div>}
+        {loading ? <HabitListSkeleton /> : habits.length === 0 && error ? null : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : <div className="overflow-hidden rounded-md bg-card divide-y divide-line">{habits.map((habit) => <HabitCard key={habit.id} habit={habit} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onToggleDay={(date, completed) => toggleHabitDay(habit, date, completed)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}{!creating && <button onClick={startCreate} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nuevo hábito</button>}</div>}
       </div>
     </div>
   );
 }
 
-function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySummary, onToggle, onEdit, onDelete }: { habit: Habit; weekDates: Date[]; saving: boolean; summary?: HabitSummary; summaryFailed: boolean; onRetrySummary: () => void; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
+function HabitCard({ habit, saving, summary, summaryFailed, onRetrySummary, onToggle, onToggleDay, onEdit, onDelete }: { habit: Habit; saving: boolean; summary?: HabitSummary; summaryFailed: boolean; onRetrySummary: () => void; onToggle: () => void; onToggleDay: (date: string, completed: boolean) => void; onEdit: () => void; onDelete: () => void }) {
   const doneToday = habit.completedDates.includes(todayKey());
   const [open, setOpen] = useState(false);
   const panelId = `habit-${habit.id}`;
@@ -261,8 +274,8 @@ function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySu
     goal ? `Meta ${goal.completedDays}/${goal.requiredDays}` : null,
   ].filter(Boolean).join(" · ");
   return (
-    <div className="pl-4 pr-2">
-      <div className="flex items-center gap-1">
+    <div>
+      <div className="flex items-center gap-1 pl-4 pr-2">
         <button type="button" onClick={() => setOpen((current) => !current)} aria-expanded={open} aria-controls={panelId} className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 rounded-md py-2 text-left active:bg-wash">
           <span className="h-3 w-3 flex-shrink-0 rounded-[3px]" style={{ background: habit.color }} aria-hidden="true" />
           <span className="min-w-0 flex-1">
@@ -285,37 +298,80 @@ function HabitCard({ habit, weekDates, saving, summary, summaryFailed, onRetrySu
       </div>
       <div id={panelId} className={`grid transition-[grid-template-rows] duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`} inert={!open}>
         <div className="min-h-0 overflow-hidden">
-          <div className="pr-2 pb-3">
+          <div className="pb-3">
+            <div className="px-4 pr-6">
             {habit.type === "QUIT" && <p className="mb-1 text-[13px] font-semibold text-coral-ink">Marca los días que lo evitas.</p>}
             <HabitStatsRow stats={summary?.stats} noHistory={habit.completedDates.length === 0} failed={summaryFailed && !summary} onRetry={onRetrySummary} />
             {summary?.monthlyGoal && <MonthlyGoalRow monthly={summary.monthlyGoal} color={habit.color} />}
             {habit.monthlyGoal && !summary && !summaryFailed && <Skeleton className="mt-3 h-[56px] w-full" />}
-            {/* La semana como una línea: una estación por día */}
-            <div className="relative mt-3">
-              <span className="absolute left-3 right-3 top-[11px] h-[3px] bg-line-strong" />
-              <ul className="relative flex justify-between">
-                {weekDates.map((date, index) => {
-                  const key = toLocalKey(date);
-                  const planned = habit.daysOfWeek.includes(index + 1);
-                  const complete = habit.completedDates.includes(key);
-                  return (
-                    <li key={key} className="flex w-6 flex-col items-center gap-1" aria-label={`${DAYS[index]}: ${complete ? "hecho" : planned ? "pendiente" : "descanso"}`}>
-                      <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-[3px]" style={{ borderColor: planned ? habit.color : "var(--color-line-strong)", background: complete ? habit.color : "var(--color-card)", borderStyle: planned ? "solid" : "dashed" }}>
-                        {complete && <svg width="9" height="7" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                      </span>
-                      <span className="text-[13px] font-medium text-ink-2">{DAYS[index]}</span>
-                    </li>
-                  );
-                })}
-              </ul>
             </div>
+            <HabitMonth habit={habit} onToggleDay={onToggleDay} />
             {/* Acciones fuera de la fila: lejos del botón de marcar, para no tocarlas por error. */}
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-1">
+            <div className="mx-4 mr-6 mt-3 flex items-center justify-between gap-2 border-t border-line pt-1">
               <button onClick={onEdit} disabled={saving} aria-label={`Editar hábito ${habit.title}`} className="flex min-h-[44px] items-center gap-2 rounded-md px-2 text-[14px] font-semibold text-ink-2 active:bg-wash disabled:opacity-50"><IconPencil size={16} />Editar</button>
               <DeleteButton label={`hábito ${habit.title}`} onClick={onDelete} disabled={saving} />
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+const MAX_MONTHS_BACK = 24;
+const monthTitle = (year: number, month: number) => {
+  const text = new Date(year, month, 1).toLocaleDateString("es", { month: "long", year: "numeric" });
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+/** El mes del hábito como una cuadrícula de estaciones: cada día se toca para marcar o desmarcar. */
+function HabitMonth({ habit, onToggleDay }: { habit: Habit; onToggleDay: (date: string, completed: boolean) => void }) {
+  const now = new Date();
+  const [offset, setOffset] = useState(0);
+  const shown = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+  const year = shown.getFullYear();
+  const month = shown.getMonth();
+  const today = todayKey();
+  const created = habit.createdDate;
+  const firstKey = toLocalKey(shown);
+  // Sin día de creación no hay límite inferior; con él, no se retrocede antes de su mes.
+  const canGoBack = offset < MAX_MONTHS_BACK && (!created || created.slice(0, 7) < firstKey.slice(0, 7));
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leading = (shown.getDay() + 6) % 7;
+  const cells = [...Array.from({ length: leading }, () => null), ...Array.from({ length: daysInMonth }, (_, index) => index + 1)];
+  const quit = habit.type === "QUIT";
+  return (
+    <div className="mt-3">
+      <div className="mx-4 mr-6 border-t border-line" />
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={() => setOffset((current) => current + 1)} disabled={!canGoBack} aria-label="Mes anterior" className="flex h-11 w-11 flex-shrink-0 items-center justify-center text-ink-2 active:bg-wash disabled:opacity-30">
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        <p aria-live="polite" className="text-[14px] font-semibold text-ink">{monthTitle(year, month)}</p>
+        <button type="button" onClick={() => setOffset((current) => current - 1)} disabled={offset === 0} aria-label="Mes siguiente" className="flex h-11 w-11 flex-shrink-0 items-center justify-center text-ink-2 active:bg-wash disabled:opacity-30">
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+      </div>
+      <div className="grid grid-cols-7 px-0.5" role="group" aria-label={`Días de ${monthTitle(year, month)}`}>
+        {DAYS.map((day) => <span key={day} className="flex h-6 items-center justify-center text-[13px] font-medium text-ink-2" aria-hidden="true">{day}</span>)}
+        {cells.map((day, index) => {
+          if (day === null) return <span key={`blank-${index}`} aria-hidden="true" />;
+          const key = toLocalKey(new Date(year, month, day));
+          const weekday = (leading + day - 1) % 7 + 1;
+          const planned = habit.daysOfWeek.includes(weekday);
+          const complete = habit.completedDates.includes(key);
+          const future = key > today;
+          const beforeCreation = created !== null && key < created;
+          // Un día de descanso no se marca, pero uno ya marcado se puede desmarcar.
+          const locked = future || beforeCreation || (!planned && !complete);
+          const label = new Date(year, month, day).toLocaleDateString("es", { day: "numeric", month: "long" });
+          const state = complete ? (quit ? "lo evité" : "hecho") : future ? "aún no" : beforeCreation ? "antes de crear el hábito" : !planned ? "descanso" : "pendiente";
+          return (
+            <button key={key} type="button" disabled={locked} aria-pressed={complete} aria-label={`${label}: ${state}`} onClick={() => onToggleDay(key, !complete)} className="flex h-11 items-center justify-center disabled:opacity-40">
+              <span className={`num flex h-[30px] w-[30px] items-center justify-center rounded-full border-[3px] text-[13px] transition-[background-color,transform] duration-150 ease-out ${key === today ? "font-bold" : "font-medium"} ${locked ? "" : "active:scale-75"}`} style={{ borderColor: planned ? habit.color : "var(--color-line-strong)", borderStyle: planned ? "solid" : "dashed", background: complete ? habit.color : "var(--color-card)", color: complete ? "var(--color-night)" : "var(--color-ink)" }}>{day}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

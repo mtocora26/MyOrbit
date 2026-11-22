@@ -79,6 +79,7 @@ public class HabitService {
     public Habit updateCompletion(String userId, String id, UpdateHabitCompletionRequest request) {
         Habit habit = getOwned(userId, id);
         String date = resolveDate(userId, request.date());
+        requireDateInRange(userId, habit, date);
         if (request.completed() && !habit.getCompletedDates().contains(date)) habit.getCompletedDates().add(date);
         if (!request.completed()) habit.getCompletedDates().remove(date);
         return habitRepository.save(habit);
@@ -91,6 +92,16 @@ public class HabitService {
             return LocalDate.parse(raw).toString();
         } catch (DateTimeParseException e) {
             throw new BusinessRuleException("La fecha debe tener el formato AAAA-MM-DD, por ejemplo 2026-10-10");
+        }
+    }
+
+    /** No se marca ni se desmarca el futuro (según el día del usuario) ni un día anterior a la creación del hábito. */
+    private void requireDateInRange(String userId, Habit habit, String date) {
+        if (LocalDate.parse(date).isAfter(userZone.today(userId))) {
+            throw new BusinessRuleException("No se puede marcar un dia futuro");
+        }
+        if (habit.getCreatedDate() != null && date.compareTo(habit.getCreatedDate()) < 0) {
+            throw new BusinessRuleException("No se puede marcar un dia anterior a la creacion del habito");
         }
     }
 

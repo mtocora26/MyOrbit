@@ -102,6 +102,65 @@ class HabitServiceTest {
                 () -> service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(false, "basura")));
     }
 
+    @Test
+    void completionRejectsFutureDaysForCheckingAndUnchecking() {
+        Habit habit = habitOf("u1");
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+
+        for (boolean completed : new boolean[]{true, false}) {
+            assertThrows(BusinessRuleException.class,
+                    () -> service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(completed, "2026-10-11")));
+        }
+        assertEquals(List.of(), habit.getCompletedDates());
+        org.mockito.Mockito.verify(repository, org.mockito.Mockito.never()).save(any(Habit.class));
+    }
+
+    @Test
+    void completionAcceptsTodayAsTheLastAllowedDay() {
+        when(repository.findById("h1")).thenReturn(Optional.of(habitOf("u1")));
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        Habit saved = service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(true, "2026-10-10"));
+
+        assertEquals(List.of("2026-10-10"), saved.getCompletedDates());
+    }
+
+    @Test
+    void completionRejectsDaysBeforeTheHabitWasCreated() {
+        Habit habit = habitOf("u1");
+        habit.setCreatedDate("2026-10-05");
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        assertThrows(BusinessRuleException.class,
+                () -> service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(true, "2026-10-04")));
+        assertEquals(List.of("2026-10-05"),
+                service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(true, "2026-10-05")).getCompletedDates());
+    }
+
+    @Test
+    void pastDaysCountForTheStreakAndTheMonthlyGoal() {
+        Habit habit = habitOf("u1");
+        habit.setFrequency(HabitFrequency.DAILY);
+        habit.setCreatedDate("2026-10-01");
+        habit.setMonthlyGoal(50);
+        when(repository.findById("h1")).thenReturn(Optional.of(habit));
+        when(repository.save(any(Habit.class))).then(returnsFirstArg());
+
+        for (String day : new String[]{"2026-10-08", "2026-10-09", "2026-10-10"}) {
+            service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(true, day));
+        }
+
+        HabitStats stats = service.stats("u1", "h1", 30);
+        assertEquals(3, stats.currentStreak());
+        assertEquals(3, service.monthlyGoal("u1", "h1", 0).current().completedDays());
+
+        service.updateCompletion("u1", "h1", new UpdateHabitCompletionRequest(false, "2026-10-09"));
+
+        assertEquals(1, service.stats("u1", "h1", 30).currentStreak());
+        assertEquals(2, service.monthlyGoal("u1", "h1", 0).current().completedDays());
+    }
+
     private Habit existing() {
         Habit habit = habitOf("u1");
         habit.setTitle("Leer");
