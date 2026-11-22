@@ -68,7 +68,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
           </div>
 
           {error && <p className="mt-4 text-[13px] font-semibold text-danger">{error}</p>}
-          <button disabled={saving} className="mt-6 w-full rounded-md py-3.5 text-[14px] font-bold text-white disabled:opacity-50" style={{ background: "var(--color-coral)" }}>
+          <button disabled={saving} className="mt-6 min-h-[48px] w-full rounded-md py-3.5 text-[14px] font-bold text-night disabled:opacity-50" style={{ background: "var(--color-coral)" }}>
             {saving ? "Procesando..." : mode === "login" ? "Entrar a MyOrbit" : "Crear mi cuenta"}
           </button>
         </form>
