@@ -187,7 +187,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
   if (variant === "chips") {
     const options = value && !categories.some((category) => category.id === value) ? [...ordered, { id: value, name: value, color: "var(--color-ink-3)" }] : ordered;
     return (
-      <div role="radiogroup" aria-label="Categoría" className={`no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 ${className}`}>
+      <div role="radiogroup" aria-label="Categoría" className={`flex flex-wrap gap-2 ${className}`}>
         {options.map((category) => {
           const selected = category.id === value;
           return (
