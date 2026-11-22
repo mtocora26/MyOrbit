@@ -260,7 +260,7 @@ On a phone a container with a lot in it does not pour everything onto one screen
 
 - **Sheet or sub-screen.** A short decision (choose, edit a small group of settings) opens a bottom sheet (`DetailSheet`). Navigation or a long list opens a sub-screen with the header's back button. At most **three levels** (e.g. habit list → one habit → its month); always back, always the same way out.
 - **Same exit everywhere.** A sheet closes by dragging the handle, system back, Escape, the scrim or "Listo"; a sub-screen by back. Never a level that only closes with a small icon.
-- **One row pattern.** The summary row is `SummaryRow` inside a `SummaryList` (`shared.tsx`): title on the left, one-line summary on the right, `line-strong` chevron, 56px (64px with an avatar or a second line). It is the List rows pattern; do not hand-draw it per screen. Accordions of equal weight (several `CollapsibleSection` stacked) are replaced by this list.
+- **One row pattern.** The summary row is `SummaryRow` inside a `SummaryList` (`shared.tsx`): title on the left, one-line summary on the right, `line-strong` chevron, 56px (64px with an avatar or a second line). It is the List rows pattern; do not hand-draw it per screen. There are no accordions: stacked sections of equal weight (the old Perfil, the subject's tasks and schedule, the grade simulator) are rows of this list. What the screen is *for* (a subject's evaluations, the list of grades) stays on screen under its title.
 - **Quick capture is the model.** The sheet shows the type, the title and one line of defaults with "Cambiar"; the choosers open on demand.
 
 ### Inputs / Fields
