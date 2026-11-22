@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScreenHeader, Badge, CategoryBadge, CategoryPicker, Checkbox, ProgressBar, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
+import { ScreenHeader, CategoryBadge, CategoryPicker, Checkbox, PriorityDot, ProgressBar, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import { IconCalendar } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
@@ -31,12 +31,6 @@ function attachSubtask(list: Subtask[], removed: DetachedSubtask): Subtask[] {
     : { ...item, subtasks: item.subtasks ? attachSubtask(item.subtasks, removed) : item.subtasks });
 }
 
-const PRIORITY_BADGE: Record<UiTask["priority"], { label: string; color: "coral" | "yellow" | "green" }> = {
-  alta: { label: "Alta prioridad", color: "coral" },
-  media: { label: "Media prioridad", color: "yellow" },
-  baja: { label: "Baja prioridad", color: "green" },
-};
-
 export default function TaskDetailScreen({ onBack, taskId }: Props) {
   const [task, setTask] = useState<UiTask | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,8 +49,6 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   const [newSubtaskDate, setNewSubtaskDate] = useState("");
   const [newSubtaskTime, setNewSubtaskTime] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
-  const [renamingTitle, setRenamingTitle] = useState(false);
-  const [quickTitle, setQuickTitle] = useState("");
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setCategories([]));
@@ -250,27 +242,6 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
     setError(null);
   }
 
-  async function commitQuickRename() {
-    setRenamingTitle(false);
-    const title = quickTitle.trim();
-    if (!task || saving || !title || title === task.label) return;
-
-    const previous = task;
-    setTask({ ...task, label: title });
-
-    try {
-      setSaving(true);
-      setError(null);
-      const updated = await updateTask(task.id, { title, due: task.rawDue, priority: task.priority, categoryId: task.categoryId });
-      setTask(toUiTask(updated));
-    } catch (err) {
-      setTask(previous);
-      setError(err instanceof Error ? err.message : "No fue posible renombrar la tarea");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleSaveTask() {
     if (!task || saving) return;
     const title = draftTitle.trim();
@@ -316,176 +287,150 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
   return (
     <div className="h-full flex flex-col bg-paper">
       <ScreenHeader
-        title="Detalle de tarea"
+        title={task?.label ?? "Tarea"}
+        wrapTitle
         onBack={onBack}
         right={
-          <button
-            onClick={editing ? cancelEditMode : openEditMode}
-            className="w-11 h-11 rounded-full bg-wash flex items-center justify-center"
-            title={editing ? "Cancelar edicion" : "Editar tarea"}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-2)" strokeWidth="2" strokeLinecap="round">
-              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-          </button>
+          task ? (
+            <button
+              onClick={editing ? cancelEditMode : openEditMode}
+              className="flex h-11 w-11 items-center justify-center rounded-md bg-wash text-ink-2 transition-transform active:scale-[0.97]"
+              title={editing ? "Cancelar edición" : "Editar tarea"}
+              aria-label={editing ? "Cancelar edición" : "Editar tarea"}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+            </button>
+          ) : undefined
         }
       />
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-1 pb-28 flex flex-col gap-3">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-28 flex flex-col gap-5">
         {loading && <ListSkeleton rows={2} label="Cargando detalle" />}
         {error && <ErrorBanner message={error} onRetry={() => setRetryTick((tick) => tick + 1)} />}
 
         {!loading && !task && !error && (
-          <div className="bg-card rounded-md p-4">
-            <p className="text-[14px] text-ink-2">Selecciona una tarea desde la lista para ver su detalle.</p>
-          </div>
+          <p className="text-[14px] text-ink-2">Selecciona una tarea desde la lista para ver su detalle.</p>
         )}
 
         {task && (
           <>
-            <div className="bg-card rounded-md p-4">
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: task.priority === "alta" ? "var(--color-coral)" : task.priority === "media" ? "var(--color-amber)" : "var(--color-green)" }} />
-                <Badge label={PRIORITY_BADGE[task.priority].label} color={PRIORITY_BADGE[task.priority].color} />
-                <CategoryBadge name={categoryName} color={category?.color} />
-              </div>
-
-              {editing ? (
-                <div className="flex flex-col gap-3">
-                  <input
-                    value={draftTitle}
-                    onChange={(e) => setDraftTitle(e.target.value)}
-                    placeholder="Titulo de la tarea"
-                    className="min-h-[44px] rounded-md border border-line bg-paper px-3 text-[14px] font-semibold text-ink outline-none"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="date"
-                      value={draftDate}
-                      onChange={(e) => setDraftDate(e.target.value)}
-                      aria-label="Fecha límite"
-                      className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none"
-                    />
-                    <input
-                      type="time"
-                      value={draftTime}
-                      onChange={(e) => setDraftTime(e.target.value)}
-                      aria-label="Hora límite"
-                      className="min-h-[44px] w-full min-w-0 rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none"
-                    />
-                    <select
-                      value={draftPriority}
-                      onChange={(e) => setDraftPriority(e.target.value as TaskPriority)}
-                      className="col-span-2 min-h-[44px] rounded-md border border-line bg-paper px-3 text-[14px] text-ink outline-none"
-                    >
-                      <option value="alta">Alta</option>
-                      <option value="media">Media</option>
-                      <option value="baja">Baja</option>
-                    </select>
-                    <CategoryPicker categories={categories} value={draftCategoryId} onChange={setDraftCategoryId} onCreate={handleCreateCategory} className="col-span-2" />
-                    <SubjectPicker subjects={subjects} value={draftSubjectId} onChange={handleSubjectChange} className="col-span-2" />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSaveTask}
-                      disabled={saving}
-                      className="rounded-md px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50"
-                      style={{ background: "var(--color-coral)" }}
-                    >
-                      {saving ? "Guardando..." : "Guardar cambios"}
-                    </button>
-                    <button
-                      onClick={cancelEditMode}
-                      disabled={saving}
-                      className="rounded-md px-3 py-2 text-[13px] font-bold text-ink-2 bg-wash disabled:opacity-50"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : renamingTitle ? (
+            {editing ? (
+              <div className="flex flex-col gap-3">
                 <input
-                  autoFocus
-                  value={quickTitle}
-                  onChange={(event) => setQuickTitle(event.target.value)}
-                  onBlur={commitQuickRename}
-                  onKeyDown={(event) => { if (event.key === "Enter") commitQuickRename(); if (event.key === "Escape") setRenamingTitle(false); }}
-                  className="w-full rounded-md border border-coral bg-card px-2 py-1 text-[18px] font-bold text-ink outline-none"
+                  value={draftTitle}
+                  onChange={(e) => setDraftTitle(e.target.value)}
+                  placeholder="Título de la tarea"
+                  aria-label="Título de la tarea"
+                  className="min-h-[44px] rounded-md border border-line-control bg-card px-3 text-[16px] font-semibold text-ink outline-none focus:border-coral"
                 />
-              ) : (
-                <h2
-                  onDoubleClick={() => { setQuickTitle(task.label); setRenamingTitle(true); }}
-                  title="Doble clic para renombrar"
-                  className="text-[18px] font-bold text-ink leading-snug cursor-text"
-                >
-                  {task.label}
-                </h2>
-              )}
-            </div>
-
-            <div className="bg-card rounded-md p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <MetaField icon={<IconCalendar size={13} color={overdue ? "var(--color-danger)" : "var(--color-ink-3)"} />} label="Fecha limite" value={task.due} valueClassName={overdue ? "text-danger" : undefined} />
-                <MetaField icon={<StatusIcon />} label="Estado" value={task.done ? "Completada" : overdue ? "Vencida" : "En progreso"} valueClassName={overdue && !task.done ? "text-danger" : undefined} />
-                <MetaField icon={<FolderIcon />} label="Categoria" value={categoryName} />
-                {task.subjectId && <MetaField icon={<FolderIcon />} label="Materia" value={subjects.find((subject) => subject.id === task.subjectId)?.name ?? "Materia"} />}
-              </div>
-            </div>
-
-            <div className="bg-card rounded-md p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[14px] font-bold text-ink">Progreso</p>
-                <span className="text-[14px] font-bold text-coral-ink tabular-nums">{progress}%</span>
-              </div>
-              <ProgressBar value={progress} color="var(--color-coral)" height={8} bg="var(--color-coral-wash)" />
-              <p className="text-[13px] text-ink-3 mt-2">
-                {task.subtasks.length ? `${getSubtaskProgress(task.subtasks).completed} de ${getSubtaskProgress(task.subtasks).total} pasos completados` : task.done ? "La tarea esta completa" : "La tarea aun esta pendiente"}
-              </p>
-            </div>
-
-            <div className="bg-card rounded-md p-4">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-[14px] font-bold text-ink">Subtareas</p><p className="mt-0.5 text-[13px] text-ink-3">Cada paso puede contener otros pasos.</p></div><span className="rounded-full bg-wash px-2.5 py-1 text-[13px] font-bold text-ink-2">{getSubtaskProgress(task.subtasks).completed}/{getSubtaskProgress(task.subtasks).total}</span></div>
-              <div className="mt-4 flex flex-col gap-2">
-                {task.subtasks.map((subtask) => <SubtaskItem key={subtask.id} subtask={subtask} depth={0} saving={saving} onToggle={handleToggleSubtask} onDelete={handleDeleteSubtask} onAddChild={handleAddSubtask} onUpdateDue={handleUpdateSubtaskDue} onRename={handleRenameSubtask} />)}
-              </div>
-              <div className="mt-3 flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <input value={newSubtaskTitle} onChange={(event) => setNewSubtaskTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined); }} placeholder="Añadir un paso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-paper px-3 text-[14px] outline-none focus:border-coral" />
-                  <button onClick={() => handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined)} disabled={saving || !newSubtaskTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-strong px-3 text-[13px] font-bold text-on-strong disabled:opacity-50">Añadir</button>
-                </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="date" value={newSubtaskDate} onChange={(event) => setNewSubtaskDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-paper px-3 text-[14px] text-ink outline-none" />
-                  <input type="time" value={newSubtaskTime} onChange={(event) => setNewSubtaskTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-paper px-3 text-[14px] text-ink outline-none" />
+                  <input
+                    type="date"
+                    value={draftDate}
+                    onChange={(e) => setDraftDate(e.target.value)}
+                    aria-label="Fecha límite"
+                    className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none focus:border-coral"
+                  />
+                  <input
+                    type="time"
+                    value={draftTime}
+                    onChange={(e) => setDraftTime(e.target.value)}
+                    aria-label="Hora límite"
+                    className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none focus:border-coral"
+                  />
+                  <select
+                    value={draftPriority}
+                    onChange={(e) => setDraftPriority(e.target.value as TaskPriority)}
+                    aria-label="Prioridad"
+                    className="col-span-2 min-h-[44px] rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none focus:border-coral"
+                  >
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
+                  </select>
+                  <CategoryPicker categories={categories} value={draftCategoryId} onChange={setDraftCategoryId} onCreate={handleCreateCategory} className="col-span-2" />
+                  <SubjectPicker subjects={subjects} value={draftSubjectId} onChange={handleSubjectChange} className="col-span-2" />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveTask}
+                    disabled={saving}
+                    className="min-h-[44px] rounded-md bg-coral px-4 text-[14px] font-bold text-night disabled:opacity-50"
+                  >
+                    {saving ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                  <button
+                    onClick={cancelEditMode}
+                    disabled={saving}
+                    className="min-h-[44px] rounded-md bg-wash px-4 text-[14px] font-bold text-ink-2 disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className={`num inline-flex items-center gap-1.5 text-[16px] font-semibold ${overdue ? "text-danger" : "text-ink-2"}`}>
+                  <IconCalendar size={16} />
+                  {task.due}
+                </span>
+                {task.done && <span className="rounded-sm bg-green-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-green-ink">Completada</span>}
+                {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
+                <CategoryBadge name={categoryName} color={category?.color} />
+                {task.subjectId && <span className="text-[14px] text-ink-2">{subjects.find((subject) => subject.id === task.subjectId)?.name ?? "Materia"}</span>}
+                <PriorityDot level={task.priority} />
+              </div>
+            )}
+
+            <section aria-label="Subtareas" className="flex flex-col gap-2">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Subtareas</h2>
+                {task.subtasks.length > 0 && <span className="num text-[14px] font-semibold text-ink-2">{getSubtaskProgress(task.subtasks).completed}/{getSubtaskProgress(task.subtasks).total}</span>}
+              </div>
+              {task.subtasks.length > 0 && (
+                <>
+                  <ProgressBar value={progress} color="var(--color-coral)" height={4} />
+                  <div className="flex flex-col gap-1 rounded-md bg-card px-3 py-2">
+                    {task.subtasks.map((subtask) => <SubtaskItem key={subtask.id} subtask={subtask} depth={0} saving={saving} onToggle={handleToggleSubtask} onDelete={handleDeleteSubtask} onAddChild={handleAddSubtask} onUpdateDue={handleUpdateSubtaskDue} onRename={handleRenameSubtask} />)}
+                  </div>
+                </>
+              )}
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <input value={newSubtaskTitle} onChange={(event) => setNewSubtaskTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined); }} placeholder="Añadir un paso" aria-label="Añadir un paso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+                  <button onClick={() => handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined)} disabled={saving || !newSubtaskTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-coral px-4 text-[14px] font-bold text-night disabled:bg-wash disabled:text-ink-3">Añadir</button>
+                </div>
+                {newSubtaskTitle.trim() && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[13px] font-semibold text-ink-2">Fecha (opcional)</span>
+                      <input type="date" value={newSubtaskDate} onChange={(event) => setNewSubtaskDate(event.target.value)} className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none focus:border-coral" />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-[13px] font-semibold text-ink-2">Hora (opcional)</span>
+                      <input type="time" value={newSubtaskTime} onChange={(event) => setNewSubtaskTime(event.target.value)} className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none focus:border-coral" />
+                    </label>
+                  </div>
+                )}
+              </div>
+            </section>
           </>
         )}
       </div>
 
       {/* CTA */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 py-4 bg-card border-t border-wash">
+      <div className="absolute bottom-0 left-0 right-0 border-t border-line bg-card px-4 py-4">
         <button
           onClick={handleToggleCompleted}
           disabled={!task || saving || editing || (task?.subtasks.length ?? 0) > 0}
-          className="w-full py-3.5 rounded-md text-[15px] font-bold text-white transition-transform active:scale-[0.98]"
-          style={{
-            background: !task
-              ? "var(--color-line-strong)"
-              : editing
-                ? "var(--color-line-strong)"
-                : task.subtasks.length > 0
-                  ? "var(--color-line-strong)"
-              : task.done
-                ? "var(--color-green)"
-                : "var(--color-coral)",
-            
-          }}
+          className={`min-h-[48px] w-full rounded-md text-[15px] font-bold transition-transform active:scale-[0.98] ${!task || editing || (task?.subtasks.length ?? 0) > 0 ? "bg-wash text-ink-3" : task.done ? "bg-wash text-ink" : "bg-coral text-night"}`}
         >
           {!task
             ? "Sin tarea seleccionada"
             : editing
-              ? "Termina la edicion para cambiar estado"
+              ? "Termina la edición para cambiar el estado"
               : task.subtasks.length > 0
                 ? `${task.subtasks.filter((subtask) => subtask.done).length}/${task.subtasks.length} subtareas completadas`
               : saving
@@ -495,15 +440,6 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                   : "Marcar como completada"}
         </button>
       </div>
-    </div>
-  );
-}
-
-function MetaField({ icon, label, value, valueClassName }: { icon: React.ReactNode; label: string; value: string; valueClassName?: string }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1 mb-1">{icon}<p className="text-[14px] text-ink-2 font-medium">{label}</p></div>
-      <p className={`text-[13px] font-bold ${valueClassName ?? "text-ink"}`}>{value}</p>
     </div>
   );
 }
@@ -548,7 +484,7 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
 
   return (
     <div className="flex flex-col gap-2" style={{ marginLeft: depth ? Math.min(depth * 14, 42) : 0 }}>
-      <div className="flex flex-col gap-1.5 rounded-md bg-paper px-3 py-2.5">
+      <div className="flex flex-col">
         <div className="flex items-center gap-3">
           <Checkbox checked={subtask.done} onChange={() => onToggle(subtask.id, subtask.done)} />
           {renaming ? (
@@ -558,46 +494,39 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
               onChange={(event) => setDraftTitle(event.target.value)}
               onBlur={commitRename}
               onKeyDown={(event) => { if (event.key === "Enter") commitRename(); if (event.key === "Escape") { setDraftTitle(subtask.title); setRenaming(false); } }}
-              className="min-w-0 flex-1 rounded-md border border-blue bg-card px-2 py-1 text-[13px] font-semibold text-ink outline-none"
+              className="min-h-[44px] min-w-0 flex-1 rounded-md border border-blue bg-card px-2 text-[14px] font-semibold text-ink outline-none"
             />
           ) : (
             <p
               onDoubleClick={() => { setDraftTitle(subtask.title); setRenaming(true); }}
               title="Doble clic para renombrar"
-              className={`min-w-0 flex-1 text-[13px] font-semibold ${subtask.done ? "text-ink-3 line-through" : "text-ink"}`}
+              className={`min-w-0 flex-1 text-[15px] font-semibold ${subtask.done ? "text-ink-3 line-through" : "text-ink"}`}
             >
               {subtask.title}
             </p>
           )}
-          <button onClick={() => setAddingChild(!addingChild)} disabled={saving} title="Añadir subpaso" className="flex h-11 w-11 -m-2 shrink-0 items-center justify-center rounded-full text-[18px] font-semibold text-blue-ink hover:bg-blue-wash">+</button>
+          <button onClick={() => setAddingChild(!addingChild)} disabled={saving} title="Añadir subpaso" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[20px] font-semibold text-coral-ink active:bg-wash">+</button>
           <DeleteButton label={`subtarea «${subtask.title}»`} onClick={() => onDelete(subtask.id)} disabled={saving} className="ml-1" />
         </div>
-        <button onClick={openDueEditor} disabled={saving} className={`ml-8 flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-bold ${overdue ? "bg-danger-wash text-danger" : subtask.due ? "bg-blue-wash text-blue-ink" : "bg-wash text-ink-3"}`}>
-          <IconCalendar size={10} color={overdue ? "var(--color-danger)" : subtask.due ? "var(--color-blue)" : "var(--color-ink-3)"} />
+        <button onClick={openDueEditor} disabled={saving} className={`num ml-9 -mt-1 inline-flex min-h-[44px] w-fit items-center gap-1.5 text-[14px] font-semibold ${overdue ? "text-danger" : subtask.due ? "text-ink-2" : "text-ink-3"}`}>
+          <IconCalendar size={14} color={overdue ? "var(--color-danger)" : "var(--color-ink-3)"} />
           {subtask.due ? formatTaskDue(subtask.due) : "Sin fecha"}
         </button>
       </div>
       {editingDue && (
-        <div className="ml-8 flex flex-col gap-2">
+        <div className="ml-9 flex flex-col gap-2">
           <div className="grid grid-cols-2 gap-2">
             <input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} aria-label="Fecha del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none" />
             <input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} aria-label="Hora del paso" className="min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[14px] text-ink outline-none" />
           </div>
           <div className="flex gap-2">
-            <button onClick={saveDue} disabled={saving} className="min-h-[44px] flex-1 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Guardar</button>
-            <button onClick={() => setEditingDue(false)} disabled={saving} className="min-h-[44px] flex-1 rounded-md bg-wash px-3 text-[13px] font-bold text-ink-2">Cancelar</button>
+            <button onClick={saveDue} disabled={saving} className="min-h-[44px] flex-1 rounded-md bg-coral px-3 text-[14px] font-bold text-night disabled:opacity-50">Guardar</button>
+            <button onClick={() => setEditingDue(false)} disabled={saving} className="min-h-[44px] flex-1 rounded-md bg-wash px-3 text-[14px] font-bold text-ink-2">Cancelar</button>
           </div>
         </div>
       )}
-      {addingChild && <div className="ml-8 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[14px] outline-none focus:border-blue" /><button onClick={addChild} disabled={saving || !childTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Añadir</button></div>}
+      {addingChild && <div className="ml-9 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[14px] outline-none focus:border-blue" /><button onClick={addChild} disabled={saving || !childTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-blue px-3 text-[13px] font-bold text-white disabled:opacity-50">Añadir</button></div>}
       {children.map((child) => <SubtaskItem key={child.id} subtask={child} depth={depth + 1} saving={saving} onToggle={onToggle} onDelete={onDelete} onAddChild={onAddChild} onUpdateDue={onUpdateDue} onRename={onRename} />)}
     </div>
   );
-}
-
-function FolderIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-3)" strokeWidth="2" strokeLinecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>;
-}
-function StatusIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-3)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>;
 }

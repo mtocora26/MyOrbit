@@ -11,6 +11,8 @@ import { registerBackHandler } from "../hooks/useNativeApp";
 // ─── Screen Header ────────────────────────────────────────────────────────────
 interface ScreenHeaderProps {
   title: string;
+  /** El título es un dato del usuario (p. ej. el nombre de una tarea): se parte en hasta dos líneas en vez de cortarse. */
+  wrapTitle?: boolean;
   subtitle?: string;
   onBack?: () => void;
   right?: ReactNode;
@@ -39,7 +41,7 @@ export function PageTitle({ children, className = "" }: { children: ReactNode; c
   return <h1 className={`font-display text-[26px] font-semibold leading-none tracking-tight text-ink lg:text-[44px] ${className}`}>{children}</h1>;
 }
 
-export function ScreenHeader({ title, subtitle, onBack, right, bg = "var(--color-paper)" }: ScreenHeaderProps) {
+export function ScreenHeader({ title, wrapTitle = false, subtitle, onBack, right, bg = "var(--color-paper)" }: ScreenHeaderProps) {
   return (
     <header className="flex items-center justify-between gap-3 px-4 py-3 flex-shrink-0 border-b border-line lg:px-8" style={{ background: bg }}>
       <div className="flex min-w-0 items-center gap-3">
@@ -55,7 +57,7 @@ export function ScreenHeader({ title, subtitle, onBack, right, bg = "var(--color
           </button>
         )}
         <div className="min-w-0">
-          <h1 className="font-display text-[26px] font-semibold leading-none tracking-tight text-ink truncate">{title}</h1>
+          <h1 className={`font-display text-[26px] font-semibold tracking-tight text-ink ${wrapTitle ? "line-clamp-2 break-words leading-[1.05]" : "truncate leading-none"}`}>{title}</h1>
           {subtitle && <p className="mt-1 text-[13px] text-ink-2 truncate">{subtitle}</p>}
         </div>
       </div>
