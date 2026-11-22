@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, ChoiceChip, PageTitle, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
+import { CategoryBadge, ChoiceChip, OverdueBadge, PageTitle, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
 import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
@@ -360,7 +360,7 @@ function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, on
                 </button>
               )}
             {task.pending && <PendingMark />}
-            {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
+            {overdue && <OverdueBadge />}
             <CategoryBadge name={categoryName} color={categoryColor} />
             {subtaskInfo && <span className="num text-[14px] font-semibold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total} pasos</span>}
             <PriorityDot level={task.priority} />
@@ -427,7 +427,7 @@ function TasksBoard({ tasks, categories, colorByCategoryId, nameByCategoryId, gr
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <CategoryBadge name={task.categoryId ? (nameByCategoryId.get(task.categoryId) ?? "Categoría") : "Sin categoría"} color={task.categoryId ? colorByCategoryId.get(task.categoryId) : undefined} />
-                      {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
+                      {overdue && <OverdueBadge />}
                       {subtaskInfo && <span className="text-[13px] font-bold text-ink-2">{subtaskInfo.completed}/{subtaskInfo.total}</span>}
                     </div>
                   </div>

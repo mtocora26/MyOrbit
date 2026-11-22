@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import ThemeToggle from "../components/ThemeToggle";
 import NotificationBell from "../components/NotificationBell";
 import AcademicGlance from "../components/AcademicGlance";
-import { Badge, CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner, Skeleton, PageTitle } from "../components/shared";
+import { CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner, Skeleton, PageTitle, OverdueBadge } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, completeLabel, type Habit } from "../services/habitsApi";
@@ -109,7 +108,6 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
 
   const weekday = (new Date().getDay() + 6) % 7 + 1;
   const todayHabits = habits.filter((habit) => habit.daysOfWeek.includes(weekday));
-  const habitsDone = todayHabits.filter((habit) => habit.completedDates.includes(todayKey())).length;
 
   async function toggleTask(task: UiTask) {
     const previousTasks = tasks;
@@ -162,27 +160,28 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
           </div>
           <div className="-mr-2 flex flex-shrink-0 items-center">
             <NotificationBell count={unreadCount} onClick={onNotifications} className="lg:hidden" />
-            <ThemeToggle className="flex-shrink-0 lg:hidden" />
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-3">
-          <div className="flex-1"><ProgressBar value={taskProgress} height={4} /></div>
-          {tasksKnown
-            ? <p className="num whitespace-nowrap text-[15px] font-medium text-ink-2">{completedTasks}/{tasks.length}</p>
-            : <Skeleton className="h-[22px] w-9" />}
-        </div>
-        <div className="mt-1.5 text-[14px] text-ink-2">
-          {!tasksKnown
-            ? (taskError ? "No se pudieron cargar tus tareas." : <Skeleton className="h-[20px] w-44" />)
-            : tasks.length === 0
-            ? "Sin tareas todavía."
-            : overdueCount > 0
-              ? `${overdueCount} ${overdueCount === 1 ? "vencida" : "vencidas"} · ${pendingTasks - overdueCount} por llegar`
-              : `${pendingTasks} por llegar · vas a tiempo`}
+        <div className="mt-3 flex flex-col gap-2">
+          <ProgressBar value={taskProgress} height={4} />
+          <p className="num text-[14px] text-ink-2">
+            {!tasksKnown
+              ? (taskError ? "No se pudieron cargar tus tareas." : <Skeleton className="h-[20px] w-44" />)
+              : tasks.length === 0
+                ? "Sin tareas todavía."
+                : (
+                  <>
+                    {completedTasks} de {tasks.length} hechas ·{" "}
+                    {overdueCount > 0
+                      ? <span className="font-semibold text-danger">{overdueCount} {overdueCount === 1 ? "vencida" : "vencidas"}</span>
+                      : pendingTasks > 0 ? "vas a tiempo" : "todo al día"}
+                  </>
+                )}
+          </p>
         </div>
         {classBanner && (
-          <button type="button" onClick={onAgenda} className="mt-1 flex min-h-[44px] w-full items-center gap-2 text-left text-[14px] font-semibold leading-snug text-blue-ink">
-            <span aria-hidden="true" className="num flex-shrink-0">{classNow?.current ? "●" : "→"}</span>
+          <button type="button" onClick={onAgenda} className="mt-1 flex min-h-[44px] w-full items-center gap-2 text-left text-[14px] leading-snug text-ink-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill={classNow?.current ? "currentColor" : "none"} stroke="currentColor" strokeWidth="3" strokeLinejoin="round" className="flex-shrink-0 text-green-ink" aria-hidden="true"><path d="M12 2l10 10-10 10L2 12z" /></svg>
             <span>{classBanner}{classDetail}</span>
           </button>
         )}
@@ -205,7 +204,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               <p className="mt-2 text-[14px] text-ink-2">No hay entregas pendientes. Planea tu semana o agrega algo nuevo.</p>
               <div className="mt-4 flex justify-center gap-2">
                 <button onClick={onFab} className="rounded-md bg-coral min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]">Nueva tarea</button>
-                <button onClick={onAgenda} className="rounded-md border border-line-strong min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Abrir agenda</button>
+                <button onClick={onAgenda} className="rounded-md bg-wash min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Abrir agenda</button>
               </div>
             </div>
           ) : (
@@ -231,7 +230,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                         <p className={`text-[16px] font-semibold leading-snug ${task.done ? "text-ink-3 line-through" : "text-ink"}`}>{task.label}</p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                           <CategoryBadge name={nameOf(task)} color={color} />
-                          {overdue && <Badge label="Vencida" color="coral" />}
+                          {overdue && <OverdueBadge />}
                         </div>
                       </div>
                       <div className="flex flex-shrink-0 flex-col items-end gap-2 pt-0.5">
@@ -256,7 +255,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               <p className="mt-0.5 text-[14px] text-ink-2">{habits.length ? "Descansa o revisa tu plan semanal." : "Crea uno pequeño y corre junto a tus entregas."}</p>
             </button>
           ) : (
-            <div className="rounded-md bg-card px-3 pt-3 pb-3">
+            <div>
               <div className="relative">
                 <span className="absolute left-4 right-4 top-[22px] h-[3px] -translate-y-1/2 bg-line-strong" />
                 <ul className="relative flex gap-1 overflow-x-auto no-scrollbar">
@@ -273,7 +272,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                         >
                           <span
                             className="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[3px] transition-[background-color,transform] duration-150 ease-out active:scale-75"
-                            style={{ borderColor: habit.color, background: done ? habit.color : "var(--color-card)" }}
+                            style={{ borderColor: habit.color, background: done ? habit.color : "var(--color-paper)" }}
                           >
                             {done && <svg width="11" height="9" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                           </span>
@@ -285,7 +284,6 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                   })}
                 </ul>
               </div>
-              <p className="num mt-2 border-t border-line pt-2 text-[14px] text-ink-2">{habitsDone} de {todayHabits.length} hoy</p>
             </div>
           )}
         </section>

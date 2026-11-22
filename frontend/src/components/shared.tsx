@@ -88,6 +88,11 @@ export function Badge({ label, color = "gray" }: BadgeProps) {
 
 // ─── Category Badge & Picker ──────────────────────────────────────────────────
 // La categoría es una línea de la red: cuadrito del color de la línea + nombre.
+/** «Vencida»: el mismo distintivo, siempre en `danger`, en Hoy, Tareas y el detalle. */
+export function OverdueBadge() {
+  return <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>;
+}
+
 /** «Sin enviar»: la tarea se creó o cambió sin conexión y aún no llega al servidor. */
 export function PendingMark({ className = "" }: { className?: string }) {
   return (
