@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChoiceChip, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
-import { IconBell, IconCalendar, IconCheckCircle, IconClock, IconGraduation, IconHabit } from "../components/icons";
-import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification, type NotificationType } from "../services/notificationsApi";
+import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from "../services/notificationsApi";
 import { deleteReminder, fetchReminders, type PersonalReminder } from "../services/remindersApi";
 
 interface Props {
@@ -16,19 +15,6 @@ interface Props {
 }
 
 type Filter = "todas" | "sin-leer";
-
-const TYPE_STYLE: Record<NotificationType, { icon: ReactNode; color: string; bg: string; label: string }> = {
-  DEADLINE: { icon: <IconClock size={20} />, color: "var(--color-amber-ink)", bg: "var(--color-amber-wash)", label: "Fecha límite" },
-  OVERDUE: { icon: <IconClock size={20} />, color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", label: "Vencidas" },
-  EXAM: { icon: <IconGraduation size={20} />, color: "var(--color-green-ink)", bg: "var(--color-green-wash)", label: "Evaluación" },
-  CLASS: { icon: <IconCalendar size={20} />, color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", label: "Agenda" },
-  AT_RISK: { icon: <IconGraduation size={20} />, color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", label: "En riesgo" },
-  HABIT: { icon: <IconHabit size={20} />, color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", label: "Hábito" },
-  REMINDER: { icon: <IconBell size={20} />, color: "var(--color-blue-ink)", bg: "var(--color-blue-wash)", label: "Recordatorio" },
-};
-
-/** Avisos antiguos de tipos que ya no existen (p. ej. «tarea completada»). */
-const LEGACY_STYLE = { icon: <IconCheckCircle size={20} />, color: "var(--color-green-ink)", bg: "var(--color-green-wash)", label: "Aviso" };
 
 export function timeAgo(iso: string, now = Date.now()): string {
   const minutes = Math.floor((now - new Date(iso).getTime()) / 60_000);
@@ -170,18 +156,18 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
           <h2 className="font-display text-[18px] font-semibold leading-none text-ink-2">{group.label}</h2>
           <ul className="overflow-hidden rounded-md bg-card">
             {group.items.map((notification, index) => {
-              const style = TYPE_STYLE[notification.type] ?? LEGACY_STYLE;
               return (
                 <li key={notification.id} className={index > 0 ? "border-t border-line" : ""}>
                   <button onClick={() => open(notification)} className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors active:bg-wash">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md" style={{ background: style.bg, color: style.color }} aria-hidden="true">{style.icon}</span>
+                    {/* No leída = punto coral y título en negrita; leída, el mismo hueco vacío para que todo quede alineado. */}
+                    <span aria-hidden="true" className={`mt-[7px] h-2.5 w-2.5 flex-shrink-0 rounded-full ${notification.read ? "" : "bg-coral"}`} />
                     <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className={`truncate text-[16px] text-ink ${notification.read ? "font-medium" : "font-semibold"}`}>{notification.title}</span>
-                        {!notification.read && <span className="flex-shrink-0 rounded-[3px] bg-coral px-1.5 py-[3px] text-[13px] font-semibold leading-none text-night">Nueva</span>}
+                      <span className={`block truncate text-[16px] text-ink ${notification.read ? "font-medium" : "font-semibold"}`}>
+                        {!notification.read && <span className="sr-only">Sin leer. </span>}
+                        {notification.title}
                       </span>
                       <span className={`mt-0.5 block text-[14px] leading-snug ${notification.read ? "text-ink-2" : "text-ink"}`}>{notification.message}</span>
-                      <span className="mt-1 block text-[13px] text-ink-3">{style.label} · {timeAgo(notification.createdAt)}</span>
+                      <span className="mt-1 block text-[13px] text-ink-3">{timeAgo(notification.createdAt)}</span>
                     </span>
                   </button>
                 </li>

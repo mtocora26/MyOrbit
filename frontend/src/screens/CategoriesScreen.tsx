@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
-import { IconPencil } from "../components/icons";
+import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
 import { createCategory, deleteCategory, fetchCategories, orderCategories, updateCategory, type Category } from "../services/categoriesApi";
 import { fetchTasks } from "../services/tasksApi";
 
@@ -117,12 +116,7 @@ export default function CategoriesScreen({ onBack }: Props) {
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-paper">
-      <ScreenHeader
-        title="Categorías"
-        subtitle="Cada una es una línea de tu red"
-        onBack={onBack}
-        right={<button onClick={() => openForm(null)} aria-label="Crear categoría" className="flex h-11 w-11 items-center justify-center rounded-md bg-coral text-[24px] font-semibold text-night">+</button>}
-      />
+      <ScreenHeader title="Categorías" onBack={onBack} />
 
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">
         {loadError && <ErrorBanner message={loadError} onRetry={load} />}
@@ -135,25 +129,24 @@ export default function CategoriesScreen({ onBack }: Props) {
           <ul className="overflow-hidden rounded-md bg-card">
             {sorted.map((category, index) => {
               const isChild = !!category.parentId && categories.some((item) => item.id === category.parentId);
+              const subs = childrenOf(category.id).length;
               return (
-              <li key={category.id} className={`flex items-center gap-3 pr-1 ${isChild ? "pl-9" : "pl-4"} ${index > 0 ? "border-t border-line" : ""}`}>
-                <span className={`flex-shrink-0 rounded-[3px] ${isChild ? "h-2.5 w-2.5" : "h-3 w-3"}`} style={{ background: category.color }} aria-hidden="true" />
-                <div className="min-w-0 flex-1 py-3">
-                  <p className={`truncate text-ink ${isChild ? "text-[15px] font-medium" : "text-[16px] font-semibold"}`}>{category.name}</p>
-                  <p className="num text-[13px] text-ink-2">{countLabel(category)}{!isChild && childrenOf(category.id).length > 0 ? ` · ${childrenOf(category.id).length} ${childrenOf(category.id).length === 1 ? "subcategoría" : "subcategorías"}` : ""}</p>
-                </div>
-                {!isChild && (
-                  <button onClick={() => openForm(null, category.id)} aria-label={`Agregar subcategoría a ${category.name}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                <li key={category.id} className={index > 0 ? "border-t border-line" : ""}>
+                  {/* Tocar la fila edita; añadir subcategoría y eliminar viven en la hoja de edición. */}
+                  <button onClick={() => openForm(category)} aria-label={`Editar categoría ${category.name}`} className={`flex min-h-[64px] w-full items-center gap-3 pr-3 text-left active:bg-wash ${isChild ? "pl-9" : "pl-4"}`}>
+                    <span className={`flex-shrink-0 rounded-[3px] ${isChild ? "h-2.5 w-2.5" : "h-3 w-3"}`} style={{ background: category.color }} aria-hidden="true" />
+                    <span className="min-w-0 flex-1 py-3">
+                      <span className={`block truncate text-ink ${isChild ? "text-[15px] font-medium" : "text-[16px] font-semibold"}`}>{category.name}</span>
+                      <span className="num block text-[13px] text-ink-2">{countLabel(category)}{!isChild && subs > 0 ? ` · ${subs} ${subs === 1 ? "subcategoría" : "subcategorías"}` : ""}</span>
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="flex-shrink-0"><path d="M9 18l6-6-6-6" /></svg>
                   </button>
-                )}
-                <button onClick={() => openForm(category)} aria-label={`Editar categoría ${category.name}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-colors active:bg-wash">
-                  <IconPencil size={18} />
-                </button>
-                <DeleteButton label={`categoría ${category.name}`} onClick={() => openDelete(category)} />
-              </li>
+                </li>
               );
             })}
+            <li className="border-t border-line">
+              <button onClick={() => openForm(null)} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nueva categoría</button>
+            </li>
           </ul>
         )}
       </div>
@@ -190,7 +183,14 @@ export default function CategoriesScreen({ onBack }: Props) {
               <button type="button" onClick={closeSheet} disabled={saving} className="min-h-[48px] flex-1 rounded-md bg-wash text-[15px] font-semibold text-ink-2 disabled:opacity-50">Cancelar</button>
               <button type="submit" disabled={!name.trim() || saving} className="min-h-[48px] flex-1 rounded-md bg-coral text-[15px] font-semibold text-night disabled:opacity-50">{saving ? "Guardando..." : sheet.category ? "Guardar cambios" : "Crear categoría"}</button>
             </div>
-          </form>
+          
+            {sheet.category && (
+              <div className="flex flex-col border-t border-line pt-1">
+                {!sheet.category.parentId && <button type="button" onClick={() => openForm(null, sheet.category!.id)} className="min-h-[44px] text-left text-[14px] font-semibold text-coral-ink">Agregar subcategoría</button>}
+                <button type="button" onClick={() => openDelete(sheet.category!)} className="min-h-[44px] text-left text-[14px] font-semibold text-danger">Eliminar categoría</button>
+              </div>
+            )}
+</form>
         )}
 
         {sheet?.kind === "delete" && (

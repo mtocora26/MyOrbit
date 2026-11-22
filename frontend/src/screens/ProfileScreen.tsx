@@ -350,6 +350,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         <button onClick={onLogout} className="w-full min-h-[44px] py-3 rounded-md bg-wash text-[14px] font-bold text-ink-2 active:scale-[0.98] transition-transform mt-2">
           Cerrar sesión
         </button>
+        <p className="pt-2 text-center text-[13px] text-ink-3">MyOrbit v1.0</p>
       </div>
       <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />
     </div>

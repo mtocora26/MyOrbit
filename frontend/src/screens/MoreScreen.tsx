@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Avatar, PageTitle } from "../components/shared";
-import { IconHabit, IconUser, IconShield, IconTag, IconBell } from "../components/icons";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 
 interface Props {
@@ -23,12 +22,11 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
   }, []);
 
   const detail = [profile?.program, profile?.semester].filter(Boolean).join(" · ");
-  const tiles: { icon: React.ReactNode; label: string; badge?: number; color: string; bg: string; action: () => void }[] = [
-    { icon: <IconHabit size={24} />, label: "Hábitos", color: "var(--color-violet-ink)", bg: "var(--color-violet-wash)", action: onHabits },
-    { icon: <IconBell size={24} />, label: "Notificaciones", badge: unreadCount, color: "var(--color-amber-ink)", bg: "var(--color-amber-wash)", action: onNotifications },
-    { icon: <IconTag size={24} />, label: "Categorías", color: "var(--color-green-ink)", bg: "var(--color-green-wash)", action: onCategories },
-    { icon: <IconUser size={24} />, label: "Perfil", color: "var(--color-coral-ink)", bg: "var(--color-coral-wash)", action: onProfile },
-    ...(isAdmin ? [{ icon: <IconShield size={24} />, label: "Usuarios", color: "var(--color-ink-2)", bg: "var(--color-wash)", action: onAdmin }] : []),
+  const rows: { label: string; badge?: number; action: () => void }[] = [
+    { label: "Hábitos", action: onHabits },
+    { label: "Notificaciones", badge: unreadCount, action: onNotifications },
+    { label: "Categorías", action: onCategories },
+    ...(isAdmin ? [{ label: "Usuarios", action: onAdmin }] : []),
   ];
 
   return (
@@ -37,29 +35,29 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
         <PageTitle>Más</PageTitle>
       </header>
 
-      <div className="no-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-3 lg:mx-0 lg:max-w-[640px] lg:px-8 [&>*]:shrink-0">
-        <button onClick={onProfile} className="flex min-h-[64px] items-center gap-3 rounded-md bg-card p-3 text-left active:bg-wash">
-          <Avatar name={userName} />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[16px] font-semibold text-ink">{userName}</span>
-            <span className="block truncate text-[14px] text-ink-2">{detail || "Completa tu perfil"}</span>
-          </span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
-        </button>
-
-        <div className="grid grid-cols-2 gap-3">
-          {tiles.map((tile) => (
-            <button key={tile.label} onClick={tile.action} className="flex min-h-[96px] flex-col items-start justify-between rounded-md bg-card p-3.5 text-left active:bg-wash">
-              <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: tile.bg, color: tile.color }}>{tile.icon}</span>
-              <span className="flex w-full items-center justify-between gap-2">
-                <span className="text-[16px] font-semibold text-ink">{tile.label}</span>
-                {(tile.badge ?? 0) > 0 && <span aria-label={`${tile.badge} sin leer`} className="num flex h-[20px] min-w-[20px] items-center justify-center rounded-[4px] bg-coral px-1.5 text-[13px] font-semibold leading-none text-night">{(tile.badge ?? 0) > 99 ? "99+" : tile.badge}</span>}
+      <div className="no-scrollbar flex flex-1 flex-col overflow-y-auto px-4 py-3 lg:mx-0 lg:max-w-[640px] lg:px-8 [&>*]:shrink-0">
+        {/* Una sola lista: tu perfil primero, luego lo demás. Sin tarjetas por destino ni iconos de color. */}
+        <ul className="overflow-hidden rounded-md bg-card">
+          <li>
+            <button onClick={onProfile} className="flex min-h-[64px] w-full items-center gap-3 px-4 py-3 text-left active:bg-wash">
+              <Avatar name={userName} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[16px] font-semibold text-ink">{userName}</span>
+                <span className="block truncate text-[14px] text-ink-2">{detail || "Completa tu perfil"}</span>
               </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="flex-shrink-0"><path d="M9 18l6-6-6-6" /></svg>
             </button>
+          </li>
+          {rows.map((row) => (
+            <li key={row.label} className="border-t border-line">
+              <button onClick={row.action} className="flex min-h-[56px] w-full items-center gap-3 px-4 text-left active:bg-wash">
+                <span className="flex-1 text-[16px] font-semibold text-ink">{row.label}</span>
+                {(row.badge ?? 0) > 0 && <span aria-label={`${row.badge} sin leer`} className="num text-[16px] font-semibold text-coral-ink">{(row.badge ?? 0) > 99 ? "99+" : row.badge}</span>}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="flex-shrink-0"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
+            </li>
           ))}
-        </div>
-
-        <p className="mt-auto pt-2 text-center text-[13px] text-ink-3">MyOrbit v1.0</p>
+        </ul>
       </div>
     </div>
   );
