@@ -491,6 +491,8 @@ Reglas: solo cuentan los **días programados** (como en las rachas); el primer m
 
 Body: `{ completed, date? }`. `date` es opcional (por defecto, hoy según el reloj del servidor) y, si viene, debe tener formato ISO `AAAA-MM-DD` y ser una fecha real del calendario. Cualquier otro valor (`hoy`, `10/10/2026`, `2026-02-30`, con hora…) responde `400` y no modifica el hábito. Aplica tanto al marcar como al desmarcar.
 
+La fecha también debe caer en el rango permitido, para marcar **y** para desmarcar: no puede ser posterior a hoy (según la zona horaria del usuario) ni anterior al día de creación del hábito (los hábitos sin día de creación no tienen límite inferior). Si no, responde `400` y no modifica nada. Marcar o desmarcar un día pasado recalcula racha, estadísticas y meta mensual, porque se calculan siempre a partir de las fechas cumplidas.
+
 ## Notificaciones (`/api/notifications`)
 
 Las notificaciones las genera el sistema a partir de eventos (tarea con fecha → `DEADLINE`, hábito pendiente → `HABIT`, tareas vencidas → `OVERDUE`, parcial próximo → `EXAM`, materia en riesgo → `AT_RISK`, clase por empezar o evento que empieza → `CLASS`, recordatorio personal que llegó a su hora → `REMINDER`; el aviso «tarea completada» (`EVENT`) se eliminó en #140); el usuario solo las consulta y las marca como leídas. Cada usuario ve únicamente las suyas.

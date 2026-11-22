@@ -24,6 +24,8 @@ export interface Habit {
   monthlyGoal: number | null;
   /** BUILD: por construir («lo hice»). QUIT: para dejar («hoy lo evité»). */
   type: HabitType;
+  /** Día de creación (AAAA-MM-DD); null en hábitos anteriores a las estadísticas. No se marca antes de ese día. */
+  createdDate: string | null;
 }
 
 export interface CreateHabitInput {
@@ -61,13 +63,14 @@ export async function createHabit(input: CreateHabitInput): Promise<Habit> {
   return response.json();
 }
 
-export async function updateHabitCompletion(habitId: string, completed: boolean): Promise<Habit> {
+/** Marca o desmarca un día (por defecto, hoy). El servidor rechaza fechas futuras y anteriores a la creación. */
+export async function updateHabitCompletion(habitId: string, completed: boolean, date: string = todayKey()): Promise<Habit> {
   const response = await fetch(`${API_BASE_URL}/api/habits/${encodeURIComponent(habitId)}/completion`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ completed, date: todayKey() }),
+    body: JSON.stringify({ completed, date }),
   });
-  if (!response.ok) throw new Error("No fue posible actualizar el habito");
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible actualizar el habito"));
   return response.json();
 }
 
