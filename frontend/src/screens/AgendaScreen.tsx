@@ -209,9 +209,6 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
         <div className="flex items-center justify-between px-4 pt-3 pb-1 lg:px-8 lg:pt-8">
           <PageTitle className="min-w-0 truncate">{monthName}<span className="num ml-2 text-[16px] font-medium tracking-normal text-ink-3">{monthYear}</span></PageTitle>
           <div className="-mr-2 flex flex-shrink-0 items-center">
-            <button onClick={() => openEventSheet(null)} aria-label="Añadir evento" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-coral-ink active:bg-wash">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-            </button>
             <WeekButton label="Semana anterior" onClick={() => shiftWeek(-1)} path="M15 18l-6-6 6-6" />
             <WeekButton label="Semana siguiente" onClick={() => shiftWeek(1)} path="M9 18l6-6-6-6" />
           </div>

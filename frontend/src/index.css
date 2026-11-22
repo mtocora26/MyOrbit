@@ -163,6 +163,11 @@ textarea:focus-visible {
   outline-offset: -1px;
 }
 
+/* Campo dentro de un contenedor que ya muestra el foco con su borde (`focus-within:border-*`): el aro lo dibuja el contenedor, no el input. */
+[class*="focus-within:border"] input:focus-visible {
+  outline: none;
+}
+
 input, select, textarea {
   caret-color: var(--color-coral);
   font-family: inherit;

@@ -252,6 +252,9 @@ The **órbita de ruta**: a full orbit (the 3px route line closed into a ring) ca
 
 Status lines under a grade (`GradeStatusLine`) are text with a mark and the tone colour, never a tinted box.
 
+### List rows
+Más, Notificaciones, Hábitos, Categorías and the subject list share one pattern: **one `card` panel, rows separated by `border-t border-line`, no outer border, no per-row box**. A row is 56-64px tall, text on the left, an optional count or state on the right, a `line-strong` chevron when it opens something. No coloured icon tiles. Unread is a coral dot (8-10px) plus a bold title, the same empty slot when read so text stays aligned. Tapping a row edits or opens it; secondary actions (add subcategory, delete) live in the edit sheet, not as icons on every row. Creating something from a list is a last row of plain `coral-ink` text ("+ Nueva categoría", "+ Nuevo hábito") at the bottom, in thumb reach. **There is one "+" in the app, the FAB**: Agenda, Hábitos and Categorías no longer carry one in the header (Universidad's stays because the FAB cannot create a subject).
+
 ### Inputs / Fields
 `card` fill, 1px `line` border, 6px radius, 12px padding, 16px text; focus shifts the border to coral. Category picker pairs a select with a 44px "+" and an 8-swatch colour radiogroup of 3px-radius squares.
 
