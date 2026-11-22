@@ -272,6 +272,8 @@ Square-cornered (4px) code in Barlow Condensed uppercase, wash fill plus ink tex
 ### Bottom Sheet
 Card fill, 8px top corners, top hairline, 40x4 handle, 24px condensed title. Enters 320ms with the drawer curve, exits 200ms ease-out; scrim fades 200ms. Escape and scrim tap close.
 
+**Quick capture** (`QuickAddSheet`) shows only what is needed to capture: the type tabs, the title field with its send button, and one line with the defaults ("Hoy · 11:59 p. m. · Media · Personal") and "Cambiar". The date, priority, category and subject choosers open under that line on demand and close again with the sheet. Category chips wrap onto several lines instead of scrolling off the edge. Fields keep one focus ring: the global ring sits over the border (`outline-offset: -1px`), it does not add to it.
+
 ### Empty State
 A dashed 3px line with one hollow coral station, a condensed 22px title, optional 28ch sub-line and primary action. No emoji.
 

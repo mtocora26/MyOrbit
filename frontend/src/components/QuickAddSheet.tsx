@@ -66,6 +66,8 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Fecha, prioridad, categoría y materia ya tienen un valor razonable: se ven como una línea y se cambian bajo demanda.
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (open) fetchCategories().then((data) => {
@@ -98,6 +100,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
 
   function closeSheet() {
     setError(null);
+    setDetailsOpen(false);
     onClose();
   }
 
@@ -141,6 +144,15 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
   const today = todayInputValue();
   const tomorrow = tomorrowInputValue();
   const customDate = date !== today && date !== tomorrow;
+  const summary = [
+    date === today ? "Hoy" : date === tomorrow ? "Mañana" : formatShortDate(date),
+    formatTime(time),
+    ...(mode === "tarea" ? [
+      PRIORITIES.find((p) => p.id === priority)?.label,
+      categories.find((category) => category.id === categoryId)?.name,
+      subjects.find((subject) => subject.id === subjectId)?.name,
+    ] : []),
+  ].filter(Boolean).join(" · ");
 
   return (
     <BottomSheet open={open} onClose={closeSheet}>
@@ -193,33 +205,44 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
 
         {(mode === "tarea" || mode === "aviso") && (
           <>
-            <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5" role="group" aria-label={mode === "aviso" ? "Fecha y hora del aviso" : "Fecha y hora límite"}>
-              <button type="button" aria-pressed={date === today} onClick={() => setDate(today)} className={`${chip} ${date === today ? chipOn : chipOff}`}>Hoy</button>
-              <button type="button" aria-pressed={date === tomorrow} onClick={() => setDate(tomorrow)} className={`${chip} ${date === tomorrow ? chipOn : chipOff}`}>Mañana</button>
-              <PickerChip type="date" value={date} onChange={setDate} label="Elegir fecha" selected={customDate} icon={<IconCalendar size={16} />} text={customDate ? formatShortDate(date) : "Otra"} />
-              <PickerChip type="time" value={time} onChange={setTime} label={mode === "aviso" ? "Hora del aviso" : "Hora límite"} selected={false} icon={<IconClock size={16} />} text={formatTime(time)} />
-            </div>
-            {mode === "aviso" && <p className="text-[13px] text-ink-3">Te llegará a Notificaciones a esa hora.</p>}
+            <button type="button" aria-expanded={detailsOpen} aria-controls="quickadd-details" onClick={() => setDetailsOpen((value) => !value)} className="flex min-h-[44px] items-center justify-between gap-3 rounded-md text-left active:bg-wash">
+              <span className="num min-w-0 truncate text-[15px] font-semibold text-ink">{summary}</span>
+              <span className="flex flex-shrink-0 items-center gap-1 text-[14px] font-semibold text-coral-ink">
+                {detailsOpen ? "Listo" : "Cambiar"}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${detailsOpen ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+              </span>
+            </button>
+            {mode === "aviso" && <p className="-mt-1 text-[13px] text-ink-3">Te llegará a Notificaciones a esa hora.</p>}
 
-            {mode === "tarea" && (
-            <>
+            {detailsOpen && (
+              <div id="quickadd-details" className="flex flex-col gap-3">
+                <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5" role="group" aria-label={mode === "aviso" ? "Fecha y hora del aviso" : "Fecha y hora límite"}>
+                  <button type="button" aria-pressed={date === today} onClick={() => setDate(today)} className={`${chip} ${date === today ? chipOn : chipOff}`}>Hoy</button>
+                  <button type="button" aria-pressed={date === tomorrow} onClick={() => setDate(tomorrow)} className={`${chip} ${date === tomorrow ? chipOn : chipOff}`}>Mañana</button>
+                  <PickerChip type="date" value={date} onChange={setDate} label="Elegir fecha" selected={customDate} icon={<IconCalendar size={16} />} text={customDate ? formatShortDate(date) : "Otra"} />
+                  <PickerChip type="time" value={time} onChange={setTime} label={mode === "aviso" ? "Hora del aviso" : "Hora límite"} selected={false} icon={<IconClock size={16} />} text={formatTime(time)} />
+                </div>
 
-            <div role="radiogroup" aria-label="Prioridad" className="grid grid-cols-3 gap-2">
-              {PRIORITIES.map((p) => {
-                const selected = priority === p.id;
-                return (
-                  <button key={p.id} type="button" role="radio" aria-checked={selected} onClick={() => setPriority(p.id)} className={`${chip} justify-center ${selected ? chipOn : chipOff}`}>
-                    <PriorityDot level={p.id} />
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
+                {mode === "tarea" && (
+                  <>
+                    <div role="radiogroup" aria-label="Prioridad" className="grid grid-cols-3 gap-2">
+                      {PRIORITIES.map((p) => {
+                        const selected = priority === p.id;
+                        return (
+                          <button key={p.id} type="button" role="radio" aria-checked={selected} onClick={() => setPriority(p.id)} className={`${chip} justify-center ${selected ? chipOn : chipOff}`}>
+                            <PriorityDot level={p.id} />
+                            {p.label}
+                          </button>
+                        );
+                      })}
+                    </div>
 
-            <CategoryPicker variant="chips" categories={categories} value={categoryId} onChange={(id) => { setCategoryId(id); rememberCategory(id); }} onCreate={handleCreateCategory} />
+                    <CategoryPicker variant="chips" categories={categories} value={categoryId} onChange={(id) => { setCategoryId(id); rememberCategory(id); }} onCreate={handleCreateCategory} />
 
-            <SubjectPicker subjects={subjects} value={subjectId} onChange={handleSubjectChange} />
-            </>
+                    <SubjectPicker subjects={subjects} value={subjectId} onChange={handleSubjectChange} />
+                  </>
+                )}
+              </div>
             )}
           </>
         )}
