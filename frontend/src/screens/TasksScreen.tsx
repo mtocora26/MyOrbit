@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { CategoryBadge, ChoiceChip, OverdueBadge, PageTitle, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner } from "../components/shared";
+import { CategoryBadge, ChoiceChip, OverdueBadge, PageTitle, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner, DetailSheet } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
-import { IconCalendar, IconChecklist, IconSearch } from "../components/icons";
+import { IconCalendar, IconChecklist, IconFilter, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
 import { flushPending, runUndoable } from "../services/undo";
 import { deleteTask, fetchTasks, getSubtaskProgress, peekTasks, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
@@ -101,6 +101,9 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   const [categoryFilter, setCategoryFilter] = useState<string>("todas");
   const [view, setView] = useState<"lista" | "tablero">("lista");
   const [groupBy, setGroupBy] = useState<"estado" | "categoria">("estado");
+  // Segundo nivel: la hoja «Filtrar» (estado, prioridad, categoría y, en tablero, cómo agrupar).
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilters = (doneFilter !== "pendientes" ? 1 : 0) + (priorityFilter !== "todas" ? 1 : 0) + (categoryFilter !== "todas" ? 1 : 0);
 
   const colorByCategoryId = useMemo(() => {
     const map = new Map<string, string>();
@@ -221,6 +224,15 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
             <IconSearch size={20} color={searching ? "var(--color-coral-ink)" : "var(--color-ink-2)"} />
           </button>
           <button
+            onClick={() => setFiltersOpen(true)}
+            title="Filtrar tareas"
+            aria-label={activeFilters ? `Filtrar tareas, ${activeFilters} ${activeFilters === 1 ? "activo" : "activos"}` : "Filtrar tareas"}
+            className="relative flex h-11 w-11 items-center justify-center rounded-md active:bg-wash"
+          >
+            <IconFilter size={20} color={activeFilters ? "var(--color-coral-ink)" : "var(--color-ink-2)"} />
+            {activeFilters > 0 && <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-coral" aria-hidden="true" />}
+          </button>
+          <button
             onClick={() => setView(view === "lista" ? "tablero" : "lista")}
             title={view === "lista" ? "Ver como tablero" : "Ver como lista"}
             className="flex h-11 w-11 items-center justify-center rounded-md active:bg-wash"
@@ -251,30 +263,6 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
           {DATE_PRESETS.map(({ id: f, label }) => (
             <ChoiceChip key={f} role="button" selected={datePreset === f} onClick={() => setDatePreset(f)} className="px-4">{label}</ChoiceChip>
           ))}
-          <select value={doneFilter} onChange={(e) => setDoneFilter(e.target.value as DoneFilter)} aria-label="Filtrar por estado" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
-            <option value="todas">Estado: todas</option>
-            <option value="pendientes">Pendientes</option>
-            <option value="completadas">Completadas</option>
-          </select>
-          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)} aria-label="Filtrar por prioridad" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
-            <option value="todas">Prioridad: todas</option>
-            <option value="alta">Alta</option>
-            <option value="media">Media</option>
-            <option value="baja">Baja</option>
-          </select>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filtrar por categoría" className="flex-shrink-0 min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2 outline-none">
-            <option value="todas">Categoría: todas</option>
-            <option value="none">Sin categoría</option>
-            {orderCategories(categories).map((category) => <option key={category.id} value={category.id}>{nameByCategoryId.get(category.id) ?? category.name}</option>)}
-          </select>
-          {view === "tablero" && (
-            <button
-              onClick={() => setGroupBy(groupBy === "estado" ? "categoria" : "estado")}
-              className="ml-auto flex-shrink-0 min-h-[44px] rounded-md bg-wash px-4 text-[14px] font-semibold text-ink-2"
-            >
-              {groupBy === "estado" ? "Por estado" : "Por línea"}
-            </button>
-          )}
         </div>
         {error && <ErrorBanner message={error} onRetry={() => loadTasks()} className="mb-3" />}
       </div>
@@ -295,6 +283,35 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
       ) : (
         <TasksBoard tasks={filteredTasks} categories={categories} colorByCategoryId={colorByCategoryId} nameByCategoryId={nameByCategoryId} groupBy={groupBy} onTaskTap={onTaskTap} onToggle={handleToggleTask} />
       )}
+
+      <DetailSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filtrar">
+        <FilterGroup label="Estado">
+          {([["todas", "Todas"], ["pendientes", "Pendientes"], ["completadas", "Completadas"]] as const).map(([id, label]) => (
+            <ChoiceChip key={id} selected={doneFilter === id} onClick={() => setDoneFilter(id)} className="px-4">{label}</ChoiceChip>
+          ))}
+        </FilterGroup>
+        <FilterGroup label="Prioridad">
+          {([["todas", "Todas"], ["alta", "Alta"], ["media", "Media"], ["baja", "Baja"]] as const).map(([id, label]) => (
+            <ChoiceChip key={id} selected={priorityFilter === id} onClick={() => setPriorityFilter(id)} className="px-4">{label}</ChoiceChip>
+          ))}
+        </FilterGroup>
+        <FilterGroup label="Categoría">
+          <ChoiceChip selected={categoryFilter === "todas"} onClick={() => setCategoryFilter("todas")} className="px-4">Todas</ChoiceChip>
+          <ChoiceChip selected={categoryFilter === "none"} onClick={() => setCategoryFilter("none")} className="px-4">Sin categoría</ChoiceChip>
+          {orderCategories(categories).map((category) => (
+            <ChoiceChip key={category.id} selected={categoryFilter === category.id} onClick={() => setCategoryFilter(category.id)} className="px-4">{nameByCategoryId.get(category.id) ?? category.name}</ChoiceChip>
+          ))}
+        </FilterGroup>
+        {view === "tablero" && (
+          <FilterGroup label="Agrupar el tablero">
+            <ChoiceChip selected={groupBy === "estado"} onClick={() => setGroupBy("estado")} className="px-4">Por estado</ChoiceChip>
+            <ChoiceChip selected={groupBy === "categoria"} onClick={() => setGroupBy("categoria")} className="px-4">Por línea</ChoiceChip>
+          </FilterGroup>
+        )}
+        {activeFilters > 0 && (
+          <button type="button" onClick={() => { setDoneFilter("pendientes"); setPriorityFilter("todas"); setCategoryFilter("todas"); }} className="min-h-[44px] self-start px-1 text-[14px] font-semibold text-coral-ink">Quitar filtros</button>
+        )}
+      </DetailSheet>
 
       <RescheduleSheet task={rescheduling} onClose={() => setRescheduling(null)} onPick={(date) => rescheduling && handleReschedule(rescheduling, date)} />
     </div>
@@ -437,6 +454,16 @@ function TasksBoard({ tasks, categories, colorByCategoryId, nameByCategoryId, gr
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Un grupo de la hoja «Filtrar»: su nombre y las opciones, que se parten en varias líneas en vez de cortarse. */
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex flex-col gap-2">
+      <p className="text-[13px] font-semibold text-ink-2">{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
