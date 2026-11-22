@@ -376,11 +376,11 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                   <IconCalendar size={16} />
                   {task.due}
                 </span>
+                <PriorityDot level={task.priority} />
                 {task.done && <span className="rounded-sm bg-green-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-green-ink">Completada</span>}
                 {overdue && <OverdueBadge />}
                 <CategoryBadge name={categoryName} color={category?.color} />
                 {task.subjectId && <span className="text-[14px] text-ink-2">{subjects.find((subject) => subject.id === task.subjectId)?.name ?? "Materia"}</span>}
-                <PriorityDot level={task.priority} />
               </div>
             )}
 
