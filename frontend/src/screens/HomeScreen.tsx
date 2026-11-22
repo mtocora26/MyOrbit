@@ -278,7 +278,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                           </span>
                         </button>
                         <span className="mt-1 line-clamp-2 text-center text-[13px] font-medium leading-tight text-ink">{habit.title}</span>
-                        <span className="num mt-0.5 text-[13px] text-ink-3">{currentStreak(habit.completedDates)} d</span>
+                        {currentStreak(habit.completedDates) > 0 && <span className="num mt-0.5 text-[13px] text-ink-3">{currentStreak(habit.completedDates)} d</span>}
                       </li>
                     );
                   })}

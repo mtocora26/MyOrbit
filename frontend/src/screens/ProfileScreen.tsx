@@ -239,7 +239,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
               </div>
               {accountError && <p role="alert" className="text-[13px] font-semibold text-danger">{accountError}</p>}
               <div className="flex gap-2">
-                <button onClick={saveAccount} disabled={savingAccount} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50">{savingAccount ? "Guardando..." : "Guardar cambios"}</button>
+                <button onClick={saveAccount} disabled={savingAccount} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[14px] font-bold text-night disabled:opacity-50">{savingAccount ? "Guardando..." : "Guardar cambios"}</button>
                 <button onClick={() => setEditingAccount(false)} disabled={savingAccount} className="rounded-md bg-wash min-h-[44px] px-4 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
               </div>
             </div>
@@ -267,7 +267,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
               <ProfileInput label="Meta de promedio" value={draft.gradeTarget} onChange={(value) => setDraft({ ...draft, gradeTarget: value })} placeholder="Ej. 4.5" />
               {profileError && <p className="text-[13px] font-semibold text-danger">{profileError}</p>}
               <div className="flex gap-2">
-                <button onClick={saveProfile} disabled={savingProfile} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50">{savingProfile ? "Guardando..." : "Guardar"}</button>
+                <button onClick={saveProfile} disabled={savingProfile} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[14px] font-bold text-night disabled:opacity-50">{savingProfile ? "Guardando..." : "Guardar"}</button>
                 <button onClick={() => setEditingProfile(false)} disabled={savingProfile} className="rounded-md bg-wash min-h-[44px] px-4 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
               </div>
             </div>

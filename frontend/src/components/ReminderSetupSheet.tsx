@@ -55,7 +55,7 @@ export default function ReminderSetupSheet({ open, onClose }: Props) {
               {!step.done && <p className="mt-0.5 text-[13px] leading-snug text-ink-2">{step.why}</p>}
             </div>
             {!step.done && (
-              <button onClick={() => handle(step)} className="min-h-[44px] flex-shrink-0 rounded-md bg-coral px-4 text-[14px] font-bold text-white transition-transform active:scale-[0.97]">{step.action}</button>
+              <button onClick={() => handle(step)} className="min-h-[44px] flex-shrink-0 rounded-md bg-coral px-4 text-[14px] font-bold text-night transition-transform active:scale-[0.97]">{step.action}</button>
             )}
           </li>
         ))}

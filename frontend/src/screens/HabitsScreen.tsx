@@ -191,7 +191,56 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
           )}
         </div>
 
-        {creating && <form onSubmit={submitHabit} className="rounded-md bg-card p-4 flex flex-col gap-3">{editingId && <p className="text-[13px] font-semibold text-ink-2">Editando hábito · tu historial de cumplimiento se conserva</p>}<div role="radiogroup" aria-label="Tipo de hábito" className="flex rounded-md bg-wash p-1">{(["BUILD", "QUIT"] as const).map((option) => <button key={option} type="button" role="radio" aria-checked={type === option} onClick={() => setType(option)} className="min-h-[44px] flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: type === option ? "var(--color-card)" : "transparent" }}>{option === "BUILD" ? "Por construir" : "Para dejar"}</button>)}</div><input autoFocus aria-label="Nombre del hábito" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={type === "QUIT" ? "Ej. No fumar" : "Ej. Leer 20 minutos"} className="rounded-md border border-line-control bg-paper px-3 py-2.5 text-[14px] outline-none focus:border-violet" /><div className="flex rounded-md bg-wash p-1"><button type="button" onClick={() => { setFrequency("diaria"); setDaysOfWeek([1, 2, 3, 4, 5, 6, 7]); }} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "diaria" ? "var(--color-card)" : "transparent" }}>Diario</button><button type="button" onClick={() => setFrequency("personalizada")} className="flex-1 rounded-lg py-2 text-[13px] font-bold" style={{ background: frequency === "personalizada" ? "var(--color-card)" : "transparent" }}>Días</button></div>{frequency === "personalizada" && <div className="flex justify-between">{DAYS.map((day, index) => <button key={day} type="button" onClick={() => toggleDay(index + 1)} className="h-11 min-w-0 max-w-11 flex-1 rounded-full text-[13px] font-bold" style={{ background: daysOfWeek.includes(index + 1) ? color : "var(--color-wash)", color: daysOfWeek.includes(index + 1) ? "white" : "var(--color-ink-2)" }}>{day}</button>)}</div>}<label className="flex items-center justify-between gap-3 text-[13px] font-semibold text-ink-2">Meta mensual (opcional)<span className="flex items-center gap-1"><input type="number" inputMode="numeric" min={1} max={100} aria-label="Meta mensual en porcentaje" value={monthlyGoal} onChange={(event) => setMonthlyGoal(event.target.value)} placeholder="80" className="num w-16 rounded-md border border-line-control bg-paper px-2 py-1.5 text-right text-[14px] outline-none focus:border-violet" /><span>%</span></span></label><div className="flex items-center justify-between"><div className="flex gap-2">{(COLORS.includes(color) ? COLORS : [...COLORS, color]).map((option) => <button key={option} type="button" aria-label={`Color ${option}`} onClick={() => setColor(option)} className="h-6 w-6 rounded-full border-2" style={{ background: option, borderColor: color === option ? "var(--color-night)" : "transparent" }} />)}</div><select value={icon} onChange={(event) => setIcon(event.target.value as keyof typeof ICONS)} className="rounded-md border border-line-control bg-paper px-2 py-1.5 text-[13px]"><option value="target">Meta</option><option value="book">Estudio</option><option value="run">Ejercicio</option><option value="reading">Lectura</option><option value="meditate">Calma</option><option value="phone">Sin redes</option></select></div><div className="flex gap-2"><button type="button" onClick={resetForm} className="rounded-md bg-wash px-3 py-2 text-[13px] font-bold text-ink-2">Cancelar</button><button disabled={!title.trim() || saving} className="rounded-md bg-violet px-3 py-2 text-[13px] font-bold text-white disabled:opacity-50">{saving ? (editingId ? "Guardando..." : "Creando...") : editingId ? "Guardar cambios" : "Crear hábito"}</button></div></form>}
+        {creating && (
+          <form onSubmit={submitHabit} className="orbit-fade flex flex-col gap-3 rounded-md bg-card p-4">
+            {editingId && <p className="text-[13px] font-semibold text-ink-2">Editando hábito · tu historial de cumplimiento se conserva</p>}
+            <div role="radiogroup" aria-label="Tipo de hábito" className="flex gap-2">
+              {(["BUILD", "QUIT"] as const).map((option) => (
+                <ChoiceChip key={option} selected={type === option} onClick={() => setType(option)} className="flex-1">{option === "BUILD" ? "Por construir" : "Para dejar"}</ChoiceChip>
+              ))}
+            </div>
+            <input autoFocus aria-label="Nombre del hábito" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={type === "QUIT" ? "Ej. No fumar" : "Ej. Leer 20 minutos"} className="min-h-[44px] rounded-md border border-line-control bg-paper px-3 text-[16px] text-ink outline-none focus:border-coral" />
+            <div role="radiogroup" aria-label="Frecuencia" className="flex gap-2">
+              <ChoiceChip selected={frequency === "diaria"} onClick={() => { setFrequency("diaria"); setDaysOfWeek([1, 2, 3, 4, 5, 6, 7]); }} className="flex-1">Diario</ChoiceChip>
+              <ChoiceChip selected={frequency === "personalizada"} onClick={() => setFrequency("personalizada")} className="flex-1">Días</ChoiceChip>
+            </div>
+            {frequency === "personalizada" && (
+              <div className="flex justify-between">
+                {DAYS.map((day, index) => (
+                  <button key={day} type="button" onClick={() => toggleDay(index + 1)} aria-pressed={daysOfWeek.includes(index + 1)} className="h-11 min-w-0 max-w-11 flex-1 rounded-full text-[13px] font-bold transition-transform duration-150 ease-out active:scale-95" style={{ background: daysOfWeek.includes(index + 1) ? color : "var(--color-wash)", color: daysOfWeek.includes(index + 1) ? "var(--color-night)" : "var(--color-ink-2)" }}>{day}</button>
+                ))}
+              </div>
+            )}
+            <label className="flex items-center justify-between gap-3 text-[13px] font-semibold text-ink-2">
+              Meta mensual (opcional)
+              <span className="flex items-center gap-1">
+                <input type="number" inputMode="numeric" min={1} max={100} aria-label="Meta mensual en porcentaje" value={monthlyGoal} onChange={(event) => setMonthlyGoal(event.target.value)} placeholder="80" className="num w-20 min-h-[44px] rounded-md border border-line-control bg-paper px-3 text-[16px] text-ink outline-none focus:border-coral text-right" />
+                <span>%</span>
+              </span>
+            </label>
+            <div className="flex flex-wrap items-center justify-between gap-x-3">
+              <div className="-ml-2 flex" role="radiogroup" aria-label="Color del hábito">
+                {(COLORS.includes(color) ? COLORS : [...COLORS, color]).map((option) => (
+                  <button key={option} type="button" role="radio" aria-checked={color === option} aria-label={`Color ${option}`} onClick={() => setColor(option)} className="flex h-11 w-11 items-center justify-center">
+                    <span className="h-6 w-6 rounded-full border-2" style={{ background: option, borderColor: color === option ? "var(--color-ink)" : "transparent" }} />
+                  </button>
+                ))}
+              </div>
+              <select value={icon} onChange={(event) => setIcon(event.target.value as keyof typeof ICONS)} aria-label="Icono del hábito" className="min-h-[44px] max-w-full rounded-md border border-line-control bg-paper px-3 text-[14px] text-ink outline-none focus:border-coral">
+                <option value="target">Meta</option>
+                <option value="book">Estudio</option>
+                <option value="run">Ejercicio</option>
+                <option value="reading">Lectura</option>
+                <option value="meditate">Calma</option>
+                <option value="phone">Sin redes</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={resetForm} className="min-h-[44px] rounded-md bg-wash px-4 text-[14px] font-bold text-ink-2 transition-transform duration-150 ease-out active:scale-[0.97]">Cancelar</button>
+              <button disabled={!title.trim() || saving} className="min-h-[44px] rounded-md bg-coral px-4 text-[14px] font-bold text-night transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50">{saving ? (editingId ? "Guardando..." : "Creando...") : editingId ? "Guardar cambios" : "Crear hábito"}</button>
+            </div>
+          </form>
+        )}
 
         {error && <ErrorBanner message={error} onRetry={loadHabits} />}
         {loading ? <HabitListSkeleton /> : habits.length === 0 && error ? null : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : <div className="overflow-hidden rounded-md bg-card divide-y divide-line">{habits.map((habit) => <HabitCard key={habit.id} habit={habit} weekDates={weekDates} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}{!creating && <button onClick={startCreate} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nuevo hábito</button>}</div>}

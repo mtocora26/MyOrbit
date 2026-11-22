@@ -219,7 +219,8 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
             const key = dayKey(date);
             const isSelected = key === selected;
             const isToday = key === todayKey;
-            const pending = (byDay.get(key) ?? []).filter((task) => !task.done).length + (evaluationsByDay.get(key) ?? []).filter((evaluation) => evaluation.grade === null).length + (classesByDay.get(key) ?? []).length + events.filter((event) => coversDay(event, key)).length;
+            // El punto marca entregas pendientes (tareas, evaluaciones y eventos), no las clases: esas estarían todos los días.
+            const pending = (byDay.get(key) ?? []).filter((task) => !task.done).length + (evaluationsByDay.get(key) ?? []).filter((evaluation) => evaluation.grade === null).length + events.filter((event) => coversDay(event, key)).length;
             return (
               <button
                 key={key}

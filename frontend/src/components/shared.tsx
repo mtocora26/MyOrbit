@@ -126,7 +126,9 @@ export function ChoiceChip({ selected, onClick, children, className = "", role =
   );
 }
 
+/** La categoría de una tarea. Sin categoría no se pinta nada: repetir la ausencia de un dato en cada fila pesa más que un borde. */
 export function CategoryBadge({ name, color }: { name: string; color?: string }) {
+  if (!name || name === "Sin categoría") return null;
   const hex = color || "var(--color-ink-3)";
   return (
     <span className="inline-flex items-center gap-1.5 text-[13px] font-medium leading-none text-ink-2">
@@ -170,9 +172,9 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
     return (
       <div className={`flex flex-col gap-2 ${className}`}>
         <div className="flex gap-2">
-          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Nueva categoría" className="min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral" />
-          <button type="button" onClick={submit} disabled={!name.trim() || saving} className="rounded-md bg-strong px-3 text-[13px] font-semibold text-on-strong disabled:opacity-50">{saving ? "..." : "Crear"}</button>
-          <button type="button" onClick={() => setCreating(false)} className="rounded-md bg-wash px-3 text-[13px] font-semibold text-ink-2">Cancelar</button>
+          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Nueva categoría" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
+          <button type="button" onClick={submit} disabled={!name.trim() || saving} className="min-h-[44px] rounded-md bg-coral px-3 text-[14px] font-semibold text-night disabled:opacity-50">{saving ? "..." : "Crear"}</button>
+          <button type="button" onClick={() => setCreating(false)} className="min-h-[44px] rounded-md bg-wash px-3 text-[14px] font-semibold text-ink-2">Cancelar</button>
         </div>
         <div className="flex gap-1" role="radiogroup" aria-label="Color de la línea">
           {CATEGORY_PALETTE.map((option) => (
@@ -218,7 +220,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
 
   return (
     <div className={`flex gap-2 ${className}`}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 py-2.5 text-[14px] text-ink outline-none focus:border-coral">
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral">
         {ordered.map((category) => <option key={category.id} value={category.id}>{labelOf(category)}</option>)}
         {value && !categories.some((category) => category.id === value) && <option value={value}>{value}</option>}
       </select>

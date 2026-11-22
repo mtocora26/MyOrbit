@@ -215,7 +215,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
             {mode === "aviso" && <p className="-mt-1 text-[13px] text-ink-3">Te llegará a Notificaciones a esa hora.</p>}
 
             {detailsOpen && (
-              <div id="quickadd-details" className="flex flex-col gap-3">
+              <div id="quickadd-details" className="orbit-fade flex flex-col gap-3">
                 <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5" role="group" aria-label={mode === "aviso" ? "Fecha y hora del aviso" : "Fecha y hora límite"}>
                   <button type="button" aria-pressed={date === today} onClick={() => setDate(today)} className={`${chip} ${date === today ? chipOn : chipOff}`}>Hoy</button>
                   <button type="button" aria-pressed={date === tomorrow} onClick={() => setDate(tomorrow)} className={`${chip} ${date === tomorrow ? chipOn : chipOff}`}>Mañana</button>
