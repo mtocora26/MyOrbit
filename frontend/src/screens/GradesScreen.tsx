@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CollapsibleSection, ProgressBar, ScreenHeader } from "../components/shared";
+import { DetailSheet, ProgressBar, ScreenHeader, SummaryList, SummaryRow } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, projectedFinal, type GradeSummary } from "../services/academicApi";
 import { fetchEvaluations, formatNumber, type Evaluation } from "../services/evaluationsApi";
@@ -13,6 +13,8 @@ export default function GradesScreen({ subject, onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expected, setExpected] = useState(MAX_GRADE / 2);
+  // Segundo nivel: el simulador vive en su hoja; arriba solo su resultado.
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
 
   async function load() {
     try {
@@ -73,30 +75,13 @@ export default function GradesScreen({ subject, onBack }: Props) {
             </section>
 
             {hasPending && (
-              <CollapsibleSection id="grades-simulator" title="Simulador" defaultOpen summary={`Proyectada ${formatGrade(projected)}`}>
-              <div className="rounded-md bg-card p-4">
-                <p className="text-[14px] text-ink-2">¿Qué promedio sacarías en el {formatNumber(summary.remainingPercentage)}% restante?</p>
-                <div className="mt-3 flex items-center gap-3">
-                  <input type="range" min={0} max={MAX_GRADE} step={0.1} value={expected} onChange={(e) => setExpected(Number(e.target.value))} aria-label="Promedio esperado en lo que falta" className="h-11 min-w-0 flex-1" style={{ accentColor: "var(--color-coral)" }} />
-                  <span className="num w-12 text-right text-[26px] font-semibold leading-none text-ink">{formatGrade(expected)}</span>
-                </div>
-                <p className="num mt-3 flex items-baseline justify-between text-[14px] text-ink-2">
-                  <span>Nota final proyectada</span>
-                  <span className="text-[26px] font-semibold leading-none text-ink">{formatGrade(projected)}</span>
-                </p>
-                <div className="mt-2 flex flex-col items-start gap-2">
-                  <GradeStatusLine tone={passes ? "ok" : "risk"}>
-                    {passes ? `Apruebas (mínimo ${formatGrade(summary.passingGrade)}).` : `No apruebas: te faltarían ${formatGrade(summary.passingGrade - projected)} puntos para el mínimo de ${formatGrade(summary.passingGrade)}.`}
-                  </GradeStatusLine>
-                  <GradeStatusLine tone={reaches ? "ok" : "risk"}>
-                    {reaches ? `Llegas a la meta de ${formatGrade(summary.targetGrade)}.` : `Te faltarían ${formatGrade(summary.targetGrade - projected)} puntos para la meta de ${formatGrade(summary.targetGrade)}.`}
-                  </GradeStatusLine>
-                </div>
-              </div>
-              </CollapsibleSection>
+              <SummaryList label="Simulador">
+                <SummaryRow title="Simulador" summary={`Proyectada ${formatGrade(projected)}`} onClick={() => setSimulatorOpen(true)} />
+              </SummaryList>
             )}
 
-            <CollapsibleSection id="grades-evaluations" title="Notas por evaluación" defaultOpen summary={`${evaluations.length}`}>
+            <section aria-labelledby="grades-evaluations-title" className="flex flex-col gap-2">
+              <h2 id="grades-evaluations-title" className="flex min-h-[44px] items-baseline gap-2 pt-2 font-display text-[20px] font-semibold leading-none tracking-tight text-ink">Notas por evaluación <span className="num text-[14px] font-normal text-ink-2">{evaluations.length}</span></h2>
               {evaluations.length === 0 ? (
                 <p className="rounded-md border border-dashed border-line-strong px-4 py-6 text-center text-[14px] text-ink-2">Agrega evaluaciones en el detalle de la materia para ver tus notas.</p>
               ) : (
@@ -123,10 +108,33 @@ export default function GradesScreen({ subject, onBack }: Props) {
               {summary.requiredGrade !== null && summary.requiredGrade > 0 && evaluations.some((evaluation) => evaluation.grade === null) && (
                 <p className="text-[13px] text-ink-3">«Necesitas» es el promedio mínimo que debes sacar en conjunto en lo pendiente para llegar a la meta.</p>
               )}
-            </CollapsibleSection>
+            </section>
           </>
         )}
       </div>
+      {summary && hasPending && (
+        <DetailSheet open={simulatorOpen} onClose={() => setSimulatorOpen(false)} title="Simulador">
+          <div>
+                <p className="text-[14px] text-ink-2">¿Qué promedio sacarías en el {formatNumber(summary.remainingPercentage)}% restante?</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <input type="range" min={0} max={MAX_GRADE} step={0.1} value={expected} onChange={(e) => setExpected(Number(e.target.value))} aria-label="Promedio esperado en lo que falta" className="h-11 min-w-0 flex-1" style={{ accentColor: "var(--color-coral)" }} />
+                  <span className="num w-12 text-right text-[26px] font-semibold leading-none text-ink">{formatGrade(expected)}</span>
+                </div>
+                <p className="num mt-3 flex items-baseline justify-between text-[14px] text-ink-2">
+                  <span>Nota final proyectada</span>
+                  <span className="text-[26px] font-semibold leading-none text-ink">{formatGrade(projected)}</span>
+                </p>
+                <div className="mt-2 flex flex-col items-start gap-2">
+                  <GradeStatusLine tone={passes ? "ok" : "risk"}>
+                    {passes ? `Apruebas (mínimo ${formatGrade(summary.passingGrade)}).` : `No apruebas: te faltarían ${formatGrade(summary.passingGrade - projected)} puntos para el mínimo de ${formatGrade(summary.passingGrade)}.`}
+                  </GradeStatusLine>
+                  <GradeStatusLine tone={reaches ? "ok" : "risk"}>
+                    {reaches ? `Llegas a la meta de ${formatGrade(summary.targetGrade)}.` : `Te faltarían ${formatGrade(summary.targetGrade - projected)} puntos para la meta de ${formatGrade(summary.targetGrade)}.`}
+                  </GradeStatusLine>
+                </div>
+              </div>
+        </DetailSheet>
+      )}
     </div>
   );
 }

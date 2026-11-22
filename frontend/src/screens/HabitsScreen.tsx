@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { ChoiceChip, ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton } from "../components/shared";
+import { useEffect, useState } from "react";
+import { ChoiceChip, ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton, DetailSheet } from "../components/shared";
 import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
 import { flushPending, runUndoable } from "../services/undo";
@@ -25,7 +25,6 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
   const [creating, setCreating] = useState(false);
   // Id del hábito en edición; null = el formulario crea uno nuevo.
   const [editingId, setEditingId] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [statsWindow, setStatsWindow] = useState<(typeof STATS_WINDOWS)[number]>(30);
   // Estadísticas y meta mensual de todos los hábitos, de una sola petición. Mientras no llegan, las tarjetas
   // muestran esqueletos (nunca «0 días» ni «–» inventados); al recalcular se conservan los valores anteriores.
@@ -157,7 +156,6 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
   }
 
   function startCreate() {
-    if (creating && !editingId) { resetForm(); return; }
     resetForm();
     setError(null);
     setCreating(true);
@@ -174,8 +172,6 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
     setMonthlyGoal(habit.monthlyGoal ? String(habit.monthlyGoal) : "");
     setType(habit.type ?? "BUILD");
     setCreating(true);
-    // El formulario vive arriba de la lista: se lleva a la vista al editar un hábito lejano.
-    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function toggleDay(day: number) {
@@ -186,7 +182,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
     <div className="h-full min-h-0 flex flex-col bg-paper">
       <ScreenHeader title="Hábitos" onBack={onBack} />
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-8 flex flex-col gap-4 lg:px-8 lg:pt-6 lg:max-w-[760px] [&>*]:shrink-0">
+      <div className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-8 flex flex-col gap-4 lg:px-8 lg:pt-6 lg:max-w-[760px] [&>*]:shrink-0">
         <div>
           {habitsKnown
             ? <p className="num text-[18px] font-semibold text-ink">{doneToday} de {habits.length} hoy</p>
@@ -204,8 +200,11 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
           )}
         </div>
 
-        {creating && (
-          <form onSubmit={submitHabit} className="orbit-fade flex flex-col gap-3 rounded-md bg-card p-4">
+        {error && <ErrorBanner message={error} onRetry={loadHabits} />}
+        {loading ? <HabitListSkeleton /> : habits.length === 0 && error ? null : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : <div className="overflow-hidden rounded-md bg-card divide-y divide-line">{habits.map((habit) => <HabitCard key={habit.id} habit={habit} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onToggleDay={(date, completed) => toggleHabitDay(habit, date, completed)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}<button onClick={startCreate} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nuevo hábito</button></div>}
+      </div>
+      <DetailSheet open={creating} onClose={resetForm} title={editingId ? "Editar hábito" : "Nuevo hábito"} doneLabel="Cancelar">
+        <form onSubmit={submitHabit} className="flex flex-col gap-3">
             {editingId && <p className="text-[13px] font-semibold text-ink-2">Editando hábito · tu historial de cumplimiento se conserva</p>}
             <div role="radiogroup" aria-label="Tipo de hábito" className="flex gap-2">
               {(["BUILD", "QUIT"] as const).map((option) => (
@@ -248,16 +247,9 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
                 <option value="phone">Sin redes</option>
               </select>
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={resetForm} className="min-h-[44px] rounded-md bg-wash px-4 text-[14px] font-bold text-ink-2 transition-transform duration-150 ease-out active:scale-[0.97]">Cancelar</button>
-              <button disabled={!title.trim() || saving} className="min-h-[44px] rounded-md bg-coral px-4 text-[14px] font-bold text-night transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50">{saving ? (editingId ? "Guardando..." : "Creando...") : editingId ? "Guardar cambios" : "Crear hábito"}</button>
-            </div>
-          </form>
-        )}
-
-        {error && <ErrorBanner message={error} onRetry={loadHabits} />}
-        {loading ? <HabitListSkeleton /> : habits.length === 0 && error ? null : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : <div className="overflow-hidden rounded-md bg-card divide-y divide-line">{habits.map((habit) => <HabitCard key={habit.id} habit={habit} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onToggleDay={(date, completed) => toggleHabitDay(habit, date, completed)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}{!creating && <button onClick={startCreate} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nuevo hábito</button>}</div>}
-      </div>
+          <button disabled={!title.trim() || saving} className="min-h-[44px] rounded-md bg-coral px-4 text-[14px] font-bold text-night transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50">{saving ? (editingId ? "Guardando..." : "Creando...") : editingId ? "Guardar cambios" : "Crear hábito"}</button>
+        </form>
+      </DetailSheet>
     </div>
   );
 }

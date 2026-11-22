@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BottomSheet, CollapsibleSection, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
+import { BottomSheet, DetailSheet, SummaryList, SummaryRow, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
 import { IconPencil } from "../components/icons";
@@ -41,6 +41,8 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
   const [summary, setSummary] = useState<GradeSummary | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [editingEval, setEditingEval] = useState<Evaluation | null>(null);
+  // Segundo nivel: tareas pendientes y horario abren su propia hoja.
+  const [detailSheet, setDetailSheet] = useState<"tasks" | "schedule" | null>(null);
   const [evalSheetOpen, setEvalSheetOpen] = useState(false);
   const [creatingCuts, setCreatingCuts] = useState(false);
   const [pendingTasks, setPendingTasks] = useState<ApiTask[]>([]);
@@ -164,13 +166,15 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
         )}
         {summaryError && !summary && <p role="alert" className="text-[14px] font-semibold text-danger">{summaryError}</p>}
 
-        <CollapsibleSection
-          id="subject-evaluations"
-          title="Evaluaciones"
-          defaultOpen
-          summary={evaluations.length > 0 ? `${evaluations.length} · ${formatNumber(assigned)}% repartido` : undefined}
-          action={evaluations.length > 0 ? <button onClick={() => openEvalSheet(null)} className="-mr-2 flex min-h-[44px] flex-shrink-0 items-center px-3 text-[14px] font-semibold text-coral-ink">Agregar</button> : undefined}
-        >
+        <section aria-labelledby="subject-evaluations-title" className="flex flex-col gap-2">
+          <div className="flex min-h-[44px] items-center justify-between gap-2">
+            <h2 id="subject-evaluations-title" className="flex min-w-0 items-baseline gap-2 font-display text-[20px] font-semibold leading-none tracking-tight text-ink">
+              Evaluaciones
+              {evaluations.length > 0 && <span className="num truncate text-[14px] font-normal text-ink-2">{evaluations.length} · {formatNumber(assigned)}% repartido</span>}
+            </h2>
+            {evaluations.length > 0 && <button onClick={() => openEvalSheet(null)} className="-mr-2 flex min-h-[44px] flex-shrink-0 items-center px-3 text-[14px] font-semibold text-coral-ink">Agregar</button>}
+          </div>
+
           {evalsError && <ErrorBanner message={evalsError} onRetry={loadEvaluations} />}
 
           {loadingEvals ? (
@@ -217,36 +221,40 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
               </ul>
             </>
           )}
-        </CollapsibleSection>
-        {pendingTasks.length > 0 && (
-          <CollapsibleSection id="subject-tasks" title="Tareas pendientes" summary={`${pendingTasks.length}`}>
-            <ul className="overflow-hidden rounded-md bg-card">
-              {pendingTasks.map((task, index) => (
-                <li key={task.id} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
-                  <span className="h-[14px] w-[14px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color }} aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{task.title}</span>
-                  {task.due && <span className="num flex-shrink-0 text-[13px] text-ink-2">{formatTaskDue(task.due)}</span>}
-                </li>
-              ))}
-            </ul>
-          </CollapsibleSection>
-        )}
+        </section>
 
-        {subject.schedule.length > 0 && (
-          <CollapsibleSection id="subject-schedule" title="Horario" summary={scheduleSummary(subject.schedule)}>
-            <ul className="overflow-hidden rounded-md bg-card">
-              {sortSlots(subject.schedule).map((slot, index) => (
-                <li key={`${slot.dayOfWeek}-${slot.start}`} className={`flex min-h-[52px] items-center gap-3 px-4 py-2.5 ${index > 0 ? "border-t border-line" : ""}`}>
-                  <span className="w-[88px] flex-shrink-0 text-[15px] font-semibold text-ink">{DAY_NAMES[slot.dayOfWeek - 1]}</span>
-                  <span className="num flex-1 text-[15px] text-ink">{slot.start}–{slot.end}</span>
-                  {slot.room && <span className="min-w-0 truncate text-[14px] text-ink-2">{slot.room}</span>}
-                </li>
-              ))}
-            </ul>
-          </CollapsibleSection>
+        {/* Primer nivel: lo secundario es una fila de resumen; el detalle abre una hoja. */}
+        {(pendingTasks.length > 0 || subject.schedule.length > 0) && (
+          <SummaryList label="Más de la materia" className="mt-2">
+            {pendingTasks.length > 0 && <SummaryRow title="Tareas pendientes" summary={`${pendingTasks.length}`} onClick={() => setDetailSheet("tasks")} />}
+            {subject.schedule.length > 0 && <SummaryRow title="Horario" summary={scheduleSummary(subject.schedule)} onClick={() => setDetailSheet("schedule")} />}
+          </SummaryList>
         )}
-
       </div>
+
+      <DetailSheet open={detailSheet === "tasks"} onClose={() => setDetailSheet(null)} title="Tareas pendientes">
+        <ul className="-mx-5 divide-y divide-line">
+          {pendingTasks.map((task) => (
+            <li key={task.id} className="flex min-h-[52px] items-center gap-3 px-5 py-2.5">
+              <span className="h-[14px] w-[14px] flex-shrink-0 rounded-full border-[3px]" style={{ borderColor: subject.color }} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{task.title}</span>
+              {task.due && <span className="num flex-shrink-0 text-[13px] text-ink-2">{formatTaskDue(task.due)}</span>}
+            </li>
+          ))}
+        </ul>
+      </DetailSheet>
+
+      <DetailSheet open={detailSheet === "schedule"} onClose={() => setDetailSheet(null)} title="Horario">
+        <ul className="-mx-5 divide-y divide-line">
+          {sortSlots(subject.schedule).map((slot) => (
+            <li key={`${slot.dayOfWeek}-${slot.start}`} className="flex min-h-[52px] items-center gap-3 px-5 py-2.5">
+              <span className="w-[88px] flex-shrink-0 text-[15px] font-semibold text-ink">{DAY_NAMES[slot.dayOfWeek - 1]}</span>
+              <span className="num flex-1 text-[15px] text-ink">{slot.start}–{slot.end}</span>
+              {slot.room && <span className="min-w-0 truncate text-[14px] text-ink-2">{slot.room}</span>}
+            </li>
+          ))}
+        </ul>
+      </DetailSheet>
 
       <EvaluationFormSheet
         open={evalSheetOpen}

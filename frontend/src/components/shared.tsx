@@ -397,6 +397,56 @@ export function BottomSheet({ open, onClose, title, children }: { open: boolean;
   );
 }
 
+// ─── Summary row (despliegue en cascada) ─────────────────────────────────────
+/** Chevron de fila: dice «esto abre otro nivel». */
+export function RowChevron() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="flex-shrink-0"><path d="M9 18l6-6-6-6" /></svg>;
+}
+
+/** Un panel `card` con filas separadas por hairlines: el nivel de arriba de un despliegue. */
+export function SummaryList({ children, label, className = "" }: { children: ReactNode; label?: string; className?: string }) {
+  return <ul aria-label={label} className={`overflow-hidden rounded-md bg-card ${className}`}>{children}</ul>;
+}
+
+/**
+ * Fila de resumen que abre un nivel (hoja o subpantalla): título a la izquierda, resumen de una línea a la derecha
+ * y chevron. Va dentro de `SummaryList`. `badge` pinta un conteo en `coral-ink`; `lead` es un hueco opcional a la
+ * izquierda (p. ej. un `Avatar`). Mide 56 px (64 con `lead` o `detail`).
+ */
+export function SummaryRow({ title, summary, detail, badge, lead, onClick, ariaLabel }: { title: string; /** Una línea a la derecha: el estado o el valor actual. */ summary?: string; /** Una línea bajo el título (p. ej. carrera y semestre). */ detail?: string; badge?: number; lead?: ReactNode; onClick: () => void; ariaLabel?: string }) {
+  const tall = Boolean(lead || detail);
+  const count = badge ?? 0;
+  return (
+    <li className="border-t border-line first:border-t-0">
+      <button type="button" onClick={onClick} aria-label={ariaLabel} className={`flex w-full items-center gap-3 px-4 text-left transition-colors duration-150 active:bg-wash ${tall ? "min-h-[64px] py-3" : "min-h-[56px]"}`}>
+        {lead}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[16px] font-semibold text-ink">{title}</span>
+          {detail && <span className="block truncate text-[14px] text-ink-2">{detail}</span>}
+        </span>
+        {summary && <span className="num min-w-0 max-w-[45%] truncate text-[14px] text-ink-2">{summary}</span>}
+        {count > 0 && <span aria-label={`${count} sin leer`} className="num text-[16px] font-semibold text-coral-ink">{count > 99 ? "99+" : count}</span>}
+        <RowChevron />
+      </button>
+    </li>
+  );
+}
+
+/**
+ * Hoja de detalle: el segundo nivel de un despliegue corto (elegir, editar un grupo de ajustes). Se cierra con
+ * arrastrar el asa, «atrás», Escape, el fondo o «Listo»: el mismo gesto en todas las hojas.
+ */
+export function DetailSheet({ open, onClose, title, children, doneLabel = "Listo" }: { open: boolean; onClose: () => void; title: string; children: ReactNode; doneLabel?: string }) {
+  return (
+    <BottomSheet open={open} onClose={onClose} title={title}>
+      <div className="flex flex-col gap-3">
+        {children}
+        <button type="button" onClick={onClose} className="min-h-[44px] rounded-md bg-wash px-4 text-[14px] font-bold text-ink-2 transition-transform duration-150 ease-out active:scale-[0.97]">{doneLabel}</button>
+      </div>
+    </BottomSheet>
+  );
+}
+
 // ─── Empty State ──────────────────────────────────────────────────────────────
 // Una línea sin estaciones todavía: el vacío se dibuja, no se rellena con emoji.
 export function EmptyState({ title, sub, action, onAction }: { icon?: string; title: string; sub?: string; action?: string; onAction?: () => void; }) {
@@ -548,53 +598,5 @@ export function Station({ color, done, overdue, onToggle, label }: { color: stri
         style={{ borderColor: color, borderStyle: overdue && !done ? "dashed" : "solid", background: done ? color : "var(--color-paper)" }}
       />
     </button>
-  );
-}
-
-// ─── Sección desplegable ───────────────────────────────────────────────────
-const SECTIONS_KEY = "myorbit.sections";
-
-function readOpen(id: string, fallback: boolean): boolean {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SECTIONS_KEY) ?? "{}") as Record<string, boolean>;
-    return typeof saved[id] === "boolean" ? saved[id] : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeOpen(id: string, open: boolean) {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SECTIONS_KEY) ?? "{}") as Record<string, boolean>;
-    localStorage.setItem(SECTIONS_KEY, JSON.stringify({ ...saved, [id]: open }));
-  } catch { /* sin almacenamiento: solo esta sesión */ }
-}
-
-/**
- * Bloque que se abre y se cierra con un toque y recuerda su estado por `id`. Cerrado muestra `summary`
- * (una línea con lo esencial) para no obligar a abrirlo. `action` queda fuera del botón (p. ej. «Agregar»).
- */
-export function CollapsibleSection({ id, title, summary, action, defaultOpen = false, forceOpen = false, children }: { id: string; title: string; summary?: string; action?: ReactNode; defaultOpen?: boolean; /** Abierta mientras sea true (p. ej. al editar), sin tocar el estado recordado. */ forceOpen?: boolean; children: ReactNode; }) {
-  const [savedOpen, setOpen] = useState(() => readOpen(id, defaultOpen));
-  const open = savedOpen || forceOpen;
-  const panelId = `section-${id}`;
-  function toggle() {
-    setOpen((current) => { const next = !(current || forceOpen); writeOpen(id, next); return next; });
-  }
-  return (
-    <section aria-labelledby={`${panelId}-title`} className="flex flex-col">
-      <div className="flex min-h-[44px] items-center gap-2">
-        <button type="button" onClick={toggle} aria-expanded={open} aria-controls={panelId} className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 rounded-md text-left active:bg-wash">
-          {/* El título arranca en el margen de la pantalla; el chevron va detrás, no delante. */}
-          <span id={`${panelId}-title`} className="font-display text-[20px] font-semibold leading-none tracking-tight text-ink">{title}</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`flex-shrink-0 text-ink-2 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
-          {!open && summary && <span className="num min-w-0 truncate text-[14px] text-ink-2">{summary}</span>}
-        </button>
-        {action}
-      </div>
-      <div id={panelId} className={`grid transition-[grid-template-rows] duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`} inert={!open}>
-        <div className="min-h-0 overflow-hidden"><div className="flex flex-col gap-2 pt-1">{children}</div></div>
-      </div>
-    </section>
   );
 }

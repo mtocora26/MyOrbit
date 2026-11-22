@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from "../services/notificationsApi";
-import { CollapsibleSection, ScreenHeader, Toggle, ListSkeleton, Avatar } from "../components/shared";
+import { ScreenHeader, Toggle, ListSkeleton, Avatar, SummaryList, SummaryRow, DetailSheet } from "../components/shared";
 import { useTheme } from "../hooks/useTheme";
 import type { AuthSession } from "../services/authApi";
 import { updateName, changePassword, updateTimeZone, availableTimeZones, detectTimeZone } from "../services/authApi";
@@ -11,6 +11,8 @@ import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 
 interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
+
+type ProfileSheet = "account" | "academic" | "notifications" | "timezone" | "appearance";
 
 export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }: Props) {
   const { theme, toggle: toggleTheme } = useTheme();
@@ -28,11 +30,11 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   const [savingZone, setSavingZone] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [editingProfile, setEditingProfile] = useState(false);
+  // Segundo nivel: la hoja de detalle abierta (una a la vez).
+  const [sheet, setSheet] = useState<ProfileSheet | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [draft, setDraft] = useState({ program: "", semester: "", gradeTarget: "" });
-  const [editingAccount, setEditingAccount] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
@@ -54,10 +56,20 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     }).catch((error: unknown) => setProfileError(error instanceof Error ? error.message : "No fue posible cargar tu perfil"));
   }, []);
 
-  function beginEdit() {
-    setDraft(profile ?? { program: "", semester: "", gradeTarget: "" });
-    setProfileError(null);
-    setEditingProfile(true);
+  function openSheet(next: ProfileSheet) {
+    if (next === "academic") {
+      setDraft(profile ?? { program: "", semester: "", gradeTarget: "" });
+      setProfileError(null);
+    }
+    if (next === "account") {
+      setDraftName(displayName);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setAccountError(null);
+      setAccountMessage(null);
+    }
+    setSheet(next);
   }
 
   async function saveProfile() {
@@ -66,22 +78,12 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
       setProfileError(null);
       const saved = await saveUserProfile(draft);
       setProfile(saved);
-      setEditingProfile(false);
+      setSheet(null);
     } catch (error) {
       setProfileError(error instanceof Error ? error.message : "No fue posible guardar tu perfil");
     } finally {
       setSavingProfile(false);
     }
-  }
-
-  function beginEditAccount() {
-    setDraftName(displayName);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setAccountError(null);
-    setAccountMessage(null);
-    setEditingAccount(true);
   }
 
   async function saveAccount() {
@@ -114,7 +116,6 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setEditingAccount(false);
       setAccountMessage(newPassword ? "Nombre y contraseña actualizados." : "Nombre actualizado.");
     } catch (error) {
       setAccountError(error instanceof Error ? error.message : "No fue posible actualizar tu cuenta");
@@ -210,6 +211,9 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     }
   }
 
+  const zone = (user.timeZone ?? detectTimeZone() ?? "America/Bogota");
+  const prefValues = prefs ? Object.values(prefs) : [];
+
   return (
     <div className="h-full flex flex-col bg-paper">
       <ScreenHeader title="Perfil" bg="var(--color-paper)" onBack={onBack} />
@@ -224,155 +228,101 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           </div>
         </div>
 
-        {/* Account */}
-        <Section id="account" title="Cuenta" summary={displayName} forceOpen={editingAccount}>
-          {editingAccount ? (
-            <div className="p-4 flex flex-col gap-3">
-              <ProfileInput label="Nombre" value={draftName} onChange={setDraftName} placeholder="Tu nombre" />
-              <p className="text-[13px] text-ink-3">Correo: {user.email} (no se puede cambiar)</p>
-              <div className="border-t border-line pt-3 flex flex-col gap-3">
-                <p className="text-[13px] font-bold text-ink">Cambiar contraseña <span className="font-normal text-ink-3">(opcional)</span></p>
-                <ProfileInput label="Contraseña actual" value={currentPassword} onChange={setCurrentPassword} placeholder="La que usas ahora" />
-                <ProfileInput label="Contraseña nueva" value={newPassword} onChange={setNewPassword} placeholder="Mínimo 8 caracteres" />
-                <ProfileInput label="Confirmar contraseña nueva" value={confirmPassword} onChange={setConfirmPassword} placeholder="Repítela" />
-                <p className="text-[13px] text-ink-3">Al cambiarla se cierran tus otras sesiones; esta permanece activa.</p>
-              </div>
-              {accountError && <p role="alert" className="text-[13px] font-semibold text-danger">{accountError}</p>}
-              <div className="flex gap-2">
-                <button onClick={saveAccount} disabled={savingAccount} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[14px] font-bold text-night disabled:opacity-50">{savingAccount ? "Guardando..." : "Guardar cambios"}</button>
-                <button onClick={() => setEditingAccount(false)} disabled={savingAccount} className="rounded-md bg-wash min-h-[44px] px-4 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <Row label="Nombre" value={displayName} />
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-[13px] text-ink-2">Contraseña</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] text-ink-3">••••••••</span>
-                  <button onClick={beginEditAccount} className="min-h-[44px] px-2 -mr-2 text-[13px] font-bold text-blue-ink">Editar cuenta</button>
-                </div>
-              </div>
-              {accountMessage && <p role="status" className="px-4 py-2 text-[13px] font-semibold text-green-ink">{accountMessage}</p>}
-            </>
-          )}
-        </Section>
-
-        {/* Academic info */}
-        <Section id="academic" title="Información académica" summary={profile?.program || "Sin configurar"} forceOpen={editingProfile}>
-          {editingProfile ? (
-            <div className="p-4 flex flex-col gap-3">
-              <ProfileInput label="Programa" value={draft.program} onChange={(value) => setDraft({ ...draft, program: value })} />
-              <ProfileInput label="Semestre" value={draft.semester} onChange={(value) => setDraft({ ...draft, semester: value })} />
-              <ProfileInput label="Meta de promedio" value={draft.gradeTarget} onChange={(value) => setDraft({ ...draft, gradeTarget: value })} placeholder="Ej. 4.5" />
-              {profileError && <p className="text-[13px] font-semibold text-danger">{profileError}</p>}
-              <div className="flex gap-2">
-                <button onClick={saveProfile} disabled={savingProfile} className="rounded-md bg-coral min-h-[44px] px-4 py-2 text-[14px] font-bold text-night disabled:opacity-50">{savingProfile ? "Guardando..." : "Guardar"}</button>
-                <button onClick={() => setEditingProfile(false)} disabled={savingProfile} className="rounded-md bg-wash min-h-[44px] px-4 py-2 text-[13px] font-bold text-ink-2">Cancelar</button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <Row label="Programa" value={profile?.program || "Sin configurar"} />
-              <Row label="Semestre" value={profile?.semester || "Sin configurar"} />
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-[13px] text-ink-2">Meta de promedio</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-bold text-coral-ink">{profile?.gradeTarget || "Sin configurar"}</span>
-                  <button onClick={beginEdit} className="min-h-[44px] px-2 -mr-2 text-[13px] font-bold text-blue-ink">{profile ? "Editar" : "Configurar"}</button>
-                </div>
-              </div>
-            </>
-          )}
-        </Section>
-
-        {/* Notifications */}
-        <Section id="notifications" title="Notificaciones" summary={prefs ? `${Object.values(prefs).filter(Boolean).length} de ${Object.values(prefs).length} activas` : undefined}>
-          {prefs ? (
-            <>
-              {isNativeApp && (
-                <>
-                  <ToggleRow label="Avisos en este teléfono" sub="Suenan a su hora aunque la app esté cerrada y sin internet" on={deviceOn} onChange={changeDevice} />
-                  <button onClick={() => setSetupOpen(true)} className="flex min-h-[44px] w-full items-center justify-between gap-3 px-4 py-2 text-left">
-                    <span className="text-[14px] text-ink-2">Comprobar que los avisos lleguen con la app cerrada</span>
-                    <span className="flex-shrink-0 text-[14px] font-semibold text-coral-ink">Revisar</span>
-                  </button>
-                  {deviceMessage && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{deviceMessage}</p>}
-                </>
-              )}
-              {!isNativeApp && (webPush === "on" || webPush === "off" || webPush === "denied") && (
-                <>
-                  <ToggleRow label="Avisos push en este dispositivo" sub="Llegan aunque la app esté cerrada" on={webPush === "on"} onChange={changeWebPush} />
-                  {webPush === "denied" && <p className="px-4 py-2 text-[14px] text-ink-2">El navegador bloqueó las notificaciones. Permítelas en los ajustes del sitio.</p>}
-                </>
-              )}
-              {!isNativeApp && webPush === "needs-install" && <p className="px-4 py-3 text-[14px] text-ink-2">En iPhone, instala MyOrbit en la pantalla de inicio para recibir avisos push.</p>}
-              {webPushMessage && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{webPushMessage}</p>}
-              <ToggleRow label="Fechas límite" sub="Al crear una tarea con fecha, 1 día y 1 hora antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
-              <ToggleRow label="Hábitos pendientes" sub="Recordatorio al final del día de lo que falta" on={prefs.habit} onChange={() => changePref("habit")} />
-              <ToggleRow label="Tareas vencidas" sub="Resumen cada mañana de lo que se pasó de fecha" on={prefs.overdue} onChange={() => changePref("overdue")} />
-              <ToggleRow label="Parciales próximos" sub="Evaluaciones de los próximos 3 días, con su fecha" on={prefs.exam} onChange={() => changePref("exam")} />
-              <ToggleRow label="Materias en riesgo" sub="Cuando aprobar una materia se complica" on={prefs.atRisk} onChange={() => changePref("atRisk")} />
-              <ToggleRow label="Clases y eventos" sub="Clase 30 min antes; evento a su hora de inicio" on={prefs.classReminder} onChange={() => changePref("classReminder")} />
-              <ToggleRow label="Recordatorios personales" sub="Los avisos que programas tú, a la hora que elijas" on={prefs.reminder} onChange={() => changePref("reminder")} />
-            </>
-          ) : (
-            <div className="px-4 py-3 min-h-[60px] flex items-center">
-              {prefsError
-                ? <div role="alert" className="flex w-full items-center justify-between gap-3"><p className="text-[14px] font-semibold text-danger">{prefsError}</p><button onClick={loadPrefs} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button></div>
-                : <ListSkeleton rows={3} label="Cargando preferencias" />}
-            </div>
-          )}
-          {prefs && prefsError && <p role="alert" className="px-4 py-2 text-[14px] font-semibold text-danger">{prefsError}</p>}
-        </Section>
+        {/* Primer nivel: cinco filas de resumen; cada una abre su hoja. */}
+        <SummaryList label="Ajustes del perfil">
+          <SummaryRow title="Cuenta" summary={displayName} onClick={() => openSheet("account")} />
+          <SummaryRow title="Información académica" summary={profile?.program || "Sin configurar"} onClick={() => openSheet("academic")} />
+          <SummaryRow title="Notificaciones" summary={prefs ? `${prefValues.filter(Boolean).length} de ${prefValues.length} activas` : undefined} onClick={() => openSheet("notifications")} />
+          <SummaryRow title="Zona horaria" summary={zone.replace(/_/g, " ")} onClick={() => openSheet("timezone")} />
+          <SummaryRow title="Apariencia" summary={theme === "dark" ? "Oscuro" : "Claro"} onClick={() => openSheet("appearance")} />
+        </SummaryList>
 
         {/* Integraciones (Google Calendar) oculto hasta que exista la integración real (#47). */}
 
-        {/* Time zone */}
-        <Section id="timezone" title="Zona horaria" summary={(user.timeZone ?? detectTimeZone() ?? "America/Bogota").replace(/_/g, " ")}>
-          <div className="flex flex-col gap-2 px-4 py-3">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[14px] text-ink-2">Los recordatorios y «hoy» se calculan con esta zona</span>
-              <select value={user.timeZone ?? detectTimeZone() ?? "America/Bogota"} onChange={(event) => changeZone(event.target.value)} disabled={savingZone} aria-label="Zona horaria" className="rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
-                {zoneOptions(user.timeZone ?? detectTimeZone()).map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
-              </select>
-            </label>
-            {!user.timeZone && <p className="text-[13px] text-ink-3">Aún no está guardada: se muestra la de tu dispositivo.</p>}
-            {zoneError && <p role="alert" className="text-[14px] font-semibold text-danger">{zoneError}</p>}
-          </div>
-        </Section>
-
-        {/* Appearance */}
-        <Section id="appearance" title="Apariencia" summary={theme === "dark" ? "Oscuro" : "Claro"}>
-          <ToggleRow label="Modo oscuro" sub="Tema oscuro de la interfaz" on={theme === "dark"} onChange={toggleTheme} />
-        </Section>
-
-        <button onClick={onLogout} className="w-full min-h-[44px] py-3 rounded-md bg-wash text-[14px] font-bold text-ink-2 active:scale-[0.98] transition-transform mt-2">
+        <button onClick={onLogout} className="w-full min-h-[44px] py-3 rounded-md bg-wash text-[14px] font-bold text-ink-2 active:scale-[0.98] transition-transform mt-3">
           Cerrar sesión
         </button>
         <p className="pt-2 text-center text-[13px] text-ink-3">MyOrbit v1.0</p>
       </div>
+
+      <DetailSheet open={sheet === "account"} onClose={() => setSheet(null)} title="Cuenta" doneLabel="Cancelar">
+        <ProfileInput label="Nombre" value={draftName} onChange={setDraftName} placeholder="Tu nombre" />
+        <p className="text-[13px] text-ink-3">Correo: {user.email} (no se puede cambiar)</p>
+        <div className="border-t border-line pt-3 flex flex-col gap-3">
+          <p className="text-[13px] font-bold text-ink">Cambiar contraseña <span className="font-normal text-ink-3">(opcional)</span></p>
+          <ProfileInput label="Contraseña actual" value={currentPassword} onChange={setCurrentPassword} placeholder="La que usas ahora" />
+          <ProfileInput label="Contraseña nueva" value={newPassword} onChange={setNewPassword} placeholder="Mínimo 8 caracteres" />
+          <ProfileInput label="Confirmar contraseña nueva" value={confirmPassword} onChange={setConfirmPassword} placeholder="Repítela" />
+          <p className="text-[13px] text-ink-3">Al cambiarla se cierran tus otras sesiones; esta permanece activa.</p>
+        </div>
+        {accountError && <p role="alert" className="text-[13px] font-semibold text-danger">{accountError}</p>}
+        {accountMessage && <p role="status" className="text-[13px] font-semibold text-green-ink">{accountMessage}</p>}
+        <button onClick={saveAccount} disabled={savingAccount} className="min-h-[44px] rounded-md bg-coral px-4 text-[14px] font-bold text-night transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50">{savingAccount ? "Guardando..." : "Guardar cambios"}</button>
+      </DetailSheet>
+
+      <DetailSheet open={sheet === "academic"} onClose={() => setSheet(null)} title="Información académica" doneLabel="Cancelar">
+        <ProfileInput label="Programa" value={draft.program} onChange={(value) => setDraft({ ...draft, program: value })} />
+        <ProfileInput label="Semestre" value={draft.semester} onChange={(value) => setDraft({ ...draft, semester: value })} />
+        <ProfileInput label="Meta de promedio" value={draft.gradeTarget} onChange={(value) => setDraft({ ...draft, gradeTarget: value })} placeholder="Ej. 4.5" />
+        {profileError && <p role="alert" className="text-[13px] font-semibold text-danger">{profileError}</p>}
+        <button onClick={saveProfile} disabled={savingProfile} className="min-h-[44px] rounded-md bg-coral px-4 text-[14px] font-bold text-night transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50">{savingProfile ? "Guardando..." : "Guardar"}</button>
+      </DetailSheet>
+
+      <DetailSheet open={sheet === "notifications"} onClose={() => setSheet(null)} title="Notificaciones">
+        {prefs ? (
+          <div className="-mx-5 divide-y divide-line">
+            {isNativeApp && (
+              <>
+                <ToggleRow label="Avisos en este teléfono" sub="Suenan a su hora aunque la app esté cerrada y sin internet" on={deviceOn} onChange={changeDevice} />
+                <button onClick={() => setSetupOpen(true)} className="flex min-h-[44px] w-full items-center justify-between gap-3 px-5 py-2 text-left">
+                  <span className="text-[14px] text-ink-2">Comprobar que los avisos lleguen con la app cerrada</span>
+                  <span className="flex-shrink-0 text-[14px] font-semibold text-coral-ink">Revisar</span>
+                </button>
+                {deviceMessage && <p role="alert" className="px-5 py-2 text-[14px] font-semibold text-danger">{deviceMessage}</p>}
+              </>
+            )}
+            {!isNativeApp && (webPush === "on" || webPush === "off" || webPush === "denied") && (
+              <>
+                <ToggleRow label="Avisos push en este dispositivo" sub="Llegan aunque la app esté cerrada" on={webPush === "on"} onChange={changeWebPush} />
+                {webPush === "denied" && <p className="px-5 py-2 text-[14px] text-ink-2">El navegador bloqueó las notificaciones. Permítelas en los ajustes del sitio.</p>}
+              </>
+            )}
+            {!isNativeApp && webPush === "needs-install" && <p className="px-5 py-3 text-[14px] text-ink-2">En iPhone, instala MyOrbit en la pantalla de inicio para recibir avisos push.</p>}
+            {webPushMessage && <p role="alert" className="px-5 py-2 text-[14px] font-semibold text-danger">{webPushMessage}</p>}
+            <ToggleRow label="Fechas límite" sub="Al crear una tarea con fecha, 1 día y 1 hora antes" on={prefs.deadline} onChange={() => changePref("deadline")} />
+            <ToggleRow label="Hábitos pendientes" sub="Recordatorio al final del día de lo que falta" on={prefs.habit} onChange={() => changePref("habit")} />
+            <ToggleRow label="Tareas vencidas" sub="Resumen cada mañana de lo que se pasó de fecha" on={prefs.overdue} onChange={() => changePref("overdue")} />
+            <ToggleRow label="Parciales próximos" sub="Evaluaciones de los próximos 3 días, con su fecha" on={prefs.exam} onChange={() => changePref("exam")} />
+            <ToggleRow label="Materias en riesgo" sub="Cuando aprobar una materia se complica" on={prefs.atRisk} onChange={() => changePref("atRisk")} />
+            <ToggleRow label="Clases y eventos" sub="Clase 30 min antes; evento a su hora de inicio" on={prefs.classReminder} onChange={() => changePref("classReminder")} />
+            <ToggleRow label="Recordatorios personales" sub="Los avisos que programas tú, a la hora que elijas" on={prefs.reminder} onChange={() => changePref("reminder")} />
+            {prefsError && <p role="alert" className="px-5 py-2 text-[14px] font-semibold text-danger">{prefsError}</p>}
+          </div>
+        ) : (
+          <div className="min-h-[60px] flex items-center">
+            {prefsError
+              ? <div role="alert" className="flex w-full items-center justify-between gap-3"><p className="text-[14px] font-semibold text-danger">{prefsError}</p><button onClick={loadPrefs} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button></div>
+              : <ListSkeleton rows={3} label="Cargando preferencias" />}
+          </div>
+        )}
+      </DetailSheet>
+
+      <DetailSheet open={sheet === "timezone"} onClose={() => setSheet(null)} title="Zona horaria">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[14px] text-ink-2">Los recordatorios y «hoy» se calculan con esta zona</span>
+          <select value={zone} onChange={(event) => changeZone(event.target.value)} disabled={savingZone} aria-label="Zona horaria" className="min-h-[44px] rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50">
+            {zoneOptions(user.timeZone ?? detectTimeZone()).map((option) => <option key={option} value={option}>{option.replace(/_/g, " ")}</option>)}
+          </select>
+        </label>
+        {!user.timeZone && <p className="text-[13px] text-ink-3">Aún no está guardada: se muestra la de tu dispositivo.</p>}
+        {zoneError && <p role="alert" className="text-[14px] font-semibold text-danger">{zoneError}</p>}
+      </DetailSheet>
+
+      <DetailSheet open={sheet === "appearance"} onClose={() => setSheet(null)} title="Apariencia">
+        <div className="-mx-5"><ToggleRow label="Modo oscuro" sub="Tema oscuro de la interfaz" on={theme === "dark"} onChange={toggleTheme} /></div>
+      </DetailSheet>
+
       <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />
-    </div>
-  );
-}
-
-/** Bloque desplegable (cerrado por defecto, recuerda su estado); `forceOpen` lo abre mientras se edita. */
-function Section({ id, title, summary, forceOpen, children }: { id: string; title: string; summary?: string; forceOpen?: boolean; children: React.ReactNode }) {
-  return (
-    <CollapsibleSection id={`profile-${id}`} title={title} summary={summary} forceOpen={forceOpen}>
-      <div className="bg-card rounded-md overflow-hidden divide-y divide-line">
-        {children}
-      </div>
-    </CollapsibleSection>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between px-4 py-3">
-      <span className="text-[13px] text-ink-2">{label}</span>
-      <span className="text-[13px] font-semibold text-ink">{value}</span>
     </div>
   );
 }
@@ -383,7 +333,7 @@ function ProfileInput({ label, value, onChange, placeholder }: { label: string; 
 
 function ToggleRow({ label, sub, on, onChange }: { label: string; sub: string; on: boolean; onChange: () => void }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 min-h-[60px]">
+    <div className="flex items-center gap-3 px-5 py-3 min-h-[60px]">
       <div className="flex-1">
         <p className="text-[16px] font-semibold text-ink">{label}</p>
         <p className="text-[14px] text-ink-2">{sub}</p>

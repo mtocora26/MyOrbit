@@ -164,6 +164,14 @@ export function IconClipboard({ size = 20, color = "currentColor", strokeWidth =
   );
 }
 
+export function IconFilter({ size = 20, color = "currentColor", strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }}>
+      <path d="M3 5h18l-7 8.5V20l-4-2v-4.5L3 5z" />
+    </svg>
+  );
+}
+
 export function IconSearch({ size = 20, color = "currentColor", strokeWidth = 1.8 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }}>
