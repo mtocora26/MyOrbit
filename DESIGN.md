@@ -255,6 +255,14 @@ Status lines under a grade (`GradeStatusLine`) are text with a mark and the tone
 ### List rows
 Más, Notificaciones, Hábitos, Categorías and the subject list share one pattern: **one `card` panel, rows separated by `border-t border-line`, no outer border, no per-row box**. A row is 56-64px tall, text on the left, an optional count or state on the right, a `line-strong` chevron when it opens something. No coloured icon tiles. Unread is a coral dot (8-10px) plus a bold title, the same empty slot when read so text stays aligned. Tapping a row edits or opens it; secondary actions (add subcategory, delete) live in the edit sheet, not as icons on every row. Creating something from a list is a last row of plain `coral-ink` text ("+ Nueva categoría", "+ Nuevo hábito") at the bottom, in thumb reach. **There is one "+" in the app, the FAB**: Agenda, Hábitos and Categorías no longer carry one in the header (Universidad's stays because the FAB cannot create a subject).
 
+### Cascade (one level, one decision)
+On a phone a container with a lot in it does not pour everything onto one screen: it **opens another level**. The upper level shows a **summary** (one line or one count) and one tap opens the detail. A container that holds more than about four decisions, or is taller than one screen, is split this way. Each level shows few things and asks for one decision.
+
+- **Sheet or sub-screen.** A short decision (choose, edit a small group of settings) opens a bottom sheet (`DetailSheet`). Navigation or a long list opens a sub-screen with the header's back button. At most **three levels** (e.g. habit list → one habit → its month); always back, always the same way out.
+- **Same exit everywhere.** A sheet closes by dragging the handle, system back, Escape, the scrim or "Listo"; a sub-screen by back. Never a level that only closes with a small icon.
+- **One row pattern.** The summary row is `SummaryRow` inside a `SummaryList` (`shared.tsx`): title on the left, one-line summary on the right, `line-strong` chevron, 56px (64px with an avatar or a second line). It is the List rows pattern; do not hand-draw it per screen. Accordions of equal weight (several `CollapsibleSection` stacked) are replaced by this list.
+- **Quick capture is the model.** The sheet shows the type, the title and one line of defaults with "Cambiar"; the choosers open on demand.
+
 ### Inputs / Fields
 `card` fill, 1px `line` border, 6px radius, 12px padding, 16px text; focus shifts the border to coral. Category picker pairs a select with a 44px "+" and an 8-swatch colour radiogroup of 3px-radius squares.
 
@@ -289,6 +297,7 @@ Ease-out `cubic-bezier(0.23, 1, 0.32, 1)` for responses, drawer `cubic-bezier(0.
 - **Do** use semantic tokens (`bg-card`, `text-ink-2`, `border-line`) so both themes work.
 - **Do** carry status by shape (hollow, filled, dashed; bar count) as well as colour.
 - **Do** keep touch targets at 44px and text at 13px or above.
+- **Do** split a crowded container into a summary and a detail level (see Cascade) instead of stacking everything on one screen.
 - **Do** separate with hairlines and tonal steps; keep exits faster than entrances.
 - **Do** use condensed tabular numerals for times, dates and counts.
 

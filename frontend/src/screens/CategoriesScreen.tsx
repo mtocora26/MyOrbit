@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
+import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner, RowChevron } from "../components/shared";
 import { createCategory, deleteCategory, fetchCategories, orderCategories, updateCategory, type Category } from "../services/categoriesApi";
 import { fetchTasks } from "../services/tasksApi";
 
@@ -139,7 +139,7 @@ export default function CategoriesScreen({ onBack }: Props) {
                       <span className={`block truncate text-ink ${isChild ? "text-[15px] font-medium" : "text-[16px] font-semibold"}`}>{category.name}</span>
                       <span className="num block text-[13px] text-ink-2">{countLabel(category)}{!isChild && subs > 0 ? ` · ${subs} ${subs === 1 ? "subcategoría" : "subcategorías"}` : ""}</span>
                     </span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="flex-shrink-0"><path d="M9 18l6-6-6-6" /></svg>
+                    <RowChevron />
                   </button>
                 </li>
               );
