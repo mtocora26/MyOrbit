@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ScreenHeader, CategoryBadge, CategoryPicker, Checkbox, PriorityDot, ProgressBar, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
+import { ScreenHeader, CategoryBadge, OverdueBadge, CategoryPicker, Checkbox, PriorityDot, ProgressBar, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import { IconCalendar } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
@@ -377,7 +377,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                   {task.due}
                 </span>
                 {task.done && <span className="rounded-sm bg-green-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-green-ink">Completada</span>}
-                {overdue && <span className="rounded-sm bg-danger-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-danger">Vencida</span>}
+                {overdue && <OverdueBadge />}
                 <CategoryBadge name={categoryName} color={category?.color} />
                 {task.subjectId && <span className="text-[14px] text-ink-2">{subjects.find((subject) => subject.id === task.subjectId)?.name ?? "Materia"}</span>}
                 <PriorityDot level={task.priority} />
