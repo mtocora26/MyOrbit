@@ -7,42 +7,37 @@ Este documento organiza MyOrbit en 3 niveles de patrones para mantener decisione
 Define como se despliega y se comunica el sistema a nivel de servicios.
 
 ### Patron elegido
-- Microservicios orientados a APIs REST.
+- **Monolito modular** con API REST (decision: [ADR 0001](docs/adr/0001-monolito-modular.md)). El plan original de microservicios no se implemento y se descarto.
 
 ### Que se trabaja aqui
-- Separacion por servicios de negocio:
-  - Auth Service
-  - Tasks Service
-  - Academic Service (materias + calificaciones)
-  - Habits Service
-  - Notification Service
-- API Gateway como punto unico de entrada para frontend.
-- Base de datos por servicio (ideal). Para clase, se permite una sola instancia Mongo con BD separada por servicio.
-- Comunicacion entre servicios:
-  - Sincrona por REST al inicio.
-  - Asincrona por eventos como mejora (por ejemplo, tarea creada -> notificacion).
-- Observabilidad minima:
-  - Health checks por servicio.
-  - Logs por servicio.
-- Ejecucion local:
-  - Docker Compose para levantar stack completo.
+- Un modulo por area de negocio dentro de la misma aplicacion Spring Boot:
+  - `users` (cuentas y sesion)
+  - `tasks`
+  - `categories`
+  - `academic` (semestres, materias, evaluaciones y notas)
+  - `events`
+  - `habits`
+  - `notifications`
+- Un modulo solo habla con otro a traves de su **servicio de aplicacion**, nunca con su repositorio. El grafo de dependencias no tiene ciclos y `notifications` es el unico que consume a los demas.
+- Una sola base MongoDB (`myorbit`) y un solo despliegue. El frontend entra por una sola ruta `/api`; no hay API Gateway.
+- Observabilidad minima: `/actuator/health` y logs de la aplicacion.
+- Ejecucion local: Docker Compose para levantar backend, Mongo y frontend (M5-02).
 
 ### Entregables tecnicos
-- Diagrama de servicios y relaciones.
-- Coleccion de endpoints por microservicio.
-- Evidencia de pruebas de integracion entre servicios.
+- Documentacion de la API en `docs/API.md`.
+- ADR con la decision y sus disparadores de revision: `docs/adr/0001-monolito-modular.md`.
 
 ---
 
 ## 2) Nivel de Arquitectura de Aplicacion
 
-Define como se organiza internamente cada microservicio y el frontend.
+Define como se organiza internamente cada modulo del backend y el frontend.
 
 ### Patron recomendado
 - Backend: Arquitectura en capas con enfoque Clean (ligero).
 - Frontend: Arquitectura por features/screens + capa de servicios API.
 
-### Backend por microservicio (estructura sugerida)
+### Backend por modulo (estructura sugerida)
 - controller: endpoints REST.
 - application/service: casos de uso.
 - domain/model: entidades y reglas de negocio.
@@ -105,7 +100,7 @@ Define patrones de codigo para resolver problemas repetitivos dentro de servicio
 
 ## Decision actual del proyecto (estado objetivo)
 
-- Infraestructura: Microservicios + API Gateway.
+- Infraestructura: Monolito modular, sin API Gateway (ADR 0001).
 - Arquitectura por servicio: Capas con enfoque Clean ligero.
 - Patrones GoF prioritarios para implementar primero:
   1. Strategy (calificaciones)
