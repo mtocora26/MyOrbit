@@ -108,11 +108,11 @@ Reglas de código: [BUENAS_PRACTICAS.md](BUENAS_PRACTICAS.md) · Arquitectura: [
 ## M5 - Integraciones e Infraestructura
 | ID | Título | Labels | Detalle |
 |---|---|---|---|
-| M5-01 | ADR: monolito modular vs microservicios | `docs` `area:infra` `P1` | El documento de arquitectura plantea microservicios; hoy es un monolito. Decidir y documentar. |
+| M5-01 | ADR: monolito modular vs microservicios | `docs` `area:infra` `P1` | **Decidido: monolito modular** ([ADR 0001](adr/0001-monolito-modular.md)). |
 | M5-02 | Docker Compose: backend + Mongo + frontend | `area:infra` `P1` | |
 | M5-03 | Exponer health de Actuator | `area:infra` `P2` | Actuator ya está como dependencia. |
 | M5-04 | Integración con Google Calendar (**Adapter**) | `feature` `solid:dip` `P2` | Puerto `CalendarGateway` en dominio; adaptador Google en infraestructura. |
-| M5-05 | API Gateway (si el ADR elige microservicios) | `area:infra` `P2` | |
+| M5-05 | API Gateway (si el ADR elige microservicios) | `area:infra` `P2` | Descartado: el ADR 0001 elige monolito modular. |
 
 ---
 
