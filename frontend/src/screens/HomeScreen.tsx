@@ -7,6 +7,7 @@ import { categoryLabel, fetchCategories, type Category } from "../services/categ
 import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, completeLabel, type Habit } from "../services/habitsApi";
 import { fromTaskDue, isOverdue } from "../services/taskDue";
 import { describeClassNow, fetchClassesNow, type ClassNow } from "../services/academicApi";
+import { IconCheck, IconPlus } from "../components/icons";
 
 interface Props {
   userName: string;
@@ -203,7 +204,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               <p className="font-display text-[22px] font-semibold leading-none text-ink">Línea despejada</p>
               <p className="mt-2 text-[14px] text-ink-2">No hay entregas pendientes. Planea tu semana o agrega algo nuevo.</p>
               <div className="mt-4 flex justify-center gap-2">
-                <button onClick={onFab} className="rounded-md bg-coral min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]">Nueva tarea</button>
+                <button onClick={onFab} className="inline-flex items-center gap-1.5 rounded-md bg-coral min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]"><IconPlus size={16} />Nueva tarea</button>
                 <button onClick={onAgenda} className="rounded-md bg-wash min-h-[44px] px-4 py-2.5 text-[14px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]">Abrir agenda</button>
               </div>
             </div>
@@ -274,7 +275,7 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
                             className="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[3px] transition-[background-color,transform] duration-150 ease-out active:scale-75"
                             style={{ borderColor: habit.color, background: done ? habit.color : "var(--color-paper)" }}
                           >
-                            {done && <svg width="11" height="9" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                            {done && <IconCheck size={14} strokeWidth={2.4} color="#fff" />}
                           </span>
                         </button>
                         <span className="mt-1 line-clamp-2 text-center text-[13px] font-medium leading-tight text-ink">{habit.title}</span>

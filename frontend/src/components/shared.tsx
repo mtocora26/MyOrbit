@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { categoryLabel, orderCategories } from "../services/categoriesApi";
 import { registerBackHandler } from "../hooks/useNativeApp";
+import { IconCheck, IconChevronLeft, IconChevronRight, IconClock, IconPlus, IconRefresh, IconTrash } from "./icons";
 
 /*
  * Lenguaje de ruta: paneles planos separados por líneas finas, estaciones
@@ -51,9 +52,7 @@ export function ScreenHeader({ title, wrapTitle = false, subtitle, onBack, right
             aria-label="Volver"
             className="flex h-11 w-11 -ml-2 flex-shrink-0 items-center justify-center rounded-md text-ink transition-colors active:bg-wash"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            <IconChevronLeft size={20} />
           </button>
         )}
         <div className="min-w-0">
@@ -97,7 +96,7 @@ export function OverdueBadge() {
 export function PendingMark({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-sm bg-wash px-1.5 py-1 font-display text-[13px] font-semibold uppercase leading-none tracking-wide text-ink-2 ${className}`}>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+      <IconClock size={12} />
       Sin enviar
     </span>
   );
@@ -212,7 +211,7 @@ export function CategoryPicker({ categories, value, onChange, onCreate, classNam
           );
         })}
         <button type="button" onClick={() => setCreating(true)} aria-label="Nueva categoría" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md bg-wash text-ink-2">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <IconPlus size={16} />
         </button>
       </div>
     );
@@ -288,9 +287,7 @@ export function Checkbox({ checked, onChange }: { checked: boolean; onChange: ()
         style={{ borderColor: checked ? "var(--color-coral)" : "var(--color-line-strong)", background: checked ? "var(--color-coral)" : "var(--color-card)" }}
       >
         {checked && (
-          <svg width="10" height="8" viewBox="0 0 9 7" fill="none" aria-hidden="true">
-            <path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <IconCheck size={14} strokeWidth={2.4} color="#fff" />
         )}
       </span>
     </button>
@@ -328,9 +325,7 @@ export function FAB({ onClick }: { onClick?: () => void; }) {
       aria-label="Añadir"
       className="absolute bottom-5 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-coral text-night transition-transform duration-150 ease-out active:scale-95"
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
+      <IconPlus size={22} />
     </button>
   );
 }
@@ -400,7 +395,7 @@ export function BottomSheet({ open, onClose, title, children }: { open: boolean;
 // ─── Summary row (despliegue en cascada) ─────────────────────────────────────
 /** Chevron de fila: dice «esto abre otro nivel». */
 export function RowChevron() {
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="flex-shrink-0"><path d="M9 18l6-6-6-6" /></svg>;
+  return <IconChevronRight size={16} className="flex-shrink-0" />;
 }
 
 /** Un panel `card` con filas separadas por hairlines: el nivel de arriba de un despliegue. */
@@ -413,13 +408,14 @@ export function SummaryList({ children, label, className = "" }: { children: Rea
  * y chevron. Va dentro de `SummaryList`. `badge` pinta un conteo en `coral-ink`; `lead` es un hueco opcional a la
  * izquierda (p. ej. un `Avatar`). Mide 56 px (64 con `lead` o `detail`).
  */
-export function SummaryRow({ title, summary, detail, badge, lead, onClick, ariaLabel }: { title: string; /** Una línea a la derecha: el estado o el valor actual. */ summary?: string; /** Una línea bajo el título (p. ej. carrera y semestre). */ detail?: string; badge?: number; lead?: ReactNode; onClick: () => void; ariaLabel?: string }) {
+export function SummaryRow({ title, summary, detail, badge, lead, icon, onClick, ariaLabel }: { title: string; /** Una línea a la derecha: el estado o el valor actual. */ summary?: string; /** Una línea bajo el título (p. ej. carrera y semestre). */ detail?: string; badge?: number; lead?: ReactNode; /** Icono plano a la izquierda (24 px, `currentColor`); no cambia la altura de la fila. */ icon?: ReactNode; onClick: () => void; ariaLabel?: string }) {
   const tall = Boolean(lead || detail);
   const count = badge ?? 0;
   return (
     <li className="border-t border-line first:border-t-0">
       <button type="button" onClick={onClick} aria-label={ariaLabel} className={`flex w-full items-center gap-3 px-4 text-left transition-colors duration-150 active:bg-wash ${tall ? "min-h-[64px] py-3" : "min-h-[56px]"}`}>
         {lead}
+        {icon && <span aria-hidden="true" className="flex h-6 w-6 flex-shrink-0 items-center justify-center text-ink-2">{icon}</span>}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[16px] font-semibold text-ink">{title}</span>
           {detail && <span className="block truncate text-[14px] text-ink-2">{detail}</span>}
@@ -449,7 +445,7 @@ export function DetailSheet({ open, onClose, title, children, doneLabel = "Listo
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 // Una línea sin estaciones todavía: el vacío se dibuja, no se rellena con emoji.
-export function EmptyState({ title, sub, action, onAction }: { icon?: string; title: string; sub?: string; action?: string; onAction?: () => void; }) {
+export function EmptyState({ title, sub, action, actionIcon, onAction }: { icon?: string; title: string; sub?: string; action?: string; /** Icono opcional antes del texto: para los CTA de crear (+). */ actionIcon?: ReactNode; onAction?: () => void; }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
       <svg width="148" height="36" viewBox="0 0 148 36" fill="none" aria-hidden="true" className="mb-5">
@@ -461,9 +457,9 @@ export function EmptyState({ title, sub, action, onAction }: { icon?: string; ti
       {action && onAction && (
         <button
           onClick={onAction}
-          className="mt-5 rounded-md bg-coral px-5 py-3 text-[15px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]"
+          className="mt-5 inline-flex items-center gap-2 rounded-md bg-coral px-5 py-3 text-[15px] font-semibold text-night transition-transform duration-150 ease-out active:scale-[0.97]"
         >
-          {action}
+          {actionIcon}{action}
         </button>
       )}
     </div>
@@ -487,9 +483,7 @@ export function DeleteButton({ label, onClick, disabled, className = "" }: { lab
       aria-label={`Eliminar ${label}`}
       className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 transition-[background-color,color,transform] duration-150 ease-out hover:text-danger active:scale-95 active:bg-danger-wash active:text-danger disabled:opacity-50 ${className}`}
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 7h16M9 7V5h6v2M6 7l1 12h10l1-12M10 11v5M14 11v5" />
-      </svg>
+      <IconTrash size={22} />
     </button>
   );
 }
@@ -499,7 +493,7 @@ export function ErrorBanner({ message, onRetry, className = "" }: { message: str
   return (
     <div role="alert" className={`flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2 ${className}`}>
       <p className="text-[14px] font-semibold text-danger">{message}</p>
-      {onRetry && <button type="button" onClick={onRetry} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button>}
+      {onRetry && <button type="button" onClick={onRetry} className="inline-flex items-center justify-center gap-1.5 min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink"><IconRefresh size={16} />Reintentar</button>}
     </div>
   );
 }

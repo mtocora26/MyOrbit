@@ -6,6 +6,7 @@ import { fetchAcademicOverview, fetchAcademicSummary, formatGrade, gradeStatus, 
 import { cacheKeys, peek } from "../services/cache";
 import { fetchSemesters, type Semester } from "../services/semestersApi";
 import { type Subject } from "../services/subjectsApi";
+import { IconChevronRight, IconPencil, IconPlus } from "../components/icons";
 
 interface Props { onSubjectTap: (subject: Subject) => void; }
 
@@ -96,8 +97,8 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
             {semesters.map((option) => (
               <ChoiceChip key={option} selected={option === activeSemester} onClick={() => setSemester(option)} className="num">{option}</ChoiceChip>
             ))}
-            {activeRecord && <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} className="min-h-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink">Editar</button>}
-            <button type="button" onClick={() => setSemesterSheet({ semester: null })} aria-label="Nuevo semestre" className="min-h-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink">+ Semestre</button>
+            {activeRecord && <button type="button" onClick={() => setSemesterSheet({ semester: activeRecord })} aria-label="Editar semestre" title="Editar semestre" className="flex h-11 w-11 flex-shrink-0 items-center justify-center text-coral-ink"><IconPencil size={20} /></button>}
+            <button type="button" onClick={() => setSemesterSheet({ semester: null })} aria-label="Nuevo semestre" className="inline-flex min-h-[44px] items-center gap-1 flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink"><IconPlus size={16} />Semestre</button>
           </div>
         )}
       </header>
@@ -108,7 +109,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
         {loading ? (
           <ListSkeleton rows={5} label="Cargando materias" />
         ) : visible.length === 0 && !error ? (
-          <EmptyState title="Aún no tienes materias" sub="Agrega las materias del semestre para seguir tus evaluaciones y notas." action="Crear materia" onAction={() => setCreating(true)} />
+          <EmptyState title="Aún no tienes materias" sub="Agrega las materias del semestre para seguir tus evaluaciones y notas." action="Crear materia" actionIcon={<IconPlus size={18} />} onAction={() => setCreating(true)} />
         ) : (
           <>
             <h2 className="font-display text-[20px] font-semibold leading-none text-ink">Materias ({visible.length})</h2>
@@ -127,7 +128,7 @@ export default function UniversityScreen({ onSubjectTap }: Props) {
                         {standingById.get(subject.id)!.atRisk && <span className="rounded-[3px] bg-danger-wash px-1.5 py-[3px] text-[13px] font-semibold leading-none text-danger">En riesgo</span>}
                       </span>
                     )}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-line-strong)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+                    <IconChevronRight size={16} />
                   </button>
                 </li>
               ))}

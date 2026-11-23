@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ScreenHeader, Badge, BottomSheet, InputField, Skeleton, Avatar } from "../components/shared";
-import { IconSearch } from "../components/icons";
+import { IconPlus, IconSearch, IconTrash } from "../components/icons";
 import { createAdminUser, deleteAdminUser, fetchAdminUsers, updateAdminUser, type AdminUser, type UserRole } from "../services/adminApi";
 import { getSession } from "../services/authApi";
 
@@ -80,7 +80,7 @@ export default function AdminScreen({ onBack }: Props) {
         subtitle="Gestión de cuentas"
         onBack={onBack}
         right={<button onClick={() => setCreating(true)} className="flex min-h-[44px] items-center gap-2 rounded-md bg-coral px-4 text-[15px] font-semibold text-night">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <IconPlus size={16} />
           Nuevo
         </button>}
       />
@@ -146,7 +146,7 @@ export default function AdminScreen({ onBack }: Props) {
                           <ActionButton onClick={() => setConfirmDelete(null)}>Cancelar</ActionButton>
                         </>
                       ) : (
-                        <ActionButton danger disabled={busy || isMe} onClick={() => setConfirmDelete(user.id)}>Eliminar</ActionButton>
+                        <ActionButton danger disabled={busy || isMe} onClick={() => setConfirmDelete(user.id)}><IconTrash size={16} />Eliminar</ActionButton>
                       )}
                       {isMe && <p className="w-full text-[14px] text-ink-2">No puedes cambiar tu propio rol ni tu estado desde aquí.</p>}
                     </div>
@@ -179,7 +179,7 @@ function ActionButton({ children, onClick, disabled, danger }: { children: React
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`min-h-[44px] rounded-md border px-4 text-[14px] font-semibold transition-colors duration-150 disabled:opacity-40 ${danger ? "border-danger-line text-danger" : "border-line-strong text-ink"}`}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-md border px-4 text-[14px] font-semibold transition-colors duration-150 disabled:opacity-40 ${danger ? "border-danger-line text-danger" : "border-line-strong text-ink"}`}
     >
       {children}
     </button>

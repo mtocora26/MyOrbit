@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "./shared";
 import { fetchAcademicSummary, fetchAgendaEvaluations, formatGrade, type AcademicSummary, type AgendaEvaluation } from "../services/academicApi";
+import { IconChevronRight, IconRefresh } from "./icons";
 
 interface Props {
   /** Lleva a Universidad. */
@@ -77,7 +78,7 @@ export default function AcademicGlance({ onOpen, refreshTick }: Props) {
           </span>
           {detail && <span className={`mt-0.5 block text-[14px] ${detail.risk ? "font-semibold text-danger" : "text-ink-2"}`}>{detail.text}</span>}
         </span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-ink-3" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+        <IconChevronRight size={20} className="flex-shrink-0 text-ink-3" />
       </button>
     </section>
   );

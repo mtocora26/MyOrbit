@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BottomSheet, CategoryPicker, PriorityDot, choiceChip, choiceChipOn, choiceChipOff } from "./shared";
-import { IconPencil, IconCalendar, IconHabit, IconClock, IconBell } from "./icons";
+import { IconArrowUp, IconBell, IconCalendar, IconChevronDown, IconClock, IconHabit, IconPencil } from "./icons";
 import { createReminder, REMINDER_MAX_LENGTH } from "../services/remindersApi";
 import { requestLocalReminderPermission, syncLocalReminders } from "../services/localReminders";
 import { createTask, type TaskPriority } from "../services/tasksApi";
@@ -198,7 +198,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
             {saving ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+              <IconArrowUp size={22} />
             )}
           </button>
         </div>
@@ -209,7 +209,7 @@ export default function QuickAddSheet({ open, onClose, onTaskCreated, onHabitCre
               <span className="num min-w-0 truncate text-[15px] font-semibold text-ink">{summary}</span>
               <span className="flex flex-shrink-0 items-center gap-1 text-[14px] font-semibold text-coral-ink">
                 {detailsOpen ? "Listo" : "Cambiar"}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${detailsOpen ? "rotate-180" : ""}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                <IconChevronDown size={14} className={`transition-transform duration-200 ${detailsOpen ? "rotate-180" : ""}`} />
               </span>
             </button>
             {mode === "aviso" && <p className="-mt-1 text-[13px] text-ink-3">Te llegará a Notificaciones a esa hora.</p>}

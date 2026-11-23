@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BottomSheet, DetailSheet, SummaryList, SummaryRow, EmptyState, ProgressBar, ProgressRing, ScreenHeader, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
 import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, type GradeSummary } from "../services/academicApi";
-import { IconPencil } from "../components/icons";
+import { IconPencil, IconPlus } from "../components/icons";
 import SubjectFormSheet from "../components/SubjectFormSheet";
 import EvaluationFormSheet from "../components/EvaluationFormSheet";
 import { createEvaluation, DEFAULT_CUTS, fetchSubjectGrades, formatNumber, MAX_PERCENTAGE, type Evaluation } from "../services/evaluationsApi";
@@ -172,7 +172,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
               Evaluaciones
               {evaluations.length > 0 && <span className="num truncate text-[14px] font-normal text-ink-2">{evaluations.length} · {formatNumber(assigned)}% repartido</span>}
             </h2>
-            {evaluations.length > 0 && <button onClick={() => openEvalSheet(null)} className="-mr-2 flex min-h-[44px] flex-shrink-0 items-center px-3 text-[14px] font-semibold text-coral-ink">Agregar</button>}
+            {evaluations.length > 0 && <button onClick={() => openEvalSheet(null)} aria-label="Agregar evaluación" title="Agregar evaluación" className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center text-coral-ink"><IconPlus size={22} /></button>}
           </div>
 
           {evalsError && <ErrorBanner message={evalsError} onRetry={loadEvaluations} />}
@@ -181,7 +181,7 @@ export default function SubjectDetailScreen({ subject: initial, onBack, onDelete
             <ListSkeleton rows={3} label="Cargando evaluaciones" />
           ) : evaluations.length === 0 && !evalsError ? (
             <div className="rounded-md border border-dashed border-line-strong">
-              <EmptyState title="Aún no hay evaluaciones" sub="Agrega parciales, talleres y finales con su porcentaje para ver cómo va la materia." action="Agregar evaluación" onAction={() => openEvalSheet(null)} />
+              <EmptyState title="Aún no hay evaluaciones" sub="Agrega parciales, talleres y finales con su porcentaje para ver cómo va la materia." action="Agregar evaluación" actionIcon={<IconPlus size={18} />} onAction={() => openEvalSheet(null)} />
               <div className="flex justify-center pb-4">
                 <button onClick={createDefaultCuts} disabled={creatingCuts} className="min-h-[44px] px-3 text-[14px] font-semibold text-coral-ink disabled:opacity-50">{creatingCuts ? "Creando cortes..." : "Usar 3 cortes (30 / 30 / 40 %)"}</button>
               </div>

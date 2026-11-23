@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CategoryBadge, ChoiceChip, OverdueBadge, PageTitle, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner, DetailSheet } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
-import { IconCalendar, IconChecklist, IconFilter, IconSearch } from "../components/icons";
+import { IconBoard, IconCalendar, IconChecklist, IconFilter, IconList, IconPlus, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
 import { flushPending, runUndoable } from "../services/undo";
 import { deleteTask, fetchTasks, getSubtaskProgress, peekTasks, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
@@ -235,17 +235,13 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
           <button
             onClick={() => setView(view === "lista" ? "tablero" : "lista")}
             title={view === "lista" ? "Ver como tablero" : "Ver como lista"}
-            className="flex h-11 w-11 items-center justify-center rounded-md active:bg-wash"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-ink-2 active:bg-wash"
             aria-label="Cambiar vista"
           >
             {view === "lista" ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-2)" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 6h16M4 12h10M4 18h6" />
-              </svg>
+              <IconList size={18} />
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-2)" strokeWidth="2" strokeLinecap="round">
-                <rect x="4" y="4" width="4" height="16" rx="1" /><rect x="10" y="4" width="4" height="10" rx="1" /><rect x="16" y="4" width="4" height="13" rx="1" />
-              </svg>
+              <IconBoard size={18} />
             )}
           </button>
           </div>
@@ -272,7 +268,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
       ) : filteredTasks.length === 0 ? (
         // Si la carga falló no se dice «sin tareas»: el aviso de error con «Reintentar» ya explica lo que pasa.
         error ? null : query.trim() ? <div className="px-4 pt-4"><EmptyState icon="—" title="Sin resultados" sub={`Ninguna tarea coincide con «${query.trim()}».`} /></div> : <div className="px-4 pt-4">
-          <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" onAction={onFab} />
+          <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" actionIcon={<IconPlus size={18} />} onAction={onFab} />
         </div>
       ) : view === "lista" ? (
         <ol className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 py-4 pb-24 lg:px-8 lg:max-w-[760px]">

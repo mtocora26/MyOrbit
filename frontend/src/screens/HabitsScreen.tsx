@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChoiceChip, ErrorBanner, ProgressBar, ScreenHeader, Skeleton, DeleteButton, DetailSheet } from "../components/shared";
-import { IconBook, IconMeditate, IconNoPhone, IconPencil, IconReadingBook, IconRun, IconTarget } from "../components/icons";
+import { IconBook, IconCheck, IconChevronLeft, IconChevronRight, IconMeditate, IconNoPhone, IconPencil, IconPlus, IconReadingBook, IconRefresh, IconRun, IconTarget } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
 import { flushPending, runUndoable } from "../services/undo";
 import { createHabit, deleteHabit, fetchHabitSummaries, fetchHabits, toLocalKey, todayKey, updateHabit, updateHabitCompletion, completeLabel, type Habit, type HabitType, type HabitStats, type HabitSummary, type MonthlyGoal } from "../services/habitsApi";
@@ -201,7 +201,7 @@ export default function HabitsScreen({ onBack, refreshTick }: Props) {
         </div>
 
         {error && <ErrorBanner message={error} onRetry={loadHabits} />}
-        {loading ? <HabitListSkeleton /> : habits.length === 0 && error ? null : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 min-h-[44px] rounded-md bg-coral px-5 text-[15px] font-semibold text-night">Crear hábito</button></div> : <div className="overflow-hidden rounded-md bg-card divide-y divide-line">{habits.map((habit) => <HabitCard key={habit.id} habit={habit} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onToggleDay={(date, completed) => toggleHabitDay(habit, date, completed)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}<button onClick={startCreate} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nuevo hábito</button></div>}
+        {loading ? <HabitListSkeleton /> : habits.length === 0 && error ? null : habits.length === 0 ? <div className="rounded-md border border-dashed border-line-strong px-5 py-10 text-center"><p className="font-display text-[22px] font-semibold leading-none text-ink">Tu primera rutina empieza aquí</p><p className="mt-1 text-[13px] leading-relaxed text-ink-2">Crea un hábito pequeño y marca tu avance cada día.</p><button onClick={startCreate} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-coral px-5 text-[15px] font-semibold text-night"><IconPlus size={18} />Crear hábito</button></div> : <div className="overflow-hidden rounded-md bg-card divide-y divide-line">{habits.map((habit) => <HabitCard key={habit.id} habit={habit} saving={saving} summary={summaries[habit.id]} summaryFailed={summaryFailed} onRetrySummary={() => setSummaryTick((tick) => tick + 1)} onToggle={() => toggleHabit(habit)} onToggleDay={(date, completed) => toggleHabitDay(habit, date, completed)} onEdit={() => startEdit(habit)} onDelete={() => removeHabit(habit.id)} />)}<button onClick={startCreate} className="flex min-h-[56px] w-full items-center gap-2 px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash"><IconPlus size={18} />Nuevo hábito</button></div>}
       </div>
       <DetailSheet open={creating} onClose={resetForm} title={editingId ? "Editar hábito" : "Nuevo hábito"} doneLabel="Cancelar">
         <form onSubmit={submitHabit} className="flex flex-col gap-3">
@@ -284,7 +284,7 @@ function HabitCard({ habit, saving, summary, summaryFailed, onRetrySummary, onTo
           className="flex h-12 w-12 flex-shrink-0 items-center justify-center disabled:opacity-50"
         >
           <span className="flex h-[28px] w-[28px] items-center justify-center rounded-full border-[3px] transition-[background-color,transform] duration-150 ease-out active:scale-75" style={{ borderColor: habit.color, background: doneToday ? habit.color : "var(--color-card)" }}>
-            {doneToday && <svg width="12" height="10" viewBox="0 0 9 7" fill="none" aria-hidden="true"><path d="M1 3.5L3.5 6 8 1" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            {doneToday && <IconCheck size={14} strokeWidth={2.4} color="#fff" />}
           </span>
         </button>
       </div>
@@ -300,7 +300,7 @@ function HabitCard({ habit, saving, summary, summaryFailed, onRetrySummary, onTo
             <HabitMonth habit={habit} onToggleDay={onToggleDay} />
             {/* Acciones fuera de la fila: lejos del botón de marcar, para no tocarlas por error. */}
             <div className="mx-4 mr-6 mt-3 flex items-center justify-between gap-2 border-t border-line pt-1">
-              <button onClick={onEdit} disabled={saving} aria-label={`Editar hábito ${habit.title}`} className="flex min-h-[44px] items-center gap-2 rounded-md px-2 text-[14px] font-semibold text-ink-2 active:bg-wash disabled:opacity-50"><IconPencil size={16} />Editar</button>
+              <button onClick={onEdit} disabled={saving} aria-label={`Editar hábito ${habit.title}`} title="Editar hábito" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash disabled:opacity-50"><IconPencil size={20} /></button>
               <DeleteButton label={`hábito ${habit.title}`} onClick={onDelete} disabled={saving} />
             </div>
           </div>
@@ -337,11 +337,11 @@ function HabitMonth({ habit, onToggleDay }: { habit: Habit; onToggleDay: (date: 
       <div className="mx-4 mr-6 border-t border-line" />
       <div className="flex items-center justify-between">
         <button type="button" onClick={() => setOffset((current) => current + 1)} disabled={!canGoBack} aria-label="Mes anterior" className="flex h-11 w-11 flex-shrink-0 items-center justify-center text-ink-2 active:bg-wash disabled:opacity-30">
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <IconChevronLeft size={20} />
         </button>
         <p aria-live="polite" className="text-[14px] font-semibold text-ink">{monthTitle(year, month)}</p>
         <button type="button" onClick={() => setOffset((current) => current - 1)} disabled={offset === 0} aria-label="Mes siguiente" className="flex h-11 w-11 flex-shrink-0 items-center justify-center text-ink-2 active:bg-wash disabled:opacity-30">
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <IconChevronRight size={20} />
         </button>
       </div>
       <div className="grid grid-cols-7 px-0.5" role="group" aria-label={`Días de ${monthTitle(year, month)}`}>
@@ -416,7 +416,7 @@ function HabitStatsRow({ stats, noHistory, failed, onRetry }: { stats?: HabitSta
         {failed ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-[13px] text-ink-2">No se pudieron calcular las estadísticas.</p>
-            <button type="button" onClick={onRetry} className="-mr-3 min-h-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink">Reintentar</button>
+            <button type="button" onClick={onRetry} className="inline-flex items-center justify-center gap-1.5 -mr-3 min-h-[44px] flex-shrink-0 px-3 text-[14px] font-semibold text-coral-ink"><IconRefresh size={16} />Reintentar</button>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-2" aria-hidden="true">

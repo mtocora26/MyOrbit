@@ -3,6 +3,7 @@ import { BottomSheet } from "./shared";
 import { fromTaskDue } from "../services/taskDue";
 import { componentsAverage, createEvaluation, deleteEvaluation, formatNumber, MAX_PERCENTAGE, parseDecimal, updateEvaluation, type Evaluation } from "../services/evaluationsApi";
 import { formatGrade } from "../services/academicApi";
+import { IconClose, IconPlus } from "./icons";
 
 interface Props {
   open: boolean;
@@ -157,7 +158,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
           <section aria-label="Componentes del corte" className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <p className="text-[14px] font-semibold text-ink">Componentes (opcional)</p>
-              <button type="button" onClick={addPart} disabled={parts.length >= 20} className="-mr-2 min-h-[44px] px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50">+ Componente</button>
+              <button type="button" onClick={addPart} disabled={parts.length >= 20} className="-mr-2 inline-flex min-h-[44px] items-center gap-1 px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50"><IconPlus size={16} />Componente</button>
             </div>
             {parts.length === 0 ? (
               <p className="text-[13px] text-ink-3">Divide el corte en partes (parcial, actividades…) con su peso dentro del corte.</p>
@@ -168,7 +169,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
                     <li key={index} className="flex flex-col gap-2 rounded-md border border-line bg-card p-2">
                       <div className="flex items-center gap-2">
                         <input value={part.name} maxLength={100} onChange={(e) => setPart(index, { name: e.target.value })} aria-label={`Nombre del componente ${index + 1}`} placeholder="Ej. Parcial" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
-                        <button type="button" onClick={() => setParts((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar componente ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+                        <button type="button" onClick={() => setParts((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar componente ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><IconClose size={16} /></button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <span className="flex items-center gap-1 rounded-md border border-line-control bg-card px-3 py-2.5 focus-within:border-coral">
@@ -195,7 +196,7 @@ export default function EvaluationFormSheet({ open, onClose, subjectId, evaluati
             <div className="flex items-center gap-2">
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Fecha de la evaluación" className="num min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral" />
               <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!date} aria-label="Hora de la evaluación" className="num w-[120px] rounded-md border border-line-control bg-card px-3 py-3 text-[16px] text-ink outline-none focus:border-coral disabled:opacity-50" />
-              {date && <button type="button" onClick={() => setDate("")} aria-label="Quitar fecha" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>}
+              {date && <button type="button" onClick={() => setDate("")} aria-label="Quitar fecha" className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><IconClose size={16} /></button>}
             </div>
           </div>
 

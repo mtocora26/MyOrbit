@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BottomSheet, CATEGORY_PALETTE } from "./shared";
 import { createSubject, currentSemester, DAY_NAMES, semesterOptions, sortSlots, updateSubject, type Subject } from "../services/subjectsApi";
 import { formatNumber, parseDecimal } from "../services/evaluationsApi";
+import { IconClose, IconPlus } from "./icons";
 
 interface Props {
   open: boolean;
@@ -150,7 +151,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
         <section aria-label="Horario" className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <p className="text-[14px] font-semibold text-ink">Horario (opcional)</p>
-            <button type="button" onClick={() => setSlots((current) => [...current, { dayOfWeek: 1, start: "08:00", end: "10:00", room: "" }])} disabled={slots.length >= MAX_SLOTS} className="-mr-2 min-h-[44px] px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50">+ Franja</button>
+            <button type="button" onClick={() => setSlots((current) => [...current, { dayOfWeek: 1, start: "08:00", end: "10:00", room: "" }])} disabled={slots.length >= MAX_SLOTS} className="-mr-2 inline-flex min-h-[44px] items-center gap-1 px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50"><IconPlus size={16} />Franja</button>
           </div>
           {slots.length === 0 ? (
             <p className="text-[13px] text-ink-3">Agrega los días y horas de clase; se repiten cada semana mientras dura el semestre.</p>
@@ -162,7 +163,7 @@ export default function SubjectFormSheet({ open, onClose, subject, knownSemester
                     <select value={slot.dayOfWeek} onChange={(e) => setSlot(index, { dayOfWeek: Number(e.target.value) })} aria-label={`Día de la franja ${index + 1}`} className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral">
                       {DAY_NAMES.map((day, position) => <option key={day} value={position + 1}>{day}</option>)}
                     </select>
-                    <button type="button" onClick={() => setSlots((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar franja ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+                    <button type="button" onClick={() => setSlots((current) => current.filter((_, position) => position !== index))} aria-label={`Quitar franja ${index + 1}`} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash"><IconClose size={16} /></button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <input type="time" value={slot.start} onChange={(e) => setSlot(index, { start: e.target.value })} aria-label={`Inicio de la franja ${index + 1}`} className="num min-h-[44px] w-full min-w-0 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />

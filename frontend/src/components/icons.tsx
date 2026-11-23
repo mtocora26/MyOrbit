@@ -358,3 +358,128 @@ export function IconOrbit({ size = 20, color = "currentColor", strokeWidth = 1.8
     </svg>
   );
 }
+
+// Acciones y marcas de interfaz (criterio «iconos primero», #239)
+
+export function IconPlus({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function IconClose({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+export function IconChevronRight({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
+}
+
+export function IconChevronLeft({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
+export function IconChevronDown({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+export function IconCheck({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+export function IconCheckAll({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M2 12.5l4.5 4.5L15 8M10 16.5l1 1L22 7.5" />
+    </svg>
+  );
+}
+
+export function IconArrowUp({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  );
+}
+
+export function IconTrash({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M4 7h16M9 7V5h6v2M6 7l1 12h10l1-12M10 11v5M14 11v5" />
+    </svg>
+  );
+}
+
+export function IconList({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M4 6h16M4 12h10M4 18h6" />
+    </svg>
+  );
+}
+
+export function IconBoard({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <rect x="4" y="4" width="4" height="16" rx="1" /><rect x="10" y="4" width="4" height="10" rx="1" /><rect x="16" y="4" width="4" height="13" rx="1" />
+    </svg>
+  );
+}
+
+export function IconRefresh({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M20 11a8 8 0 0 0-14.9-3M4 5v3.5h3.5M4 13a8 8 0 0 0 14.9 3M20 19v-3.5h-3.5" />
+    </svg>
+  );
+}
+
+export function IconWifiOff({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <path d="M2 8.8a15 15 0 0 1 4-2.4M22 8.8a15 15 0 0 0-9-3.7M5 12.9a10 10 0 0 1 3.4-1.9M19 12.9a10 10 0 0 0-3-1.8M8.5 16.4a5 5 0 0 1 7 0M12 20h.01M3 3l18 18" />
+    </svg>
+  );
+}
+
+export function IconServer({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <rect x="3" y="4" width="18" height="6" rx="1.5" />
+      <rect x="3" y="14" width="18" height="6" rx="1.5" />
+      <path d="M7 7h.01M7 17h.01M17 11v2" />
+    </svg>
+  );
+}
+
+export function IconSun({ size = 20, color = "currentColor", strokeWidth = 1.8, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base(strokeWidth)} style={{ color }} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6" />
+    </svg>
+  );
+}

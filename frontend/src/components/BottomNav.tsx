@@ -1,5 +1,6 @@
 import React from "react";
 import type { MainTab } from "../App";
+import { IconPlus } from "./icons";
 
 interface Props {
   active: MainTab;
@@ -71,9 +72,7 @@ export default function BottomNav({ active, onChange, onFab }: Props) {
             aria-label="Añadir tarea, evento o hábito"
             className="flex h-12 w-12 items-center justify-center rounded-full bg-coral text-night transition-transform duration-150 ease-out active:scale-95"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <IconPlus size={24} />
           </button>
         </div>
 
