@@ -9,6 +9,7 @@ import { localReminderPermission, localRemindersEnabled, requestLocalReminderPer
 import ReminderSetupSheet from "../components/ReminderSetupSheet";
 import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "../services/pushApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
+import { IconRefresh } from "../components/icons";
 
 interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
 
@@ -301,7 +302,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
         ) : (
           <div className="min-h-[60px] flex items-center">
             {prefsError
-              ? <div role="alert" className="flex w-full items-center justify-between gap-3"><p className="text-[14px] font-semibold text-danger">{prefsError}</p><button onClick={loadPrefs} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button></div>
+              ? <div role="alert" className="flex w-full items-center justify-between gap-3"><p className="text-[14px] font-semibold text-danger">{prefsError}</p><button onClick={loadPrefs} className="inline-flex items-center justify-center gap-1.5 min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink"><IconRefresh size={16} />Reintentar</button></div>
               : <ListSkeleton rows={3} label="Cargando preferencias" />}
           </div>
         )}

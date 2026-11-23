@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BottomSheet, CATEGORY_PALETTE, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner, RowChevron } from "../components/shared";
 import { createCategory, deleteCategory, fetchCategories, orderCategories, updateCategory, type Category } from "../services/categoriesApi";
 import { fetchTasks } from "../services/tasksApi";
+import { IconPlus } from "../components/icons";
 
 interface Props { onBack: () => void; }
 
@@ -124,7 +125,7 @@ export default function CategoriesScreen({ onBack }: Props) {
         {loading ? (
           <ListSkeleton rows={4} label="Cargando categorías" />
         ) : sorted.length === 0 && !loadError ? (
-          <EmptyState title="Aún no tienes categorías" sub="Agrupa tus tareas por materia, proyecto o ámbito de tu vida." action="Crear categoría" onAction={() => openForm(null)} />
+          <EmptyState title="Aún no tienes categorías" sub="Agrupa tus tareas por materia, proyecto o ámbito de tu vida." action="Crear categoría" actionIcon={<IconPlus size={18} />} onAction={() => openForm(null)} />
         ) : (
           <ul className="overflow-hidden rounded-md bg-card">
             {sorted.map((category, index) => {
@@ -145,7 +146,7 @@ export default function CategoriesScreen({ onBack }: Props) {
               );
             })}
             <li className="border-t border-line">
-              <button onClick={() => openForm(null)} className="flex min-h-[56px] w-full items-center px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash">+ Nueva categoría</button>
+              <button onClick={() => openForm(null)} className="flex min-h-[56px] w-full items-center gap-2 px-4 text-left text-[15px] font-semibold text-coral-ink active:bg-wash"><IconPlus size={18} />Nueva categoría</button>
             </li>
           </ul>
         )}

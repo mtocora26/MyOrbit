@@ -1,4 +1,4 @@
-import { IconPencil, IconHabit, IconUser } from "./icons";
+import { IconClose, IconHabit, IconPencil, IconUser } from "./icons";
 interface Props {
   name: string;
   onClose: () => void;
@@ -20,7 +20,7 @@ export default function WelcomeOnboarding({ name, onClose, onCreateTask, onConfi
               <h1 id="welcome-title" className="mt-5 text-[26px] font-bold leading-tight">Bienvenida a tu órbita, {name}</h1>
               <p className="mt-2 max-w-md text-[14px] leading-relaxed text-ink-3">No necesitas configurar todo ahora. Empieza por lo que te resulte útil y completa tu espacio cuando quieras.</p>
             </div>
-            <button onClick={onClose} title="Continuar sin configurar" aria-label="Continuar sin configurar" className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10 text-white transition-colors hover:bg-white/20"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+            <button onClick={onClose} title="Continuar sin configurar" aria-label="Continuar sin configurar" className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10 text-white transition-colors hover:bg-white/20"><IconClose size={16} /></button>
           </div>
         </div>
 

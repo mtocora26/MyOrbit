@@ -8,6 +8,7 @@ import { CategoryBadge, EmptyState, PriorityDot, Station, ErrorBanner, PageTitle
 import EventFormSheet from "../components/EventFormSheet";
 import { coversDay, dayOfEvent, daysBetween, fetchEvents, type CalendarEvent } from "../services/eventsApi";
 import { fetchSubjects, type Subject } from "../services/subjectsApi";
+import { IconChevronLeft, IconChevronRight } from "../components/icons";
 
 const DAYS = ["L", "M", "X", "J", "V", "S", "D"];
 
@@ -209,8 +210,8 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
         <div className="flex items-center justify-between px-4 pt-3 pb-1 lg:px-8 lg:pt-8">
           <PageTitle className="min-w-0 truncate">{monthName}<span className="num ml-2 text-[16px] font-medium tracking-normal text-ink-3">{monthYear}</span></PageTitle>
           <div className="-mr-2 flex flex-shrink-0 items-center">
-            <WeekButton label="Semana anterior" onClick={() => shiftWeek(-1)} path="M15 18l-6-6 6-6" />
-            <WeekButton label="Semana siguiente" onClick={() => shiftWeek(1)} path="M9 18l6-6-6-6" />
+            <WeekButton label="Semana anterior" onClick={() => shiftWeek(-1)} icon={<IconChevronLeft size={20} />} />
+            <WeekButton label="Semana siguiente" onClick={() => shiftWeek(1)} icon={<IconChevronRight size={20} />} />
           </div>
         </div>
 
@@ -408,10 +409,10 @@ export default function AgendaScreen({ refreshTick = 0 }: { onFab?: () => void; 
   );
 }
 
-function WeekButton({ label, onClick, path }: { label: string; onClick: () => void; path: string }) {
+function WeekButton({ label, onClick, icon }: { label: string; onClick: () => void; icon: React.ReactNode }) {
   return (
     <button onClick={onClick} aria-label={label} className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-ink-2 active:bg-wash">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>
+      {icon}
     </button>
   );
 }

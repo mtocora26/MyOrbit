@@ -274,6 +274,15 @@ Settings rows (`ToggleRow`) are label, one-line description and the switch: no l
 ### Choice Chip
 One language for picking an option among a few (date presets, priority, category, semester, task filters, notification filter, habit stats window, Agenda day): `ChoiceChip` in `shared.tsx`. **No border.** Unselected is a `wash` fill with `ink-2` text; selected is `coral-wash` with `coral-ink` text. Same shape and size in both states, 6px radius, 44px minimum height, presses to 0.97. Never `strong` (near-white in dark mode, the brightest thing on screen), never an ink border, never a per-option colour. Secondary actions next to chips ("Editar", "+ Semestre") are plain `coral-ink` text, not boxed chips. In the Agenda strip the selected day is `coral-wash`; today, when not selected, is `coral-ink` text only.
 
+### Icons first
+One icon set, in `components/icons.tsx`: 24px grid, `currentColor`, 1.8px stroke, round caps and joins. No inline `<svg>` for UI icons, no emoji and no Unicode glyphs (✓ → × +) as icons. A new icon is drawn there first. Decorative drawings (logo, loader, empty-state routes, progress ring) are not icons and stay where they are.
+
+Pick the form of a control by what it does:
+- **Icon only** when the meaning is universal and the action repeats: add, edit, close, back, check, mark all, remove a step. Always an `aria-label` in Spanish (and `title`) and a 44 × 44 px target.
+- **Icon + text** when the action is rare, destructive or ambiguous: *Reintentar*, *Eliminar* (admin), the end-of-list *Nueva categoría* / *Nuevo hábito* rows and the empty-state calls to action.
+- **Text only** for states and data (filters, summaries, counts) and for the confirm/cancel pair of a sheet or form (*Guardar*, *Cancelar*, *Listo*, *Cerrar*).
+- The bottom bar keeps icon + label on its five tabs: they are few and the label removes doubt. Rows in *Más* carry a flat `ink-2` icon (no colour tile).
+
 ### Navigation
 Bottom bar on `card` with a top hairline: Hoy, Tareas, [add], Agenda, Uni, Más. Inactive icons and labels `ink-3`, active label `ink` with coral-ink icon and a 3px coral bar sliding in from the centre (300ms). Central add is a 56px coral circle raised 20px with a 4px card-coloured ring. Icons are 22px stroke SVG at 1.9 weight.
 

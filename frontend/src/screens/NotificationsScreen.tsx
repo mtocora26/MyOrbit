@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChoiceChip, EmptyState, ScreenHeader, ListSkeleton, ErrorBanner } from "../components/shared";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from "../services/notificationsApi";
 import { deleteReminder, fetchReminders, type PersonalReminder } from "../services/remindersApi";
+import { IconCheckAll } from "../components/icons";
 
 interface Props {
   onBack: () => void;
@@ -114,7 +115,7 @@ export default function NotificationsScreen({ onBack, onUnreadChange, onOpenTask
         title="Notificaciones"
         subtitle={unread > 0 ? `${unread} sin leer` : "Estás al día"}
         onBack={onBack}
-        right={unread > 0 ? <button onClick={markAll} disabled={busy} className="-mr-2 flex min-h-[44px] items-center px-2 text-[14px] font-semibold text-coral-ink disabled:opacity-50">Marcar todas</button> : undefined}
+        right={unread > 0 ? <button onClick={markAll} disabled={busy} aria-label="Marcar todas como leídas" title="Marcar todas como leídas" className="-mr-2 flex h-11 w-11 items-center justify-center text-coral-ink disabled:opacity-50"><IconCheckAll size={22} /></button> : undefined}
       />
 
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-3 pb-8 lg:max-w-[760px] lg:px-8 lg:pt-6 [&>*]:shrink-0">

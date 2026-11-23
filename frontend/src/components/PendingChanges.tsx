@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { BottomSheet } from "./shared";
 import { getConnectionState, subscribeConnection } from "../services/connection";
 import { discardOp, getOutboxSnapshot, retryOp, subscribeOutbox, type OutboxKind } from "../services/outbox";
+import { IconRefresh } from "./icons";
 
 const VERB: Record<OutboxKind, string> = {
   createTask: "Crear tarea",

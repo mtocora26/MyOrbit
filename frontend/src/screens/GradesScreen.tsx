@@ -4,6 +4,7 @@ import GradeStatusLine from "../components/GradeStatusLine";
 import { fetchGradeSummary, formatGrade, gradeStatus, MAX_GRADE, passStatus, projectedFinal, type GradeSummary } from "../services/academicApi";
 import { fetchEvaluations, formatNumber, type Evaluation } from "../services/evaluationsApi";
 import type { Subject } from "../services/subjectsApi";
+import { IconRefresh } from "../components/icons";
 
 interface Props { subject: Subject; onBack: () => void; }
 
@@ -50,7 +51,7 @@ export default function GradesScreen({ subject, onBack }: Props) {
         {error && (
           <div role="alert" className="flex items-center justify-between gap-3 rounded-md border border-danger-line bg-danger-wash px-3 py-2">
             <p className="text-[14px] font-semibold text-danger">{error}</p>
-            <button onClick={load} className="min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink">Reintentar</button>
+            <button onClick={load} className="inline-flex items-center justify-center gap-1.5 min-h-[44px] flex-shrink-0 px-2 text-[14px] font-semibold text-coral-ink"><IconRefresh size={16} />Reintentar</button>
           </div>
         )}
         {loading && <p className="text-[14px] text-ink-2">Calculando notas...</p>}

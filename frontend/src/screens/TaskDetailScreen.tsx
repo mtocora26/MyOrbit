@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ScreenHeader, CategoryBadge, OverdueBadge, CategoryPicker, Checkbox, PriorityDot, ProgressBar, ListSkeleton, ErrorBanner, DeleteButton } from "../components/shared";
-import { IconCalendar } from "../components/icons";
+import { IconCalendar, IconPencil, IconPlus } from "../components/icons";
 import { createSubtask, deleteSubtask, fetchTaskById, getSubtaskProgress, toUiTask, updateSubtaskDue, updateSubtaskStatus, updateTask, updateTaskStatus, type Subtask, type TaskPriority, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
 import { categoryLabel, createCategory, fetchCategories, type Category } from "../services/categoriesApi";
@@ -298,9 +298,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
               title={editing ? "Cancelar edición" : "Editar tarea"}
               aria-label={editing ? "Cancelar edición" : "Editar tarea"}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
+              <IconPencil size={18} />
             </button>
           ) : undefined
         }
@@ -401,7 +399,7 @@ export default function TaskDetailScreen({ onBack, taskId }: Props) {
                 {task.subtasks.length === 0 && <p className="text-[14px] text-ink-3">Divide la tarea en pasos pequeños y marca cada uno al terminarlo.</p>}
                 <div className="flex gap-2">
                   <input value={newSubtaskTitle} onChange={(event) => setNewSubtaskTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined); }} placeholder="Añadir un paso" aria-label="Añadir un paso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" />
-                  <button onClick={() => handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined)} disabled={saving || !newSubtaskTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-coral px-4 text-[14px] font-bold text-night disabled:bg-wash disabled:text-ink-3">Añadir</button>
+                  <button onClick={() => handleAddSubtask(newSubtaskTitle, undefined, newSubtaskDate ? toTaskDue(newSubtaskDate, newSubtaskTime) : undefined)} disabled={saving || !newSubtaskTitle.trim()} aria-label="Añadir paso" title="Añadir paso" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-coral text-night disabled:bg-wash disabled:text-ink-3"><IconPlus size={22} /></button>
                 </div>
                 {newSubtaskTitle.trim() && (
                   <div className="orbit-fade grid grid-cols-2 gap-2">
@@ -526,7 +524,7 @@ function SubtaskItem({ subtask, depth, saving, onToggle, onDelete, onAddChild, o
           </div>
         </div>
       )}
-      {addingChild && <div className="ml-9 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" /><button onClick={addChild} disabled={saving || !childTitle.trim()} className="min-h-[44px] min-w-[44px] shrink-0 rounded-md bg-coral px-4 text-[14px] font-bold text-night disabled:opacity-50">Añadir</button></div>}
+      {addingChild && <div className="ml-9 flex gap-2"><input value={childTitle} onChange={(event) => setChildTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addChild(); }} autoFocus placeholder="Añadir subpaso" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-line-control bg-card px-3 text-[16px] text-ink outline-none focus:border-coral" /><button onClick={addChild} disabled={saving || !childTitle.trim()} aria-label="Añadir subpaso" title="Añadir subpaso" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-coral text-night disabled:opacity-50"><IconPlus size={22} /></button></div>}
       {children.map((child) => <SubtaskItem key={child.id} subtask={child} depth={depth + 1} saving={saving} onToggle={onToggle} onDelete={onDelete} onAddChild={onAddChild} onUpdateDue={onUpdateDue} onRename={onRename} />)}
     </div>
   );
