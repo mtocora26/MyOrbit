@@ -80,14 +80,13 @@ El splash se oculta en cuanto React pinta la primera pantalla (`hideSplash()` en
 
 Con el emulador o un teléfono en modo depuración: abre `chrome://inspect` en Chrome de escritorio y elige el WebView de MyOrbit para ver la consola y el DOM de la app instalada. Las peticiones de red, errores de CORS y `localStorage` se ven ahí.
 
-## Versión firmada (AAB) para tiendas
+## Distribución
 
-**Pendiente, necesita un *keystore* tuyo** (es un secreto: no lo subas a git). Pasos:
+La app **no se publica en Play Store**: se instala el APK de depuración (`pnpm android:debug`, luego `adb install -r app-debug.apk`). Por eso no hay *keystore* ni `signingConfigs`. Si algún día se publica, hace falta crear un keystore propio (un secreto: no va a git), configurar `signingConfigs` en `frontend/android/app/build.gradle` leyendo sus claves de un `keystore.properties` ignorado por git, y generar el AAB con `./gradlew bundleRelease`.
 
-1. Crea el keystore (`keytool -genkeypair ...`) y guárdalo fuera del repo con su contraseña.
-2. Configura `signingConfigs` en `frontend/android/app/build.gradle` leyendo las rutas y claves de variables de entorno o de un `keystore.properties` ignorado por git.
-3. `./gradlew bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`.
-4. Sube a Play Console. Sube el `versionCode`/`versionName` de `app/build.gradle` en cada publicación.
+## Orientación
+
+La app queda **fija en vertical** (`android:screenOrientation="portrait"` en `AndroidManifest.xml`), igual que la PWA (`orientation: 'portrait'` en `vite.config.ts`): se usa con una mano y las pantallas están pensadas para 360–390 px de ancho.
 
 ## Avisos en el teléfono (notificaciones locales)
 
