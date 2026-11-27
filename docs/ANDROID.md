@@ -102,7 +102,7 @@ La app programa sus propios avisos con `@capacitor/local-notifications` (`fronte
 
 - Se recalculan al iniciar sesión, al volver a la app, al cambiar tareas/hábitos/recordatorios y al cambiar las preferencias. Sin conexión se conserva lo ya programado; al cerrar sesión se cancela todo.
 - El permiso de notificaciones se pide al crear el primer recordatorio, o con el interruptor «Avisos en este teléfono» del Perfil. Nunca al abrir la app.
-- Para que suenen a la hora exacta, Android 12+ exige el permiso «Alarmas y recordatorios». La app lo pide al activar «Avisos en este teléfono» y el Perfil muestra un botón «Permitir» mientras falte. Sin él el sistema puede retrasar los avisos varios minutos; algunos fabricantes (Xiaomi, Huawei...) además retrasan avisos con el ahorro de batería agresivo.
+- Para que suenen a la hora exacta, Android 12+ exige el permiso «Alarmas y recordatorios». Ajustes se abre solo cuando el usuario lo toca: al activar «Avisos en este teléfono» o con «Permitir» en la hoja «Que tus avisos lleguen». Mientras falte, los avisos se programan como inexactos (`isExactNotification: false`; con el valor por defecto el plugin abriría Ajustes en cada reprogramación) y el sistema puede retrasarlos varios minutos; algunos fabricantes (Xiaomi, Huawei...) además retrasan avisos con el ahorro de batería agresivo.
 - Un cambio hecho desde otro dispositivo (la web) llega al teléfono cuando la app se abre; los avisos no se actualizan solos en segundo plano.
 - Quedan fuera: hábitos pendientes, tareas vencidas y materias en riesgo (siguen llegando a la bandeja), y FCM (push remoto).
 

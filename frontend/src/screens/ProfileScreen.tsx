@@ -5,7 +5,7 @@ import { useTheme } from "../hooks/useTheme";
 import type { AuthSession } from "../services/authApi";
 import { updateName, changePassword, updateTimeZone, availableTimeZones, detectTimeZone } from "../services/authApi";
 import { isNativeApp } from "../hooks/useNativeApp";
-import { localReminderPermission, localRemindersEnabled, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
+import { exactAlarmsAllowed, localReminderPermission, localRemindersEnabled, requestExactAlarms, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
 import ReminderSetupSheet from "../components/ReminderSetupSheet";
 import { agendaWidgetStatus, pinAgendaWidget, syncAgendaWidget, type AgendaWidgetStatus } from "../services/agendaWidget";
 import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "../services/pushApi";
@@ -202,6 +202,8 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     }
     setLocalRemindersEnabled(true);
     setDeviceOn(true);
+    // Aquí sí se abre Ajustes: lo pide el usuario al activar el interruptor.
+    if (!(await exactAlarmsAllowed())) await requestExactAlarms();
     syncLocalReminders().catch(() => undefined);
   }
 

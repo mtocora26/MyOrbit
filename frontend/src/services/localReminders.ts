@@ -239,12 +239,16 @@ async function runSync(): Promise<void> {
     if (!planned) return;
     await cancelPending();
     if (!planned.length) return;
+    // El plugin pide exactitud por defecto y, sin el permiso, abre Ajustes en cada programación. Programar ocurre
+    // solo (al volver a la app o cambiar datos), así que solo se piden exactos si ya están permitidos.
+    const exact = await exactAlarmsAllowed();
     const notifications: LocalNotificationSchema[] = planned.map((item) => ({
       id: notificationId(item.key),
       title: item.title,
       body: item.body,
       channelId: CHANNEL_ID,
       schedule: { at: item.at, allowWhileIdle: true },
+      isExactNotification: exact,
     }));
     await LocalNotifications.schedule({ notifications });
   } catch {
