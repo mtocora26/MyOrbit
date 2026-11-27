@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_card">#16223D</color>
+    <color name="widget_line">#34466D</color>
+    <color name="widget_ink">#EEF2FA</color>
+    <color name="widget_ink_2">#B6C0D4</color>
+    <color name="widget_coral">#FF7A5C</color>
+    <color name="widget_coral_ink">#FF9F88</color>
+</resources>

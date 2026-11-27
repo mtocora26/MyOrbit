@@ -4,4 +4,19 @@
     <string name="title_activity_main">MyOrbit</string>
     <string name="package_name">com.app.myorbit</string>
     <string name="custom_url_scheme">com.app.myorbit</string>
+    <string name="widget_agenda_label">Agenda de hoy</string>
+    <string name="widget_agenda_description">Lo que te queda hoy: clases, eventos, evaluaciones y entregas.</string>
+    <string name="widget_agenda_today">Hoy, %1$s</string>
+    <string name="widget_agenda_empty">Nada pendiente hoy</string>
+    <string name="widget_agenda_stale">Abre MyOrbit para actualizar tu agenda</string>
+    <string name="widget_agenda_no_data">Abre MyOrbit para ver tu agenda</string>
+    <string name="widget_agenda_all_day">Día</string>
+    <string name="widget_agenda_more">+%1$d más</string>
+    <!-- Filas ficticias de la vista previa en el selector de widgets. -->
+    <string name="widget_agenda_preview_class">Cálculo II</string>
+    <string name="widget_agenda_preview_evaluation">Parcial de Física</string>
+    <string name="widget_agenda_preview_task">Entregar informe</string>
+    <string name="widget_agenda_preview_class_time" translatable="false">08:00</string>
+    <string name="widget_agenda_preview_evaluation_time" translatable="false">11:00</string>
+    <string name="widget_agenda_preview_task_time" translatable="false">18:00</string>
 </resources>
