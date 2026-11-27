@@ -64,7 +64,7 @@ El grafo es **acíclico** y tiene una sola dirección: `notifications` está arr
 ## Consecuencias
 
 **Buenas**
-- Un `docker compose` con backend, Mongo y frontend (`M5-02`) basta para el entorno local.
+- Un `docker compose` con backend, Mongo y frontend (`M5-02`) basta para el entorno local. (Después se descartó en #45: no hizo falta.)
 - Un solo log, un solo `/actuator/health`, un solo despliegue.
 - Transacciones y consultas entre módulos son llamadas a método, no a red.
 
