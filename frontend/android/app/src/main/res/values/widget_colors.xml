@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mismos tokens que la web (DESIGN.md / index.css). El widget sigue el tema del teléfono. -->
+<resources>
+    <color name="widget_card">#FFFFFF</color>
+    <color name="widget_line">#D7DDE8</color>
+    <color name="widget_ink">#121A2B</color>
+    <color name="widget_ink_2">#465066</color>
+    <color name="widget_coral">#FF6B4A</color>
+    <color name="widget_coral_ink">#C23A1D</color>
+</resources>

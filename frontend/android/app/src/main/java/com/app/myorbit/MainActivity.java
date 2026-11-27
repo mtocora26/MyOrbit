@@ -16,6 +16,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(DeviceSettingsPlugin.class);
+        registerPlugin(AgendaWidgetPlugin.class);
         super.onCreate(savedInstanceState);
         createRemindersChannel();
     }

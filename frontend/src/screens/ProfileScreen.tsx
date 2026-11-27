@@ -7,13 +7,14 @@ import { updateName, changePassword, updateTimeZone, availableTimeZones, detectT
 import { isNativeApp } from "../hooks/useNativeApp";
 import { localReminderPermission, localRemindersEnabled, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
 import ReminderSetupSheet from "../components/ReminderSetupSheet";
+import { agendaWidgetStatus, pinAgendaWidget, syncAgendaWidget, type AgendaWidgetStatus } from "../services/agendaWidget";
 import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "../services/pushApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 import { IconRefresh } from "../components/icons";
 
 interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
 
-type ProfileSheet = "account" | "academic" | "notifications" | "timezone" | "appearance";
+type ProfileSheet = "account" | "academic" | "notifications" | "timezone" | "appearance" | "widget";
 
 export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }: Props) {
   const { theme, toggle: toggleTheme } = useTheme();
@@ -62,6 +63,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
       setDraft(profile ?? { program: "", semester: "", gradeTarget: "" });
       setProfileError(null);
     }
+    if (next === "widget") setWidgetMessage(null);
     if (next === "account") {
       setDraftName(displayName);
       setCurrentPassword("");
@@ -141,6 +143,29 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
     if (isNativeApp) return;
     webPushState().then(setWebPush);
   }, []);
+
+  // Widget de agenda (solo en la app de Android). Se vuelve a consultar al regresar de la confirmación del teléfono.
+  const [widget, setWidget] = useState<AgendaWidgetStatus | null>(null);
+  const [widgetMessage, setWidgetMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isNativeApp) return;
+    const load = () => { agendaWidgetStatus().then(setWidget); };
+    load();
+    window.addEventListener("focus", load);
+    document.addEventListener("visibilitychange", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      document.removeEventListener("visibilitychange", load);
+    };
+  }, [sheet]);
+
+  async function addWidget() {
+    setWidgetMessage(null);
+    await syncAgendaWidget();
+    setWidgetMessage(await pinAgendaWidget()
+      ? "Confirma en el aviso del teléfono."
+      : "Este teléfono no deja agregarlo desde la app. Agrégalo desde la pantalla de inicio.");
+  }
 
   async function changeWebPush() {
     if (webPushBusy) return;
@@ -229,13 +254,14 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           </div>
         </div>
 
-        {/* Primer nivel: cinco filas de resumen; cada una abre su hoja. */}
+        {/* Primer nivel: filas de resumen; cada una abre su hoja. */}
         <SummaryList label="Ajustes del perfil">
           <SummaryRow title="Cuenta" summary={displayName} onClick={() => openSheet("account")} />
           <SummaryRow title="Información académica" summary={profile?.program || "Sin configurar"} onClick={() => openSheet("academic")} />
           <SummaryRow title="Notificaciones" summary={prefs ? `${prefValues.filter(Boolean).length} de ${prefValues.length} activas` : undefined} onClick={() => openSheet("notifications")} />
           <SummaryRow title="Zona horaria" summary={zone.replace(/_/g, " ")} onClick={() => openSheet("timezone")} />
           <SummaryRow title="Apariencia" summary={theme === "dark" ? "Oscuro" : "Claro"} onClick={() => openSheet("appearance")} />
+          {isNativeApp && <SummaryRow title="Widget de agenda" summary={widget ? (widget.added ? "Agregado" : "Sin agregar") : undefined} onClick={() => openSheet("widget")} />}
         </SummaryList>
 
         <button onClick={onLogout} className="w-full min-h-[44px] py-3 rounded-md bg-wash text-[14px] font-bold text-ink-2 active:scale-[0.98] transition-transform mt-3">
@@ -319,6 +345,13 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
 
       <DetailSheet open={sheet === "appearance"} onClose={() => setSheet(null)} title="Apariencia">
         <div className="-mx-5"><ToggleRow label="Modo oscuro" sub="Tema oscuro de la interfaz" on={theme === "dark"} onChange={toggleTheme} /></div>
+      </DetailSheet>
+
+      <DetailSheet open={sheet === "widget"} onClose={() => setSheet(null)} title="Widget de agenda">
+        <p className="text-[14px] text-ink-2">Muestra en la pantalla de inicio lo que te queda hoy: clases, eventos, evaluaciones y entregas. Al tocarlo se abre la Agenda.</p>
+        {widget?.canPin && <button onClick={addWidget} className="min-h-[44px] rounded-md bg-coral px-4 text-[14px] font-bold text-night transition-transform duration-150 ease-out active:scale-[0.97]">Agregar a la pantalla de inicio</button>}
+        {widgetMessage && <p role="status" className="text-[14px] font-semibold text-ink">{widgetMessage}</p>}
+        <p className="text-[13px] text-ink-3">También puedes mantener presionada la pantalla de inicio y elegir Widgets → MyOrbit. Sigue el tema claro u oscuro del teléfono.</p>
       </DetailSheet>
 
       <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />

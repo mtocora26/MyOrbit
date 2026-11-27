@@ -39,6 +39,21 @@ export function registerBackHandler(handler: BackHandler): () => void {
   };
 }
 
+/**
+ * Enlaces `myorbit://…` con los que Android abre la app (p. ej. al tocar el widget), tanto si estaba cerrada como en
+ * segundo plano. Siempre usa la versión más reciente de `handler`.
+ */
+export function useLaunchLink(handler: (url: string) => void): void {
+  const latest = useRef(handler);
+  latest.current = handler;
+  useEffect(() => {
+    if (!isNativeApp) return;
+    const listener = CapacitorApp.addListener("appUrlOpen", ({ url }) => latest.current(url));
+    CapacitorApp.getLaunchUrl().then((launch) => { if (launch?.url) latest.current(launch.url); }).catch(() => undefined);
+    return () => { listener.then((handle) => handle.remove()).catch(() => undefined); };
+  }, []);
+}
+
 /** Manejador de «atrás» de la pantalla raíz. Siempre usa la versión más reciente de `handler`. */
 export function useBackHandler(handler: BackHandler): void {
   const latest = useRef(handler);

@@ -109,6 +109,20 @@ La app programa sus propios avisos con `@capacitor/local-notifications` (`fronte
 - Al iniciar sesión, una hoja («Que tus avisos lleguen») revisa notificaciones, alarmas exactas, batería sin restricciones y el inicio automático del fabricante (Tecno, Xiaomi, Huawei, Oppo, Vivo), y lleva directo a cada ajuste. Se reabre desde Perfil → Notificaciones. Sin el inicio automático, capas como HiOS (Griffin) matan la app al cerrarla y la alarma se pierde.
 - Los avisos usan el canal nativo `avisos` (`MainActivity.java`) con prioridad alta, sonido y vibración; el canal por defecto del plugin no sonaba.
 
+## Widget «Agenda de hoy»
+
+Widget de pantalla de inicio con lo que queda del día: clases, eventos, evaluaciones sin nota y tareas pendientes. Solo existe en el APK (una PWA no puede crear widgets de Android).
+
+- **Agregarlo:** Perfil → Widget de agenda → «Agregar a la pantalla de inicio», o mantener presionada la pantalla de inicio → Widgets → MyOrbit. Algunos lanzadores no aceptan la petición desde la app: queda el camino manual.
+- **Datos:** la web arma hoy y los 6 días siguientes (`frontend/src/services/agendaWidget.ts`) y los entrega al plugin `AgendaWidget`, que los guarda en el teléfono. El widget no usa la red.
+- **Cuándo se actualizan los datos:** al iniciar sesión, al abrir o salir de la app y al crear cosas. Lo hecho en otro dispositivo llega al abrir la app. Sin conexión se conserva lo último guardado.
+- **Cuándo se repinta:** al guardar datos, cuando algo termina, al cambiar de día o de zona horaria y cada 30 minutos. La alarma es inexacta y no despierta el teléfono.
+- **Qué deja de verse:** una clase o un evento al terminar, una evaluación dos horas después de empezar; las tareas siguen hasta que acaba el día.
+- **Estados:** sin sesión («Abre MyOrbit para ver tu agenda»), sin pendientes y datos vencidos (pasados los 7 días sin abrir la app). Cerrar sesión borra los datos.
+- **Tocarlo** abre `myorbit://agenda`, que la app atiende con `useLaunchLink` para mostrar la Agenda.
+- **Tema:** sigue el del teléfono, no el ajuste «Modo oscuro» de la app. Usa la letra del sistema.
+- **Código nativo:** `AgendaWidgetProvider.java` (pinta), `AgendaWidgetModel.java` (reglas, con pruebas en `./gradlew testDebugUnitTest`) y `AgendaWidgetPlugin.java`; recursos `widget_*` en `res/`.
+
 ## Estado de red
 
 El aviso de conexión con `@capacitor/network` es la parte B de #178.
