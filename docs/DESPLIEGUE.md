@@ -84,4 +84,4 @@ lo rechaza por bucle infinito.
 ## 4. Orden
 1. Atlas → 2. Render (CORS puede ir vacío al inicio) → 3. Cloudflare con `VITE_API_BASE_URL` → 4. Volver a Render y poner la URL de Cloudflare en `MYORBIT_CORS_ALLOWED_ORIGINS`.
 
-El `Dockerfile`/`nginx.conf` del frontend son para Docker Compose y no se usan en Cloudflare.
+El `Dockerfile`/`nginx.conf` del frontend sirven para correrlo en un contenedor y no se usan en Cloudflare.

@@ -21,7 +21,7 @@ Define como se despliega y se comunica el sistema a nivel de servicios.
 - Un modulo solo habla con otro a traves de su **servicio de aplicacion**, nunca con su repositorio. El grafo de dependencias no tiene ciclos y `notifications` es el unico que consume a los demas.
 - Una sola base MongoDB (`myorbit`) y un solo despliegue. El frontend entra por una sola ruta `/api`; no hay API Gateway.
 - Observabilidad minima: `/actuator/health` y logs de la aplicacion.
-- Ejecucion local: Docker Compose para levantar backend, Mongo y frontend (M5-02).
+- Ejecucion local: backend con Maven y frontend con Vite (ver README). Docker Compose se descarto (#45).
 
 ### Entregables tecnicos
 - Documentacion de la API en `docs/API.md`.
@@ -47,7 +47,7 @@ Define como se organiza internamente cada modulo del backend y el frontend.
 ### Frontend (estructura sugerida)
 - screens: vistas por funcionalidad.
 - components: componentes reutilizables.
-- services/api: llamadas HTTP al gateway.
+- services/api: llamadas HTTP al backend.
 - models: tipos y contratos de datos.
 - state/hooks: estado y logica de presentacion.
 
@@ -120,7 +120,7 @@ Define patrones de codigo para resolver problemas repetitivos dentro de servicio
 | Desarrollo | Proxy de `/api` en Vite hacia `localhost:8080` (`VITE_DEV_API_TARGET` lo cambia) | Mismo comportamiento que produccion, sin CORS. |
 | Fallback SPA | `try_files $uri /index.html` salvo `/api/` y `/assets/` (un asset inexistente da 404) | Refrescar en cualquier ruta no da 404. |
 | Router | No se agrega `react-router` | La navegacion es por estado en `App.tsx`; la PWA no lo exige. Issue aparte si se necesitan deep-links. |
-| Modo offline | Solo shell offline | El service worker precachea el build; `/api` nunca pasa por el service worker (sin cache de datos ni tokens). `OfflineBanner` avisa cuando no hay red. |
+| Modo offline | Solo shell offline (ampliado despues: copia de lecturas y cola de tareas, ver docs/ANDROID.md) | El service worker precachea el build; `/api` nunca pasa por el service worker (sin cache de datos ni tokens). `OfflineBanner` avisa cuando no hay red. |
 | CORS | Sin cambios por ahora (`@CrossOrigin("*")`) | Ya no hace falta con un solo origen; quitarlo es una mejora de seguridad aparte. |
 
 ### PWA
@@ -134,7 +134,7 @@ cd frontend && docker build -t myorbit-front .
 docker run -d --rm --name myorbit-front-test -p 3000:80 --add-host backend:host-gateway myorbit-front
 # backend en :8080; abrir http://localhost:3000
 ```
-El flag `--add-host` solo hace falta fuera de Docker Compose (nginx resuelve el host `backend`).
+El flag `--add-host` permite que nginx resuelva el host `backend` en la maquina local.
 
 ### Evidencia de prueba (2026-10-10)
 - Rutas via nginx: `/` 200, `/tareas/123` 200 (fallback), `/assets/no.js` 404, `/api/*` llega al backend.
@@ -146,7 +146,7 @@ El flag `--add-host` solo hace falta fuera de Docker Compose (nginx resuelve el 
 
 ## Orden de implementacion sugerido
 
-1. Gateway + Auth + Tasks.
+1. Auth + Tasks.
 2. Academic (materias/calificaciones).
 3. Habits.
 4. Notifications.

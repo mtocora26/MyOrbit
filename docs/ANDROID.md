@@ -125,15 +125,15 @@ Widget de pantalla de inicio con lo que queda del día: clases, eventos, evaluac
 
 ## Estado de red
 
-El aviso de conexión con `@capacitor/network` es la parte B de #178.
+`frontend/src/services/connection.ts` distingue sin red, servidor inalcanzable y conexión recuperada. En la app usa `@capacitor/network`, porque `navigator.onLine` es poco fiable.
 
-## Datos sin conexión (lectura)
+## Datos sin conexión
 
 La app y la PWA guardan una copia de cada lectura de la API (`GET`) en IndexedDB (`frontend/src/services/offlineStore.ts`, enganchada al `fetch` global en `apiError.ts`). Si después no hay red o el servidor no responde (502/503/504), ese mismo `GET` devuelve la última copia y las pantallas siguen mostrando lo último que se vio, con el aviso «Mostrando lo guardado el …».
 
 - **Por usuario:** la clave lleva el id de la sesión. Cerrar sesión o entrar con otra cuenta borra toda la copia.
 - **Qué no se guarda:** `/api/auth`, `/api/push`, `/api/admin`, ni respuestas que no sean JSON correcto. Un 401 o un 4xx nunca se reemplaza por la copia.
-- **Solo lectura:** crear, editar o borrar sin red sigue fallando con «No se pudo conectar con el servidor». Escribir sin conexión es el issue #216.
+- **Escritura:** sin red, las tareas se pueden crear, editar, marcar y borrar; los cambios quedan en una cola (`outbox.ts`) y se envían al volver la conexión (reglas de conflicto en [API.md](API.md)). Las subtareas y los demás módulos fallan con «No se pudo conectar con el servidor».
 - **Tope y versión:** máximo 150 copias (se descartan las más viejas); si cambia `DB_VERSION` la copia anterior se descarta.
 - **Límite conocido:** si el servidor está dormido (Render tarda ~30 s en despertar) y la petición no falla, sino que tarda, se ve el esqueleto hasta que responde. La copia solo entra cuando la petición falla.
 - Sirve también a los avisos locales: `localReminders.ts` planifica con la copia cuando el servidor no responde.

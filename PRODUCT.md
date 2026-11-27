@@ -19,8 +19,9 @@ Academic priorities and habits in one app, because for a student they are one li
 Phone-first, often one-handed, in short sessions between classes. Connectivity can be flaky, so the PWA ships an offline shell and offline banner. Quick capture goes through a bottom sheet (QuickAddSheet); navigation through a bottom nav. Screens today: Home, Tasks, Task detail, Agenda, University, Subject detail, Grades, Habits, Categories, Notifications, Profile, More, Admin, Auth, plus welcome onboarding.
 
 ## Capabilities and Constraints
-- Tasks with subtasks, agenda, subjects, grades per corte, habits, profile, admin.
-- Stack: React 19, Vite, Tailwind 4, vite-plugin-pwa, served via nginx; Java backend (microservices-style, see ARQUITECTURA_Y_PATRONES.md).
+- Tasks with subtasks, agenda with events, subjects, grades per corte, habits, notifications, profile, admin.
+- The Android app (Capacitor APK) also schedules on-device reminders and offers a "today's agenda" home-screen widget.
+- Stack: React 19, Vite, Tailwind 4, vite-plugin-pwa, served via nginx; Java backend (modular monolith, see docs/adr/0001-monolito-modular.md).
 - UI language is Spanish only; terminology follows the Colombian university context (e.g. "corte" for grading periods).
 - Must work as an offline-capable PWA.
 - Mobile-first, one-hand use; desktop is secondary.
