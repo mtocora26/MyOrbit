@@ -238,8 +238,6 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           <SummaryRow title="Apariencia" summary={theme === "dark" ? "Oscuro" : "Claro"} onClick={() => openSheet("appearance")} />
         </SummaryList>
 
-        {/* Integraciones (Google Calendar) oculto hasta que exista la integración real (#47). */}
-
         <button onClick={onLogout} className="w-full min-h-[44px] py-3 rounded-md bg-wash text-[14px] font-bold text-ink-2 active:scale-[0.98] transition-transform mt-3">
           Cerrar sesión
         </button>

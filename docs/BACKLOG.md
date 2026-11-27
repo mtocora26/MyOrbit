@@ -24,7 +24,7 @@ Reglas de código: [BUENAS_PRACTICAS.md](BUENAS_PRACTICAS.md) · Arquitectura: [
 | **M2 - Académico** | Materias, evaluaciones y cálculo de notas (Strategy) |
 | **M3 - Hábitos y Categorías** | CRUD completo y estadísticas |
 | **M4 - Notificaciones** | Recordatorios por eventos (Observer + Factory Method) |
-| **M5 - Integraciones e Infra** | Google Calendar (Adapter), Docker Compose, despliegue |
+| **M5 - Integraciones e Infra** | Docker Compose, despliegue |
 
 ---
 
@@ -111,7 +111,6 @@ Reglas de código: [BUENAS_PRACTICAS.md](BUENAS_PRACTICAS.md) · Arquitectura: [
 | M5-01 | ADR: monolito modular vs microservicios | `docs` `area:infra` `P1` | **Decidido: monolito modular** ([ADR 0001](adr/0001-monolito-modular.md)). |
 | M5-02 | Docker Compose: backend + Mongo + frontend | `area:infra` `P1` | |
 | M5-03 | Exponer health de Actuator | `area:infra` `P2` | Actuator ya está como dependencia. |
-| M5-04 | Integración con Google Calendar (**Adapter**) | `feature` `solid:dip` `P2` | Puerto `CalendarGateway` en dominio; adaptador Google en infraestructura. |
 | M5-05 | API Gateway (si el ADR elige microservicios) | `area:infra` `P2` | Descartado: el ADR 0001 elige monolito modular. |
 
 ---

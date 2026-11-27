@@ -74,7 +74,7 @@ Define patrones de codigo para resolver problemas repetitivos dentro de servicio
 - Factory Method:
   - Creacion de notificaciones segun tipo (deadline, evento, habito).
 - Adapter:
-  - Integracion con Google Calendar sin acoplar dominio.
+  - Envio de Web Push sin acoplar dominio: puerto `PushSender`, adaptador `WebPushSender`.
 - Observer:
   - Eventos de dominio (tarea creada/completada) que disparan recordatorios.
 - Facade:
@@ -104,7 +104,7 @@ Define patrones de codigo para resolver problemas repetitivos dentro de servicio
 - Arquitectura por servicio: Capas con enfoque Clean ligero.
 - Patrones GoF prioritarios para implementar primero:
   1. Strategy (calificaciones)
-  2. Adapter (Google Calendar)
+  2. Adapter (Web Push)
   3. Observer (recordatorios)
 
 ## Decision: frontend como SPA servida con nginx y PWA (#64)
@@ -150,7 +150,6 @@ El flag `--add-host` solo hace falta fuera de Docker Compose (nginx resuelve el 
 2. Academic (materias/calificaciones).
 3. Habits.
 4. Notifications.
-5. Integraciones externas (Google Calendar).
 
 Con este marco, cada avance tecnico debe indicar:
 - Nivel afectado (Infraestructura / Arquitectura app / GoF).

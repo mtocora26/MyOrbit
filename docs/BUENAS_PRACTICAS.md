@@ -82,7 +82,7 @@ public interface GradeStrategy {
 > Una implementación debe poder reemplazar a su abstracción sin romper el comportamiento esperado.
 
 **Cómo lo aplicamos:**
-- Toda implementación de un puerto (`TaskRepository`, `CalendarGateway`, `NotificationSender`) respeta el mismo contrato: mismas excepciones, mismo manejo de "no encontrado" (`Optional`), sin efectos secundarios ocultos.
+- Toda implementación de un puerto (`TaskRepository`, `PushSender`) respeta el mismo contrato: mismas excepciones, mismo manejo de "no encontrado" (`Optional`), sin efectos secundarios ocultos.
 - Si una subclase necesita lanzar `UnsupportedOperationException`, la abstracción está mal diseñada → dividir la interfaz (ver ISP).
 - Preferimos **composición sobre herencia**. La herencia solo se usa cuando hay una relación "es-un" real.
 - Los contratos de los puertos se documentan y se prueban (los mismos tests deben pasar con el adaptador real y con un fake).
@@ -96,7 +96,7 @@ public interface GradeStrategy {
 **Cómo lo aplicamos:**
 - Separar `AuthService` (registro/login/logout) de `CurrentUserProvider` (resolver la sesión).
 - Mejor aún: un `HandlerMethodArgumentResolver` con la anotación `@CurrentUser`, para que los controllers no dependan de autenticación en absoluto.
-- Puertos pequeños y enfocados: `CalendarReader` y `CalendarWriter` en lugar de un `CalendarService` gigante, si los clientes lo justifican.
+- Puertos pequeños y enfocados: `PushSender` solo declara `channel()` y `send(...)`, en lugar de un servicio de notificaciones gigante.
 
 ### D - Inversión de Dependencias (DIP)
 
@@ -108,8 +108,8 @@ public interface GradeStrategy {
 
 **Cómo lo aplicamos:**
 - Inyección **por constructor** siempre (nunca `@Autowired` en campos).
-- Dependencias externas detrás de interfaces/beans: `PasswordEncoder`, `Clock`, `CalendarGateway`, `NotificationSender`.
-- Los casos de uso dependen de **puertos** definidos en `domain`; los adaptadores Mongo/Google viven en `infrastructure`.
+- Dependencias externas detrás de interfaces/beans: `PasswordEncoder`, `Clock`, `PushSender`.
+- Los casos de uso dependen de **puertos** definidos en `domain`; los adaptadores Mongo/Web Push viven en `infrastructure`.
 
 ```java
 @Bean Clock clock() { return Clock.system(ZoneId.of("America/Bogota")); }
