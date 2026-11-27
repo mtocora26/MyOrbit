@@ -1,6 +1,6 @@
 # ADR 0001: monolito modular en lugar de microservicios
 
-- **Estado:** propuesto (se acepta al fusionar el PR de #44)
+- **Estado:** aceptado (fusionado en #247)
 - **Fecha:** 2026-11-23
 - **Issue:** #44 (`M5-01`)
 - **Afecta:** `ARQUITECTURA_Y_PATRONES.md` (nivel 1, infraestructura), #48 (API Gateway)
