@@ -168,6 +168,13 @@ export async function discardOp(seq: number): Promise<void> {
   window.dispatchEvent(new Event("myorbit:synced"));
 }
 
+/** La cuenta se eliminó: sus cambios sin enviar ya no tienen destino. */
+export async function discardAllOps(userId: string): Promise<void> {
+  await loadOutbox();
+  await drop((op) => op.userId === userId);
+  recompute();
+}
+
 /** Vuelve a poner en espera un cambio fallido. */
 export async function retryOp(seq: number): Promise<void> {
   await loadOutbox();

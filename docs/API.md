@@ -339,6 +339,12 @@ Ambos: `401` sin sesión.
 - `newPassword` se cifra con BCrypt. Al cambiarla se cierran todas las sesiones del usuario **excepto la actual** (sigue activa).
 - Errores en español con `ProblemDetail`.
 
+## Eliminar mi cuenta (`DELETE /api/auth/me`)
+
+Cuerpo: `{ "password": "..." }`. Responde `204` y borra la cuenta con todos sus datos (los mismos que en el borrado por administración, abajo). No se puede deshacer.
+
+Errores: `401` sin sesión; `400` si falta la contraseña, si es incorrecta (la sesión sigue abierta) o si es el único administrador activo.
+
 ## Eliminar una cuenta (`DELETE /api/admin/users/{id}`)
 
 Solo para administradores; responde `204`. Borra la cuenta y **todos sus datos**: perfil académico, sesiones, tareas, categorías, semestres, materias, evaluaciones, hábitos, eventos, notificaciones y sus preferencias, recordatorios personales y suscripciones push. No se puede deshacer.

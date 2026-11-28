@@ -4,9 +4,10 @@ import LogoMark from "../components/Logo";
 
 interface Props {
   onAuthenticated: (session: AuthSession, isNewAccount: boolean) => void;
+  notice?: string | null;
 }
 
-export default function AuthScreen({ onAuthenticated }: Props) {
+export default function AuthScreen({ onAuthenticated, notice }: Props) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -50,6 +51,7 @@ export default function AuthScreen({ onAuthenticated }: Props) {
             <LogoMark size={44} className="rounded-md" />
             <p className="mt-4 font-display text-[32px] font-semibold leading-none tracking-tight text-ink">MyOrbit</p>
           </div>
+          {notice && <p role="status" className="mb-5 text-[14px] font-semibold text-green-ink">{notice}</p>}
           <p className="font-display text-[32px] font-semibold leading-none text-ink">{mode === "login" ? "Bienvenida de nuevo" : "Crea tu espacio"}</p>
           <p className="mt-2 text-[14px] leading-relaxed text-ink-2">{mode === "login" ? "Ingresa para continuar con tu organización." : "Tu cuenta separa tus tareas y configuración personal."}</p>
 

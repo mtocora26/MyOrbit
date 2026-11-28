@@ -31,6 +31,7 @@ import ReminderSetupSheet from "./components/ReminderSetupSheet";
 import { reminderSetupSteps } from "./services/devicePermissions";
 import BootScreen from "./components/BootScreen";
 import { clearLocalReminders, syncLocalReminders } from "./services/localReminders";
+import { forgetAccountOnDevice } from "./services/accountCleanup";
 import { ensureTimeZone, getSession, logout, refreshSession, type AuthSession } from "./services/authApi";
 
 /** Lo máximo que la animación de arranque retiene la app esperando al servidor. */
@@ -44,6 +45,8 @@ export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habi
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getSession());
   const [showWelcome, setShowWelcome] = useState(false);
+  // Aviso que se muestra en la pantalla de acceso (p. ej. tras eliminar la cuenta).
+  const [notice, setNotice] = useState<string | null>(null);
   const unread = useUnreadNotifications(session !== null);
 
   // Con sesión guardada, la animación de arranque cubre solo la confirmación real (como mucho BOOT_MAX_MS): luego se
@@ -169,18 +172,31 @@ export default function App() {
     setSubScreen("taskDetail");
   };
 
-  async function handleLogout() {
-    await logout();
-    clearLocalReminders().catch(() => undefined);
+  function leaveSession() {
     setSession(null);
     setSubScreen(null);
     setActiveTab("home");
   }
 
+  async function handleLogout() {
+    setNotice(null);
+    await logout();
+    clearLocalReminders().catch(() => undefined);
+    leaveSession();
+  }
+
+  async function handleAccountDeleted() {
+    if (!session) return;
+    await forgetAccountOnDevice(session.id);
+    setNotice("Tu cuenta y tus datos se eliminaron.");
+    leaveSession();
+  }
+
   if (booting && session) return <BootScreen />;
 
   if (!session) {
-    return <AuthScreen onAuthenticated={(newSession, isNewAccount) => {
+    return <AuthScreen notice={notice} onAuthenticated={(newSession, isNewAccount) => {
+      setNotice(null);
       setSession(newSession);
       setShowWelcome(isNewAccount);
       ensureTimeZone(newSession).then(setSession);
@@ -203,7 +219,7 @@ export default function App() {
             {subScreen === "subjectDetail" && selectedSubject && <SubjectDetailScreen key={selectedSubject.id} subject={selectedSubject} onBack={goBack} onDeleted={goBack} onGrades={() => setSubScreen("grades")} />}
             {subScreen === "grades"        && selectedSubject && <GradesScreen subject={selectedSubject} onBack={() => setSubScreen("subjectDetail")} />}
             {subScreen === "habits"        && <HabitsScreen onBack={goBack} refreshTick={habitsRefreshTick} />}
-            {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onUserUpdated={(next) => setSession(next)} />}
+            {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onAccountDeleted={handleAccountDeleted} onUserUpdated={(next) => setSession(next)} />}
             {subScreen === "admin"         && <AdminScreen onBack={goBack} />}
             {subScreen === "categories"    && <CategoriesScreen onBack={goBack} />}
             {subScreen === "notifications" && <NotificationsScreen onBack={goBack} onUnreadChange={unread.setCount} onOpenTask={openTaskDetail} onOpenHabits={() => setSubScreen("habits")} onOpenUniversity={() => navigate("university")} onOpenTasks={() => navigate("tasks")} onOpenAgenda={() => navigate("agenda")} />}

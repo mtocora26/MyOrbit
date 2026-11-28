@@ -10,9 +10,7 @@ import com.app.myorbit.users.domain.Role;
 import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.infrastructure.UserRepository;
 import com.app.myorbit.users.infrastructure.UserSessionRepository;
-import com.app.myorbit.users.domain.UserDeletedEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -29,15 +27,15 @@ public class UserAdminService {
     private final UserSessionRepository sessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
-    private final ApplicationEventPublisher events;
+    private final AccountDeletionService accountDeletion;
 
     public UserAdminService(UserRepository userRepository, UserSessionRepository sessionRepository,
-                            PasswordEncoder passwordEncoder, Clock clock, ApplicationEventPublisher events) {
+                            PasswordEncoder passwordEncoder, Clock clock, AccountDeletionService accountDeletion) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
-        this.events = events;
+        this.accountDeletion = accountDeletion;
     }
 
     public List<AdminUserResponse> list(User actor) {
@@ -91,22 +89,16 @@ public class UserAdminService {
         return AdminUserResponse.from(saved);
     }
 
-    /**
-     * Elimina la cuenta y todos sus datos. Primero cierra sus sesiones y avisa a los demás módulos; la cuenta se borra
-     * al final, así que si algo falla sigue existiendo y la operación se puede repetir.
-     */
     public void delete(User actor, String userId) {
         requireAdmin(actor);
         User target = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         if (actor.getId().equals(target.getId())) {
             throw new BusinessRuleException("No puedes eliminar tu propia cuenta");
         }
-        if (target.isAdmin() && target.isActive() && countActiveAdmins() <= 1) {
+        if (accountDeletion.isLastActiveAdmin(target)) {
             throw new BusinessRuleException("Debe quedar al menos un administrador activo");
         }
-        sessionRepository.deleteByUserId(target.getId());
-        events.publishEvent(new UserDeletedEvent(target.getId()));
-        userRepository.deleteById(target.getId());
+        accountDeletion.erase(target.getId());
     }
 
     private void requireAdmin(User actor) {
