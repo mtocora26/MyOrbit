@@ -27,6 +27,10 @@ public class User {
     private Instant createdAt;
     /** Zona horaria IANA elegida por el usuario (America/Bogota); null = no la ha fijado. */
     private String timeZone;
+    /** Aceptación vigente de términos y política de datos; null en cuentas que aún no la han dado. */
+    private String acceptedTermsVersion;
+    private Instant termsAcceptedAt;
+    private AgeDeclaration ageDeclaration;
     public static final String DEFAULT_TIME_ZONE = "America/Bogota";
 
     public String getTimeZone() { return timeZone; }
@@ -56,4 +60,15 @@ public class User {
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public boolean isAdmin() { return getRole() == Role.ADMIN; }
+
+    public void acceptTerms(String version, AgeDeclaration declaration, Instant at) {
+        acceptedTermsVersion = version;
+        ageDeclaration = declaration;
+        termsAcceptedAt = at;
+    }
+
+    public boolean hasPendingTerms() { return !LegalTerms.CURRENT_VERSION.equals(acceptedTermsVersion); }
+    public String getAcceptedTermsVersion() { return acceptedTermsVersion; }
+    public Instant getTermsAcceptedAt() { return termsAcceptedAt; }
+    public AgeDeclaration getAgeDeclaration() { return ageDeclaration; }
 }

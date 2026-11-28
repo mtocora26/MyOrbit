@@ -27,12 +27,12 @@ class RequestValidationTest {
 
     @Test
     void validRegisterHasNoViolations() {
-        assertTrue(messages(new RegisterRequest("Ana", "ana@uni.edu", "12345678")).isEmpty());
+        assertTrue(messages(new RegisterRequest("Ana", "ana@uni.edu", "12345678", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT)).isEmpty());
     }
 
     @Test
     void registerRejectsBlankNameBadEmailAndShortPassword() {
-        List<String> messages = messages(new RegisterRequest(" ", "no-es-correo", "123"));
+        List<String> messages = messages(new RegisterRequest(" ", "no-es-correo", "123", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT));
         assertTrue(messages.contains("El nombre es obligatorio"));
         assertTrue(messages.contains("Ingresa un correo valido"));
         assertTrue(messages.contains("La contrasena debe tener al menos 8 caracteres"));

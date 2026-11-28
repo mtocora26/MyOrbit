@@ -4,6 +4,7 @@ import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.UnauthorizedException;
 import com.app.myorbit.users.application.AccountDeletionService;
 import com.app.myorbit.users.application.AuthService;
+import com.app.myorbit.users.domain.AgeDeclaration;
 import com.app.myorbit.users.domain.Role;
 import com.app.myorbit.users.domain.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,6 +82,30 @@ class AuthControllerTest {
         mockMvc.perform(put("/api/auth/me/name").contentType("application/json")
                         .content("{\"name\":\"Ana\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void acceptTermsReturnsTheAccountWithoutPendingTerms() throws Exception {
+        User accepted = new User();
+        accepted.setId("u1");
+        accepted.acceptTerms("1.0", AgeDeclaration.MINOR_AUTHORIZED, java.time.Instant.EPOCH);
+        when(authService.acceptTerms("u1", "1.0", AgeDeclaration.MINOR_AUTHORIZED)).thenReturn(accepted);
+
+        mockMvc.perform(post("/api/auth/me/terms").header("Authorization", AUTH).contentType("application/json")
+                        .content("{\"acceptedTermsVersion\":\"1.0\",\"ageDeclaration\":\"MINOR_AUTHORIZED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.termsPending").value(false));
+    }
+
+    @Test
+    void acceptTermsRequiresBothAnswers() throws Exception {
+        mockMvc.perform(post("/api/auth/me/terms").header("Authorization", AUTH).contentType("application/json")
+                        .content("{\"acceptedTermsVersion\":\"1.0\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/auth/me/terms").header("Authorization", AUTH).contentType("application/json")
+                        .content("{\"ageDeclaration\":\"ADULT\"}"))
+                .andExpect(status().isBadRequest());
+        verify(authService, never()).acceptTerms(any(), any(), any());
     }
 
     @Test
