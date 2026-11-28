@@ -65,8 +65,15 @@ public class TaskService {
                 : categoryService.withSubcategories(userId, filter.categoryId().trim());
         return taskRepository.findByUserIdOrderByIdAsc(userId).stream()
                 .filter(task -> filter.matches(task, categoryIds))
-                .sorted(Comparator.comparing(Task::getDue, Comparator.nullsLast(Comparator.naturalOrder())))
+                .sorted(orderFor(filter))
                 .toList();
+    }
+
+    /** Las completadas, de la más reciente a la más antigua (sin fecha al final); el resto, por vencimiento. */
+    private Comparator<Task> orderFor(TaskFilter filter) {
+        return Boolean.TRUE.equals(filter.done())
+                ? Comparator.comparing(Task::getCompletedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                : Comparator.comparing(Task::getDue, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
     /** Al borrar una categoría, sus tareas se conservan pero quedan sin categoría. */
@@ -142,7 +149,7 @@ public class TaskService {
     public Task updateStatus(String userId, String id, UpdateTaskStatusRequest request) {
         Task task = getOwned(userId, id);
         requireNotStale(task, request.getClientTime());
-        task.markAll(request.isDone());
+        task.markAll(request.isDone(), logicalTime(request.getClientTime()));
         return persist(task, request.getClientTime());
     }
 
@@ -150,7 +157,7 @@ public class TaskService {
         Task task = getOwned(userId, taskId);
         requireSubtaskTitle(request);
         task.getSubtasks().add(newSubtask(request));
-        task.setDone(false);
+        task.reopen();
         return persist(task, null);
     }
 
@@ -160,7 +167,7 @@ public class TaskService {
         Subtask parent = task.findSubtask(parentSubtaskId)
                 .orElseThrow(() -> new BusinessRuleException("La subtarea padre no existe"));
         parent.getSubtasks().add(newSubtask(request));
-        task.synchronizeCompletion();
+        task.synchronizeCompletion(Instant.now());
         return persist(task, null);
     }
 
@@ -181,7 +188,7 @@ public class TaskService {
         Task task = getOwned(userId, taskId);
         Subtask subtask = requireSubtask(task, subtaskId);
         subtask.markTree(request.done());
-        task.synchronizeCompletion();
+        task.synchronizeCompletion(Instant.now());
         return persist(task, null);
     }
 
@@ -190,7 +197,7 @@ public class TaskService {
         if (!task.removeSubtask(subtaskId)) {
             throw new NotFoundException("Subtarea no encontrada");
         }
-        task.synchronizeCompletion();
+        task.synchronizeCompletion(Instant.now());
         return persist(task, null);
     }
 
@@ -230,10 +237,13 @@ public class TaskService {
      * conexión y llegan en orden no se estorban entre sí), acotada a «ahora» si es del futuro.
      */
     private Task persist(Task task, Instant clientTime) {
-        Instant now = Instant.now();
-        Instant at = clientTime == null || clientTime.isAfter(now.plus(CLOCK_SKEW)) ? now : clientTime;
-        task.setUpdatedAt(at);
+        task.setUpdatedAt(logicalTime(clientTime));
         return taskRepository.save(task);
+    }
+
+    private Instant logicalTime(Instant clientTime) {
+        Instant now = Instant.now();
+        return clientTime == null || clientTime.isAfter(now.plus(CLOCK_SKEW)) ? now : clientTime;
     }
 
     public boolean delete(String userId, String id) {

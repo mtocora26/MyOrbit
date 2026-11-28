@@ -214,6 +214,37 @@ class TaskServiceTest {
     }
 
     @Test
+    void shouldUseTheOfflineTimeAsCompletionDate_whenTheChangeArrivesLater() {
+        when(repository.findById("t1")).thenReturn(Optional.of(taskOf("u1")));
+        when(repository.save(org.mockito.ArgumentMatchers.any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest();
+        request.setDone(true);
+        request.setClientTime(java.time.Instant.parse("2026-11-21T14:00:00Z"));
+
+        Task saved = service.updateStatus("u1", "t1", request);
+
+        assertEquals(java.time.Instant.parse("2026-11-21T14:00:00Z"), saved.getCompletedAt());
+    }
+
+    @Test
+    void shouldListCompletedTasksByMostRecentFirst_withUndatedOnesLast() {
+        Task undated = taskOf("u1");
+        undated.setId("sin-fecha");
+        undated.setDone(true);
+        Task older = taskOf("u1");
+        older.setId("antigua");
+        older.markAll(true, java.time.Instant.parse("2026-11-20T10:00:00Z"));
+        Task recent = taskOf("u1");
+        recent.setId("reciente");
+        recent.markAll(true, java.time.Instant.parse("2026-11-26T10:00:00Z"));
+        when(repository.findByUserIdOrderByIdAsc("u1")).thenReturn(List.of(undated, older, recent));
+
+        List<Task> completed = service.listByUser("u1", new TaskFilter(true, null, null, null, null, false));
+
+        assertEquals(List.of("reciente", "antigua", "sin-fecha"), completed.stream().map(Task::getId).toList());
+    }
+
+    @Test
     void aClientTimeFromTheFutureIsTreatedAsNow() {
         Task task = taskOf("u1");
         when(repository.findById("t1")).thenReturn(Optional.of(task));

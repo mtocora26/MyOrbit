@@ -20,6 +20,8 @@ export interface UiTask {
   /** Materia a la que pertenece la tarea; null si no tiene. */
   subjectId: string | null;
   done: boolean;
+  /** Cuándo se completó; null si está pendiente o no se registró. */
+  completedAt?: string | null;
   subtasks: Subtask[];
   /** true si el cambio se hizo sin conexión y aún no llega al servidor. */
   pending?: boolean;
@@ -42,6 +44,7 @@ export interface ApiTask {
   categoryId: string | null;
   subjectId?: string | null;
   done: boolean;
+  completedAt?: string | null;
   subtasks?: Subtask[];
   /** Momento lógico del último cambio (lo pone el servidor). */
   updatedAt?: string | null;
@@ -94,6 +97,7 @@ export function toUiTask(task: ApiTask): UiTask {
     categoryId: normalizeCategoryId(task.categoryId),
     subjectId: task.subjectId ?? null,
     done: task.done,
+    completedAt: task.completedAt ?? null,
     subtasks: normalizeSubtasks(task.subtasks),
     pending: task.pending,
   };
@@ -178,6 +182,11 @@ function byDue(a: ApiTask, b: ApiTask): number {
   return a.due.localeCompare(b.due);
 }
 
+/** Completadas: la más reciente primero; las que no tienen fecha, al final. */
+export function byCompletion(a: { completedAt?: string | null }, b: { completedAt?: string | null }): number {
+  return (b.completedAt ? Date.parse(b.completedAt) : 0) - (a.completedAt ? Date.parse(a.completedAt) : 0);
+}
+
 /** Pone encima de `tasks` los cambios pendientes, en el orden en que se hicieron. No modifica `tasks`. */
 export function applyPending(tasks: ApiTask[], ops: OutboxOp[], filters: TaskFilters = {}): ApiTask[] {
   if (ops.length === 0) return tasks;
@@ -193,11 +202,12 @@ export function applyPending(tasks: ApiTask[], ops: OutboxOp[], filters: TaskFil
     } else if (op.kind === "deleteTask") {
       byId.delete(op.taskId);
     } else if (current) {
-      const next = op.kind === "updateTask" ? mergeUpdate(current, op.payload) : markDone(current, op.payload.done === true);
+      const next = op.kind === "updateTask" ? mergeUpdate(current, op.payload) : markDone(current, op.payload.done === true, op.at);
       byId.set(op.taskId, { ...next, pending: true });
     }
   }
   const merged = [...byId.values()].filter((task) => !task.pending || matchesFilters(task, filters));
+  if (filters.done === true) return merged.sort(byCompletion);
   return created ? merged.sort(byDue) : merged;
 }
 
@@ -227,9 +237,10 @@ function mergeUpdate(task: ApiTask, payload: Record<string, unknown>): ApiTask {
   return next;
 }
 
-function markDone(task: ApiTask, done: boolean): ApiTask {
+function markDone(task: ApiTask, done: boolean, at: string): ApiTask {
   const mark = (subtask: Subtask): Subtask => ({ ...subtask, done, subtasks: subtask.subtasks?.map(mark) });
-  return { ...task, done, subtasks: task.subtasks?.map(mark) };
+  const completedAt = done ? (task.done ? task.completedAt : at) : null;
+  return { ...task, done, completedAt, subtasks: task.subtasks?.map(mark) };
 }
 
 /** Tarea mínima para cuando no se conoce la real (nunca vista en esta app): solo para pintar el cambio. */
@@ -314,7 +325,7 @@ export async function fetchTaskById(taskId: string): Promise<ApiTask> {
 }
 
 export async function updateTaskStatus(taskId: string, done: boolean): Promise<ApiTask> {
-  const queued = async () => queueChange("setTaskDone", markDone((await knownTask(taskId)) ?? stub(taskId), done), { done });
+  const queued = async () => queueChange("setTaskDone", markDone((await knownTask(taskId)) ?? stub(taskId), done, new Date().toISOString()), { done });
   if (await hasPendingOps()) return queued();
   let response: Response;
   try {
