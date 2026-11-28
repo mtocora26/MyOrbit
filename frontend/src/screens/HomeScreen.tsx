@@ -3,6 +3,7 @@ import NotificationBell from "../components/NotificationBell";
 import AcademicGlance from "../components/AcademicGlance";
 import { CategoryBadge, PriorityDot, ProgressBar, SectionTitle, Station, ErrorBanner, Skeleton, PageTitle, OverdueBadge } from "../components/shared";
 import { fetchTasks, toUiTask, updateTaskStatus, type UiTask } from "../services/tasksApi";
+import { weekProgress } from "../services/weekProgress";
 import { categoryLabel, fetchCategories, type Category } from "../services/categoriesApi";
 import { currentStreak, fetchHabits, todayKey, updateHabitCompletion, completeLabel, type Habit } from "../services/habitsApi";
 import { fromTaskDue, isOverdue } from "../services/taskDue";
@@ -101,18 +102,18 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
   );
   const overdueCount = useMemo(() => tasks.filter((task) => !task.done && isOverdue(task.rawDue)).length, [tasks]);
 
-  const completedTasks = tasks.filter((task) => task.done).length;
-  const pendingTasks = tasks.length - completedTasks;
+  const week = weekProgress(tasks);
   // Hasta tener las tareas reales no se afirma nada del día (ni «0/0», ni «sin tareas», ni «vas a tiempo»).
   const tasksKnown = !loading && !taskError;
-  const taskProgress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
+  const taskProgress = week.total ? Math.round((week.done / week.total) * 100) : 0;
 
   const weekday = (new Date().getDay() + 6) % 7 + 1;
   const todayHabits = habits.filter((habit) => habit.daysOfWeek.includes(weekday));
 
   async function toggleTask(task: UiTask) {
     const previousTasks = tasks;
-    setTasks(tasks.map((item) => item.id === task.id ? { ...item, done: !item.done } : item));
+    const completedAt = task.done ? null : new Date().toISOString();
+    setTasks(tasks.map((item) => item.id === task.id ? { ...item, done: !item.done, completedAt } : item));
     if (!task.done) {
       navigator.vibrate?.(8);
       setLeaving((current) => new Set(current).add(task.id));
@@ -170,14 +171,16 @@ export default function HomeScreen({ userName, onTaskTap, onHabits, onFab, onVie
               ? (taskError ? "No se pudieron cargar tus tareas." : <Skeleton className="h-[20px] w-44" />)
               : tasks.length === 0
                 ? "Sin tareas todavía."
-                : (
-                  <>
-                    {completedTasks} de {tasks.length} hechas ·{" "}
-                    {overdueCount > 0
-                      ? <span className="font-semibold text-danger">{overdueCount} {overdueCount === 1 ? "vencida" : "vencidas"}</span>
-                      : pendingTasks > 0 ? "vas a tiempo" : "todo al día"}
-                  </>
-                )}
+                : week.total === 0
+                  ? "Nada para esta semana."
+                  : (
+                    <>
+                      {week.done} de {week.total} hechas esta semana ·{" "}
+                      {overdueCount > 0
+                        ? <span className="font-semibold text-danger">{overdueCount} {overdueCount === 1 ? "vencida" : "vencidas"}</span>
+                        : week.done < week.total ? "vas a tiempo" : "todo al día"}
+                    </>
+                  )}
           </p>
         </div>
         {classBanner && (
