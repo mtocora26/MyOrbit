@@ -27,6 +27,8 @@ public class Task {
      * (no cuando llegó al servidor); null en tareas anteriores a este campo.
      */
     private Instant updatedAt;
+    /** Cuándo pasó a completada; null si está pendiente o se completó antes de que existiera este campo. */
+    private Instant completedAt;
 
     public String getId() {
         return id;
@@ -92,6 +94,8 @@ public class Task {
         this.done = done;
     }
 
+    public Instant getCompletedAt() { return completedAt; }
+
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 
@@ -112,15 +116,27 @@ public class Task {
         return subtasks.stream().anyMatch(subtask -> subtask.removeDescendant(id));
     }
 
-    /** Marca la tarea y todo su árbol de subtareas. */
-    public void markAll(boolean done) {
-        this.done = done;
+    /** Marca la tarea y todo su árbol de subtareas; {@code at} es el momento en que se hizo el cambio. */
+    public void markAll(boolean done, Instant at) {
+        changeDone(done, at);
         subtasks.forEach(subtask -> subtask.markTree(done));
     }
 
     /** La tarea con subtareas está completa solo si todas lo están. */
-    public void synchronizeCompletion() {
-        this.done = !subtasks.isEmpty()
-                && subtasks.stream().map(Subtask::synchronizeCompletion).allMatch(Boolean::booleanValue);
+    public void synchronizeCompletion(Instant at) {
+        changeDone(!subtasks.isEmpty()
+                && subtasks.stream().map(Subtask::synchronizeCompletion).allMatch(Boolean::booleanValue), at);
+    }
+
+    /** Vuelve a quedar pendiente (p. ej. al agregarle una subtarea). */
+    public void reopen() {
+        changeDone(false, null);
+    }
+
+    /** La fecha de completado se fija solo al pasar de pendiente a completada: repetir la marca no la mueve. */
+    private void changeDone(boolean value, Instant at) {
+        if (!value) completedAt = null;
+        else if (!done) completedAt = at;
+        done = value;
     }
 }

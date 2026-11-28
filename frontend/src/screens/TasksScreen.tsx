@@ -4,7 +4,7 @@ import RescheduleSheet from "../components/RescheduleSheet";
 import { IconBoard, IconCalendar, IconChecklist, IconFilter, IconList, IconPlus, IconSearch } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
 import { flushPending, runUndoable } from "../services/undo";
-import { deleteTask, fetchTasks, getSubtaskProgress, peekTasks, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
+import { byCompletion, deleteTask, fetchTasks, getSubtaskProgress, peekTasks, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
 import { formatTaskDue, fromTaskDue, isOverdue, toTaskDue } from "../services/taskDue";
 import { categoryLabel, fetchCategories, orderCategories, type Category } from "../services/categoriesApi";
 
@@ -151,7 +151,8 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
 
   async function handleToggleTask(task: UiTask) {
     const previousTasks = tasks;
-    const optimistic = tasks.map((item) => item.id === task.id ? { ...item, done: !item.done } : item);
+    const completedAt = task.done ? null : new Date().toISOString();
+    const optimistic = tasks.map((item) => item.id === task.id ? { ...item, done: !item.done, completedAt } : item);
     setTasks(optimistic);
 
     try {
@@ -391,12 +392,16 @@ function TaskCard({ task, categoryColor, categoryName, last, onTap, onToggle, on
 function TasksBoard({ tasks, categories, colorByCategoryId, nameByCategoryId, groupBy, onTaskTap, onToggle }: { tasks: UiTask[]; categories: Category[]; colorByCategoryId: Map<string, string>; nameByCategoryId: Map<string, string>; groupBy: "estado" | "categoria"; onTaskTap: (taskId: string) => void; onToggle: (task: UiTask) => void }) {
   const columns = useMemo(() => {
     if (groupBy === "estado") {
-      return STATUS_COLUMNS.map((column) => ({
-        id: column.id,
-        label: column.label,
-        color: column.id === "completadas" ? "var(--color-green)" : "var(--color-coral)",
-        tasks: tasks.filter((task) => (column.id === "completadas") === task.done),
-      }));
+      return STATUS_COLUMNS.map((column) => {
+        const completed = column.id === "completadas";
+        const inColumn = tasks.filter((task) => completed === task.done);
+        return {
+          id: column.id,
+          label: column.label,
+          color: completed ? "var(--color-green)" : "var(--color-coral)",
+          tasks: completed ? inColumn.sort(byCompletion) : inColumn,
+        };
+      });
     }
     const ids = categories.length ? orderCategories(categories).map((category) => category.id) : Array.from(new Set(tasks.map((task) => task.categoryId).filter((id): id is string => !!id)));
     const uncategorized = tasks.some((task) => !task.categoryId) ? [{ id: "__none", label: "Sin categoría", color: "var(--color-ink-2)", tasks: tasks.filter((task) => !task.categoryId) }] : [];

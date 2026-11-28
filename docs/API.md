@@ -375,6 +375,10 @@ Errores: `403` sin permisos de administrador, `404` si no existe, `400` al inten
 | `categoryId` | id de categoría | Filtra por esa categoría (las tareas sin categoría no coinciden) |
 | `uncategorized` | boolean (`true`) | Solo tareas sin categoría; se ignora si se pasa `categoryId` |
 
+Orden: por `due` ascendente (sin fecha al final). Con `done=true`, por `completedAt` de la más reciente a la más antigua (sin fecha al final).
+
+Cada tarea incluye `completedAt` (instante ISO-8601): cuándo pasó a completada, ya sea al marcarla o al completar su última subtarea; en cambios hechos sin conexión, la hora en que se hicieron. Es `null` si está pendiente o se completó antes de registrarlo. Reabrirla lo borra. Las tareas completadas no se borran solas.
+
 Ejemplo: `GET /api/tasks?done=false&priority=alta&categoryId=abc&dueFrom=2026-10-01T00:00&dueTo=2026-10-31T23:59`
 
 ## Categoría de tareas (`categoryId`)
