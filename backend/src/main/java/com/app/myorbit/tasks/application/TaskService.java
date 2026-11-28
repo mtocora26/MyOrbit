@@ -252,6 +252,11 @@ public class TaskService {
         return true;
     }
 
+    /** Elimina las tareas completadas del usuario, solo cuando lo pide. @return cuántas eran */
+    public long deleteCompleted(String userId) {
+        return taskRepository.deleteByUserIdAndDoneTrue(userId);
+    }
+
     private void requireSubtaskTitle(CreateSubtaskRequest request) {
         if (request.title() == null || request.title().isBlank()) {
             throw new BusinessRuleException("El titulo de la subtarea es obligatorio");

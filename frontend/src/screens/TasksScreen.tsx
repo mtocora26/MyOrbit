@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CategoryBadge, ChoiceChip, OverdueBadge, PageTitle, PendingMark, Checkbox, DeleteButton, PriorityDot, ProgressBar, EmptyState, Station, ListSkeleton, ErrorBanner, DetailSheet } from "../components/shared";
 import RescheduleSheet from "../components/RescheduleSheet";
-import { IconBoard, IconCalendar, IconChecklist, IconFilter, IconList, IconPlus, IconSearch } from "../components/icons";
+import ClearCompletedSheet from "../components/ClearCompletedSheet";
+import { IconBoard, IconCalendar, IconChecklist, IconFilter, IconList, IconPlus, IconSearch, IconTrash } from "../components/icons";
 import { cacheKeys, peek } from "../services/cache";
 import { flushPending, runUndoable } from "../services/undo";
 import { byCompletion, deleteTask, fetchTasks, getSubtaskProgress, peekTasks, toUiTask, updateTask, updateTaskStatus, type TaskFilters, type UiTask } from "../services/tasksApi";
@@ -93,6 +94,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [rescheduling, setRescheduling] = useState<UiTask | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem(FILTERS_KEY, JSON.stringify({ datePreset, doneFilter })); } catch { /* sin almacenamiento */ }
@@ -261,6 +263,13 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
             <ChoiceChip key={f} role="button" selected={datePreset === f} onClick={() => setDatePreset(f)} className="px-4">{label}</ChoiceChip>
           ))}
         </div>
+        {/* Rara y destructiva: solo al estar viendo las completadas, con icono y texto. */}
+        {!loading && doneFilter === "completadas" && datePreset !== "vencidas" && tasks.some((task) => task.done) && (
+          <button type="button" onClick={() => setClearing(true)} className="-mt-1 mb-2 inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-danger">
+            <IconTrash size={16} />
+            Eliminar completadas
+          </button>
+        )}
         {error && <ErrorBanner message={error} onRetry={() => loadTasks()} className="mb-3" />}
       </div>
 
@@ -269,7 +278,9 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
       ) : filteredTasks.length === 0 ? (
         // Si la carga falló no se dice «sin tareas»: el aviso de error con «Reintentar» ya explica lo que pasa.
         error ? null : query.trim() ? <div className="px-4 pt-4"><EmptyState icon="—" title="Sin resultados" sub={`Ninguna tarea coincide con «${query.trim()}».`} /></div> : <div className="px-4 pt-4">
-          <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" actionIcon={<IconPlus size={18} />} onAction={onFab} />
+          {doneFilter === "completadas" && datePreset !== "vencidas"
+            ? <EmptyState icon="—" title="Sin tareas completadas" sub="Las que marques como hechas quedan aquí." />
+            : <EmptyState icon="—" title="Sin tareas pendientes" sub="Crea una nueva tarea para seguir en órbita." action="Nueva tarea" actionIcon={<IconPlus size={18} />} onAction={onFab} />}
         </div>
       ) : view === "lista" ? (
         <ol className="min-h-0 flex-1 overflow-y-auto no-scrollbar px-4 py-4 pb-24 lg:px-8 lg:max-w-[760px]">
@@ -310,6 +321,7 @@ export default function TasksScreen({ onTaskTap, onFab, refreshTick }: Props) {
         )}
       </DetailSheet>
 
+      <ClearCompletedSheet open={clearing} onClose={() => setClearing(false)} onDeleted={() => { setClearing(false); loadTasks(); }} />
       <RescheduleSheet task={rescheduling} onClose={() => setRescheduling(null)} onPick={(date) => rescheduling && handleReschedule(rescheduling, date)} />
     </div>
   );

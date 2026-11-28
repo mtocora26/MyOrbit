@@ -92,6 +92,11 @@ public class TaskController {
         return TaskResponse.from(taskService.deleteSubtask(user.getId(), id, subtaskId));
     }
 
+    @DeleteMapping("/completed")
+    public DeletedTasksResponse deleteCompleted(@CurrentUser User user) {
+        return new DeletedTasksResponse(taskService.deleteCompleted(user.getId()));
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id, @CurrentUser User user) {
