@@ -2,6 +2,7 @@ package com.app.myorbit.users.api;
 
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.UnauthorizedException;
+import com.app.myorbit.users.application.AccountDeletionService;
 import com.app.myorbit.users.application.AuthService;
 import com.app.myorbit.users.domain.Role;
 import com.app.myorbit.users.domain.User;
@@ -17,6 +18,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,6 +32,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private AccountDeletionService accountDeletion;
 
     @BeforeEach
     void authenticate() {
@@ -75,6 +80,36 @@ class AuthControllerTest {
         mockMvc.perform(put("/api/auth/me/name").contentType("application/json")
                         .content("{\"name\":\"Ana\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deleteAccountRespondsNoContent() throws Exception {
+        mockMvc.perform(delete("/api/auth/me").header("Authorization", AUTH)
+                        .contentType("application/json").content("{\"password\":\"actual123\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(accountDeletion).deleteOwn(any(User.class), eq("actual123"));
+    }
+
+    @Test
+    void deleteAccountWithWrongPasswordIsBadRequest() throws Exception {
+        org.mockito.Mockito.doThrow(new BusinessRuleException("La contraseña es incorrecta"))
+                .when(accountDeletion).deleteOwn(any(), any());
+
+        mockMvc.perform(delete("/api/auth/me").header("Authorization", AUTH)
+                        .contentType("application/json").content("{\"password\":\"mal\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("La contraseña es incorrecta"));
+    }
+
+    @Test
+    void deleteAccountRequiresAPasswordAndASession() throws Exception {
+        mockMvc.perform(delete("/api/auth/me").header("Authorization", AUTH)
+                        .contentType("application/json").content("{\"password\":\" \"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/auth/me").contentType("application/json").content("{\"password\":\"actual123\"}"))
+                .andExpect(status().isUnauthorized());
+        verify(accountDeletion, never()).deleteOwn(any(), any());
     }
 
     @Test

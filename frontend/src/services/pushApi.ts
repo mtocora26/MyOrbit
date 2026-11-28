@@ -72,6 +72,13 @@ export async function enableWebPush(): Promise<WebPushState> {
   return "on";
 }
 
+/** Cancela la suscripción de este navegador sin avisar al servidor: para cuando la cuenta ya no existe. */
+export async function forgetWebPush(): Promise<void> {
+  if (!supportsWebPush()) return;
+  const subscription = await currentSubscription();
+  await subscription?.unsubscribe();
+}
+
 /** Quita este navegador de la cuenta y cancela su suscripción. */
 export async function disableWebPush(): Promise<void> {
   const subscription = await currentSubscription();

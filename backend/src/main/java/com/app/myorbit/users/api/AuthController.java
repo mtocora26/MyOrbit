@@ -2,9 +2,11 @@ package com.app.myorbit.users.api;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
+import com.app.myorbit.users.application.AccountDeletionService;
 import com.app.myorbit.users.application.AuthService;
 import com.app.myorbit.users.domain.User;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
+    private final AccountDeletionService accountDeletion;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, AccountDeletionService accountDeletion) {
         this.authService = authService;
+        this.accountDeletion = accountDeletion;
     }
 
     @SecurityRequirements
@@ -39,6 +43,12 @@ public class AuthController {
     @GetMapping("/me")
     public AuthResponse me(@CurrentUser User user) {
         return new AuthResponse(null, user.getId(), user.getName(), user.getEmail(), user.getRole(), user.getTimeZone());
+    }
+
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount(@CurrentUser User user, @Valid @RequestBody DeleteAccountRequest request) {
+        accountDeletion.deleteOwn(user, request.password());
     }
 
     @PutMapping("/me/name")

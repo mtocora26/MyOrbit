@@ -85,6 +85,18 @@ export async function refreshSession(): Promise<AuthSession | null> {
   return next;
 }
 
+/** Elimina la cuenta y todos sus datos en el servidor. Los del dispositivo se limpian con `clearSession`. */
+export async function deleteAccount(password: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "No fue posible eliminar tu cuenta"));
+  }
+}
+
 export async function updateName(name: string): Promise<{ id: string; name: string; email: string; role?: "USER" | "ADMIN" }> {
   const response = await fetch(`${API_BASE_URL}/api/auth/me/name`, {
     method: "PUT",

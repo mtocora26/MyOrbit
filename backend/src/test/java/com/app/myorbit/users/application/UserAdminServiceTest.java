@@ -40,7 +40,8 @@ class UserAdminServiceTest {
     private final PasswordEncoder encoder = mock(PasswordEncoder.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final UserAdminService service = new UserAdminService(users, sessions, encoder,
-            Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC), events);
+            Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC),
+            new AccountDeletionService(users, sessions, encoder, events));
 
     private User user(String id, Role role, boolean active) {
         User user = new User();

@@ -7,16 +7,17 @@ import { updateName, changePassword, updateTimeZone, availableTimeZones, detectT
 import { isNativeApp } from "../hooks/useNativeApp";
 import { exactAlarmsAllowed, localReminderPermission, localRemindersEnabled, requestExactAlarms, requestLocalReminderPermission, setLocalRemindersEnabled, syncLocalReminders } from "../services/localReminders";
 import ReminderSetupSheet from "../components/ReminderSetupSheet";
+import DeleteAccountSheet from "../components/DeleteAccountSheet";
 import { agendaWidgetStatus, pinAgendaWidget, syncAgendaWidget, type AgendaWidgetStatus } from "../services/agendaWidget";
 import { disableWebPush, enableWebPush, webPushState, type WebPushState } from "../services/pushApi";
 import { fetchUserProfile, saveUserProfile, type UserProfile } from "../services/profileApi";
 import { IconRefresh } from "../components/icons";
 
-interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onUserUpdated?: (user: AuthSession) => void; }
+interface Props { onBack: () => void; user: AuthSession; onLogout: () => void; onAccountDeleted: () => void; onUserUpdated?: (user: AuthSession) => void; }
 
 type ProfileSheet = "account" | "academic" | "notifications" | "timezone" | "appearance" | "widget";
 
-export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }: Props) {
+export default function ProfileScreen({ onBack, user, onLogout, onAccountDeleted, onUserUpdated }: Props) {
   const { theme, toggle: toggleTheme } = useTheme();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   // Avisos que el propio teléfono programa (solo en la app de Android).
@@ -37,6 +38,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [draft, setDraft] = useState({ program: "", semester: "", gradeTarget: "" });
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [accountMessage, setAccountMessage] = useState<string | null>(null);
@@ -270,6 +272,10 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
           Cerrar sesión
         </button>
         <p className="pt-2 text-center text-[13px] text-ink-3">MyOrbit v1.0</p>
+        {/* Rara e irreversible: aparte de las acciones habituales, al final de la pantalla. */}
+        <button type="button" onClick={() => setDeleteOpen(true)} className="mt-6 min-h-[44px] self-center px-3 text-[14px] font-semibold text-danger">
+          Eliminar mi cuenta
+        </button>
       </div>
 
       <DetailSheet open={sheet === "account"} onClose={() => setSheet(null)} title="Cuenta" doneLabel="Cancelar">
@@ -357,6 +363,7 @@ export default function ProfileScreen({ onBack, user, onLogout, onUserUpdated }:
       </DetailSheet>
 
       <ReminderSetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} />
+      <DeleteAccountSheet open={deleteOpen} onClose={() => setDeleteOpen(false)} onDeleted={onAccountDeleted} />
     </div>
   );
 }
