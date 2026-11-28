@@ -12,4 +12,5 @@ public interface PushSubscriptionRepository extends MongoRepository<PushSubscrip
     Optional<PushSubscription> findByAddress(String address);
 
     long deleteByUserIdAndAddress(String userId, String address);
+    void deleteByUserId(String userId);
 }

@@ -8,9 +8,11 @@ import com.app.myorbit.notifications.domain.PushSender;
 import com.app.myorbit.notifications.domain.PushSubscription;
 import com.app.myorbit.notifications.infrastructure.PushSubscriptionRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
+import com.app.myorbit.users.domain.UserDeletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -102,5 +104,10 @@ public class PushService {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        repository.deleteByUserId(event.userId());
     }
 }

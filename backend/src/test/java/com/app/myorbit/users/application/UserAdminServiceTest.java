@@ -7,9 +7,12 @@ import com.app.myorbit.users.api.CreateUserRequest;
 import com.app.myorbit.users.api.UpdateUserRequest;
 import com.app.myorbit.users.domain.Role;
 import com.app.myorbit.users.domain.User;
+import com.app.myorbit.users.domain.UserDeletedEvent;
 import com.app.myorbit.users.infrastructure.UserRepository;
 import com.app.myorbit.users.infrastructure.UserSessionRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
@@ -24,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,8 +38,9 @@ class UserAdminServiceTest {
     private final UserRepository users = mock(UserRepository.class);
     private final UserSessionRepository sessions = mock(UserSessionRepository.class);
     private final PasswordEncoder encoder = mock(PasswordEncoder.class);
+    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final UserAdminService service = new UserAdminService(users, sessions, encoder,
-            Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC));
+            Clock.fixed(Instant.parse("2026-10-10T12:00:00Z"), ZoneOffset.UTC), events);
 
     private User user(String id, Role role, boolean active) {
         User user = new User();
@@ -131,13 +137,26 @@ class UserAdminServiceTest {
     }
 
     @Test
-    void deleteRemovesUserAndSessions() {
+    void deleteRemovesSessionsThenDataThenUser() {
         User admin = user("a1", Role.ADMIN, true);
         when(users.findById("u1")).thenReturn(Optional.of(user("u1", Role.USER, true)));
 
         service.delete(admin, "u1");
 
-        verify(sessions).deleteByUserId("u1");
-        verify(users).deleteById("u1");
+        InOrder order = inOrder(sessions, events, users);
+        order.verify(sessions).deleteByUserId("u1");
+        order.verify(events).publishEvent(new UserDeletedEvent("u1"));
+        order.verify(users).deleteById("u1");
+    }
+
+    @Test
+    void shouldKeepTheAccount_whenDeletingItsDataFails() {
+        User admin = user("a1", Role.ADMIN, true);
+        when(users.findById("u1")).thenReturn(Optional.of(user("u1", Role.USER, true)));
+        doThrow(new IllegalStateException("sin conexión")).when(events).publishEvent(new UserDeletedEvent("u1"));
+
+        assertThrows(IllegalStateException.class, () -> service.delete(admin, "u1"));
+
+        verify(users, never()).deleteById(any());
     }
 }

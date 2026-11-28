@@ -10,4 +10,5 @@ public interface SemesterRepository extends MongoRepository<Semester, String> {
     List<Semester> findByUserIdOrderByNameDesc(String userId);
 
     Optional<Semester> findByUserIdAndName(String userId, String name);
+    void deleteByUserId(String userId);
 }

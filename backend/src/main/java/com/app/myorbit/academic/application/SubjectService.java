@@ -9,7 +9,9 @@ import com.app.myorbit.academic.infrastructure.EvaluationRepository;
 import com.app.myorbit.academic.infrastructure.SubjectRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
+import com.app.myorbit.users.domain.UserDeletedEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -101,5 +103,10 @@ public class SubjectService {
         } catch (IllegalArgumentException invalid) {
             throw new BusinessRuleException(invalid.getMessage());
         }
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        subjectRepository.deleteByUserId(event.userId());
     }
 }

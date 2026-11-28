@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface HabitRepository extends MongoRepository<Habit, String> {
     List<Habit> findByUserIdOrderByTitleAsc(String userId);
+    void deleteByUserId(String userId);
 }

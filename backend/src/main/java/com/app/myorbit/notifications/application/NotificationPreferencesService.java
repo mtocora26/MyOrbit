@@ -3,6 +3,8 @@ package com.app.myorbit.notifications.application;
 import com.app.myorbit.notifications.domain.NotificationPreferences;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.notifications.infrastructure.NotificationPreferencesRepository;
+import com.app.myorbit.users.domain.UserDeletedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,5 +29,10 @@ public class NotificationPreferencesService {
 
     public boolean isEnabled(String userId, NotificationType type) {
         return get(userId).isEnabled(type);
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        repository.deleteById(event.userId());
     }
 }

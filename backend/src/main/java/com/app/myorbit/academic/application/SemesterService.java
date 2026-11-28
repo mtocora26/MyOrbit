@@ -8,6 +8,8 @@ import com.app.myorbit.academic.infrastructure.SubjectRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.users.application.UserZoneService;
+import com.app.myorbit.users.domain.UserDeletedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -101,5 +103,10 @@ public class SemesterService {
         } catch (IllegalArgumentException invalid) {
             throw new BusinessRuleException(invalid.getMessage());
         }
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        semesterRepository.deleteByUserId(event.userId());
     }
 }

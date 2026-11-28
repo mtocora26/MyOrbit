@@ -13,7 +13,9 @@ import com.app.myorbit.habits.domain.HabitType;
 import com.app.myorbit.habits.domain.MonthlyProgress;
 import com.app.myorbit.habits.infrastructure.HabitRepository;
 import com.app.myorbit.users.application.UserZoneService;
+import com.app.myorbit.users.domain.UserDeletedEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -192,5 +194,10 @@ public class HabitService {
         if (frequency != HabitFrequency.CUSTOM) return List.of(1, 2, 3, 4, 5, 6, 7);
         List<Integer> validDays = days == null ? List.of() : days.stream().filter(day -> day >= 1 && day <= 7).distinct().toList();
         return validDays.isEmpty() ? List.of(1, 2, 3, 4, 5, 6, 7) : validDays;
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        habitRepository.deleteByUserId(event.userId());
     }
 }

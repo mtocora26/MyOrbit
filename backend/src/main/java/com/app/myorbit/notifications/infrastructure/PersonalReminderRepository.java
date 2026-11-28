@@ -10,4 +10,5 @@ public interface PersonalReminderRepository extends MongoRepository<PersonalRemi
     List<PersonalReminder> findByUserIdAndFiredFalseOrderByRemindAtAsc(String userId);
 
     List<PersonalReminder> findByUserIdAndFiredFalseAndRemindAtLessThanEqual(String userId, LocalDateTime now);
+    void deleteByUserId(String userId);
 }
