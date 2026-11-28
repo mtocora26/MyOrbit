@@ -266,6 +266,9 @@ On a phone a container with a lot in it does not pour everything onto one screen
 ### Inputs / Fields
 `card` fill, 1px `line` border, 6px radius, 12px padding, 16px text; focus shifts the border to coral. Category picker pairs a select with a 44px "+" and an 8-swatch colour radiogroup of 3px-radius squares.
 
+### Legal documents
+Long reading (terms, data policy) uses `LegalViewer`: a full-screen layer over whatever is open, so a half-filled form survives. `ScreenHeader` with back, condensed section headings, 16px body in `ink-2`, 640px measure. The texts live only in `src/legal/documents.ts`.
+
 ### Avatar
 One `Avatar` (`shared.tsx`) for the person everywhere (Más, Perfil, Admin): a square 6px plate with the initials of the first two words of the name (`initials()`, "Manuel Tocora" is always "MT"), coral with `night` text; sizes 40, 44 and 56px. Only the Admin account list passes a route colour per user, to tell accounts apart. No circles (circles are for stations), no black plate, no second initials function.
 

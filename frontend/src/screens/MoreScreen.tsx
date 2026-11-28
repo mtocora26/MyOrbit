@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Avatar, PageTitle, SummaryList, SummaryRow } from "../components/shared";
-import { IconBell, IconHabit, IconShield, IconTag } from "../components/icons";
+import { IconBell, IconDocument, IconHabit, IconShield, IconTag } from "../components/icons";
 import { fetchUserProfile, type UserProfile } from "../services/profileApi";
 
 interface Props {
@@ -9,13 +9,14 @@ interface Props {
   onProfile: () => void;
   onCategories: () => void;
   onNotifications: () => void;
+  onLegal: () => void;
   unreadCount: number;
   onAdmin: () => void;
   isAdmin: boolean;
 }
 
 
-export default function MoreScreen({ userName, onHabits, onProfile, onCategories, onNotifications, unreadCount, onAdmin, isAdmin }: Props) {
+export default function MoreScreen({ userName, onHabits, onProfile, onCategories, onNotifications, onLegal, unreadCount, onAdmin, isAdmin }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function MoreScreen({ userName, onHabits, onProfile, onCategories
     { label: "Notificaciones", icon: <IconBell size={24} />, badge: unreadCount, action: onNotifications },
     { label: "Categorías", icon: <IconTag size={24} />, action: onCategories },
     ...(isAdmin ? [{ label: "Usuarios", icon: <IconShield size={24} />, action: onAdmin }] : []),
+    { label: "Términos y privacidad", icon: <IconDocument size={24} />, action: onLegal },
   ];
 
   return (

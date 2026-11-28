@@ -18,6 +18,7 @@ import ProfileScreen from "./screens/ProfileScreen";
 import AdminScreen from "./screens/AdminScreen";
 import CategoriesScreen from "./screens/CategoriesScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
+import LegalScreen from "./screens/LegalScreen";
 import type { Subject } from "./services/subjectsApi";
 import { useUnreadNotifications } from "./hooks/useUnreadNotifications";
 import QuickAddSheet from "./components/QuickAddSheet";
@@ -40,7 +41,7 @@ const BOOT_MAX_MS = 1200;
 const RESUME_AFTER_MS = 30 * 60_000;
 
 export type MainTab = "home" | "tasks" | "agenda" | "university" | "more";
-export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "profile" | "admin" | "categories" | "notifications";
+export type SubScreen = null | "taskDetail" | "subjectDetail" | "grades" | "habits" | "profile" | "admin" | "categories" | "notifications" | "legal";
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getSession());
@@ -222,6 +223,7 @@ export default function App() {
             {subScreen === "profile"       && <ProfileScreen onBack={goBack} user={session} onLogout={handleLogout} onAccountDeleted={handleAccountDeleted} onUserUpdated={(next) => setSession(next)} />}
             {subScreen === "admin"         && <AdminScreen onBack={goBack} />}
             {subScreen === "categories"    && <CategoriesScreen onBack={goBack} />}
+            {subScreen === "legal"         && <LegalScreen onBack={goBack} />}
             {subScreen === "notifications" && <NotificationsScreen onBack={goBack} onUnreadChange={unread.setCount} onOpenTask={openTaskDetail} onOpenHabits={() => setSubScreen("habits")} onOpenUniversity={() => navigate("university")} onOpenTasks={() => navigate("tasks")} onOpenAgenda={() => navigate("agenda")} />}
 
             {subScreen === null && (
@@ -230,7 +232,7 @@ export default function App() {
                 {activeTab === "tasks"      && <TasksScreen onTaskTap={(taskId) => openTaskDetail(taskId)} onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "agenda"     && <AgendaScreen onFab={() => setFabOpen(true)} refreshTick={tasksRefreshTick} />}
                 {activeTab === "university" && <UniversityScreen onSubjectTap={(subject) => { setSelectedSubject(subject); setSubScreen("subjectDetail"); }} />}
-                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onProfile={() => setSubScreen("profile")} onCategories={() => setSubScreen("categories")} onNotifications={() => setSubScreen("notifications")} unreadCount={unread.count} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
+                {activeTab === "more"       && <MoreScreen userName={session.name} onHabits={() => setSubScreen("habits")} onProfile={() => setSubScreen("profile")} onCategories={() => setSubScreen("categories")} onNotifications={() => setSubScreen("notifications")} onLegal={() => setSubScreen("legal")} unreadCount={unread.count} onAdmin={() => setSubScreen("admin")} isAdmin={session.role === "ADMIN"} />}
               </>
             )}
 

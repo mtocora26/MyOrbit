@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { login, register, type AuthSession } from "../services/authApi";
 import LogoMark from "../components/Logo";
+import LegalViewer from "../components/LegalViewer";
+import { LEGAL_DOCUMENTS, type LegalDocumentId } from "../legal/documents";
 
 interface Props {
   onAuthenticated: (session: AuthSession, isNewAccount: boolean) => void;
@@ -14,6 +16,7 @@ export default function AuthScreen({ onAuthenticated, notice }: Props) {
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reading, setReading] = useState<LegalDocumentId | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,8 +76,16 @@ export default function AuthScreen({ onAuthenticated, notice }: Props) {
           <button disabled={saving} className="mt-6 min-h-[48px] w-full rounded-md py-3.5 text-[14px] font-bold text-night disabled:opacity-50" style={{ background: "var(--color-coral)" }}>
             {saving ? "Procesando..." : mode === "login" ? "Entrar a MyOrbit" : "Crear mi cuenta"}
           </button>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4">
+            {Object.values(LEGAL_DOCUMENTS).map((item) => (
+              <button key={item.id} type="button" onClick={() => setReading(item.id)} className="min-h-[44px] px-1 text-[13px] font-semibold text-ink-2 underline underline-offset-4">
+                {item.shortTitle}
+              </button>
+            ))}
+          </div>
         </form>
       </section>
+      {reading && <LegalViewer documentId={reading} onClose={() => setReading(null)} />}
     </main>
   );
 }
