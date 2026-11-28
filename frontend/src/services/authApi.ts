@@ -1,3 +1,4 @@
+import { LEGAL_VERSION } from "../legal/documents";
 import { readErrorMessage } from "./apiError";
 import { API_BASE_URL } from "./apiConfig";
 import { clearCache } from "./cache";
@@ -11,7 +12,11 @@ export interface AuthSession {
   role?: "USER" | "ADMIN";
   /** Zona horaria IANA de la cuenta; null/ausente = aún no fijada (el servidor usa America/Bogota). */
   timeZone?: string | null;
+  /** La cuenta debe autorizar el tratamiento de datos (nunca lo hizo o cambió la versión). */
+  termsPending?: boolean;
 }
+
+export type AgeDeclaration = "ADULT" | "MINOR_AUTHORIZED";
 
 const SESSION_KEY = "myorbit.session";
 
@@ -51,8 +56,21 @@ export function login(email: string, password: string): Promise<AuthSession> {
   return submit("login", { email, password });
 }
 
-export function register(name: string, email: string, password: string): Promise<AuthSession> {
-  return submit("register", { name, email, password });
+export function register(name: string, email: string, password: string, ageDeclaration: AgeDeclaration): Promise<AuthSession> {
+  return submit("register", { name, email, password, ageDeclaration, acceptedTermsVersion: LEGAL_VERSION });
+}
+
+/** Autoriza el tratamiento de datos de la cuenta con sesión y devuelve la sesión actualizada. */
+export async function acceptTerms(ageDeclaration: AgeDeclaration): Promise<AuthSession> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me/terms`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ ageDeclaration, acceptedTermsVersion: LEGAL_VERSION }),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible guardar tu autorización"));
+  const next = { ...getSession() as AuthSession, termsPending: false };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+  return next;
 }
 
 export function clearSession(): void {
@@ -80,7 +98,7 @@ export async function refreshSession(): Promise<AuthSession | null> {
   }
   if (!response.ok) return session;
   const me = await response.json() as AuthSession;
-  const next = { ...session, name: me.name, email: me.email, role: me.role, timeZone: me.timeZone ?? null };
+  const next = { ...session, name: me.name, email: me.email, role: me.role, timeZone: me.timeZone ?? null, termsPending: me.termsPending };
   localStorage.setItem(SESSION_KEY, JSON.stringify(next));
   return next;
 }

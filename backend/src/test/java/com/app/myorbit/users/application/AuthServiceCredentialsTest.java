@@ -68,7 +68,7 @@ class AuthServiceCredentialsTest {
 
     @Test
     void registerCreatesAnActiveUserWithHashedPasswordAndNormalizedFields() {
-        AuthResponse response = service.register(new RegisterRequest("  Ana  ", "  ANA@Uni.EDU ", "clave-segura"));
+        AuthResponse response = service.register(new RegisterRequest("  Ana  ", "  ANA@Uni.EDU ", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT));
 
         ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(saved.capture());
@@ -85,8 +85,37 @@ class AuthServiceCredentialsTest {
     }
 
     @Test
+    void shouldStoreTheAcceptedTerms_whenRegistering() {
+        AuthResponse response = service.register(new RegisterRequest("Ana", "ana@uni.edu", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.MINOR_AUTHORIZED));
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(saved.capture());
+        assertEquals("1.0", saved.getValue().getAcceptedTermsVersion());
+        assertEquals(com.app.myorbit.users.domain.AgeDeclaration.MINOR_AUTHORIZED, saved.getValue().getAgeDeclaration());
+        assertEquals(NOW, saved.getValue().getTermsAcceptedAt());
+        org.junit.jupiter.api.Assertions.assertFalse(response.termsPending());
+    }
+
+    @Test
+    void shouldNotCreateTheAccount_whenTheTermsVersionIsOldOrTheAgeIsMissing() {
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "ana@uni.edu", "clave-segura", "0.9", com.app.myorbit.users.domain.AgeDeclaration.ADULT)));
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "ana@uni.edu", "clave-segura", "1.0", null)));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void shouldClearThePendingTerms_whenAnExistingAccountAcceptsThem() {
+        when(userRepository.findById("u1")).thenReturn(java.util.Optional.of(existingUser(true)));
+
+        User accepted = service.acceptTerms("u1", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT);
+
+        org.junit.jupiter.api.Assertions.assertFalse(accepted.hasPendingTerms());
+        assertEquals(NOW, accepted.getTermsAcceptedAt());
+    }
+
+    @Test
     void registerOpensASessionThatExpiresAfterTheTtl() {
-        AuthResponse response = service.register(new RegisterRequest("Ana", "ana@uni.edu", "clave-segura"));
+        AuthResponse response = service.register(new RegisterRequest("Ana", "ana@uni.edu", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT));
 
         ArgumentCaptor<UserSession> session = ArgumentCaptor.forClass(UserSession.class);
         verify(sessionRepository).save(session.capture());
@@ -96,8 +125,8 @@ class AuthServiceCredentialsTest {
 
     @Test
     void registerGrantsAdminOnlyToConfiguredEmailsIgnoringCaseAndSpaces() {
-        AuthResponse admin = service.register(new RegisterRequest("Root", "ADMIN@uni.edu", "clave-segura"));
-        AuthResponse regular = service.register(new RegisterRequest("Ana", "ana@uni.edu", "clave-segura"));
+        AuthResponse admin = service.register(new RegisterRequest("Root", "ADMIN@uni.edu", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT));
+        AuthResponse regular = service.register(new RegisterRequest("Ana", "ana@uni.edu", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT));
 
         assertEquals(Role.ADMIN, admin.role());
         assertEquals(Role.USER, regular.role());
@@ -107,18 +136,18 @@ class AuthServiceCredentialsTest {
     void registerRejectsAnEmailAlreadyInUse() {
         when(userRepository.findByEmailIgnoreCase("ana@uni.edu")).thenReturn(Optional.of(existingUser(true)));
 
-        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "Ana@Uni.edu", "clave-segura")));
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "Ana@Uni.edu", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT)));
         verify(userRepository, never()).save(any(User.class));
         verify(sessionRepository, never()).save(any(UserSession.class));
     }
 
     @Test
     void registerRejectsInvalidData() {
-        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest(" ", "ana@uni.edu", "clave-segura")));
-        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", null, "clave-segura")));
-        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "sin-arroba", "clave-segura")));
-        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "ana@uni.edu", null)));
-        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "ana@uni.edu", "corta")));
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest(" ", "ana@uni.edu", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT)));
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", null, "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT)));
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "sin-arroba", "clave-segura", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT)));
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "ana@uni.edu", null, "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT)));
+        assertThrows(BusinessRuleException.class, () -> service.register(new RegisterRequest("Ana", "ana@uni.edu", "corta", "1.0", com.app.myorbit.users.domain.AgeDeclaration.ADULT)));
         verify(userRepository, never()).save(any(User.class));
     }
 

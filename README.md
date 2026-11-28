@@ -54,7 +54,7 @@ Las reglas de negocio de cada módulo están en [docs/API.md](docs/API.md).
 
 | Módulo | Ruta | Operaciones |
 |---|---|---|
-| Auth | `/api/auth` | `POST /register`, `POST /login`, `GET /me`, `PUT /me/name`, `PUT /me/password`, `PUT /me/timezone`, `POST /logout` |
+| Auth | `/api/auth` | `POST /register`, `POST /login`, `GET /me`, `POST /me/terms`, `DELETE /me`, `PUT /me/name`, `PUT /me/password`, `PUT /me/timezone`, `POST /logout` |
 | Perfil | `/api/profile` | `GET`, `PUT` |
 | Tareas | `/api/tasks` | `GET`, `POST`, `GET /{id}`, `PUT /{id}`, `PATCH /{id}/status`, `DELETE /{id}` |
 | Subtareas | `/api/tasks/{id}/subtasks` | `POST`, `POST /{parentSubtaskId}`, `PUT /{subtaskId}`, `PATCH /{subtaskId}/status`, `DELETE /{subtaskId}` |

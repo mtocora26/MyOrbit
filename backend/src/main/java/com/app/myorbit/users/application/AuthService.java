@@ -5,6 +5,8 @@ import com.app.myorbit.users.api.LoginRequest;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.UnauthorizedException;
 import com.app.myorbit.users.api.RegisterRequest;
+import com.app.myorbit.users.domain.AgeDeclaration;
+import com.app.myorbit.users.domain.LegalTerms;
 import com.app.myorbit.users.domain.Role;
 import com.app.myorbit.users.domain.User;
 import com.app.myorbit.users.domain.UserSession;
@@ -54,6 +56,8 @@ public class AuthService implements CurrentUserProvider {
             throw new BusinessRuleException("Ya existe una cuenta con ese correo");
         }
 
+        requireCurrentTerms(request.acceptedTermsVersion(), request.ageDeclaration());
+
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setName(name);
@@ -63,7 +67,26 @@ public class AuthService implements CurrentUserProvider {
         user.setRole(adminEmails.contains(email) ? Role.ADMIN : Role.USER);
         user.setActive(true);
         user.setCreatedAt(Instant.now(clock));
+        user.acceptTerms(request.acceptedTermsVersion(), request.ageDeclaration(), Instant.now(clock));
         return createSession(userRepository.save(user));
+    }
+
+    /** Autorización de una cuenta que no la había dado o cuya versión quedó atrás. */
+    public User acceptTerms(String userId, String version, AgeDeclaration declaration) {
+        requireCurrentTerms(version, declaration);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new com.app.myorbit.shared.error.NotFoundException("Usuario no encontrado"));
+        user.acceptTerms(version, declaration, Instant.now(clock));
+        return userRepository.save(user);
+    }
+
+    private void requireCurrentTerms(String version, AgeDeclaration declaration) {
+        if (declaration == null) {
+            throw new BusinessRuleException("Indica si eres mayor de edad o tienes autorización");
+        }
+        if (!LegalTerms.CURRENT_VERSION.equals(version)) {
+            throw new BusinessRuleException("Los términos cambiaron: actualiza la app para leer la versión vigente");
+        }
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -157,7 +180,7 @@ public class AuthService implements CurrentUserProvider {
         session.setUserId(user.getId());
         session.setExpiresAt(Instant.now(clock).plus(sessionTtl));
         sessionRepository.save(session);
-        return new AuthResponse(session.getToken(), user.getId(), user.getName(), user.getEmail(), user.getRole(), user.getTimeZone());
+        return AuthResponse.of(session.getToken(), user);
     }
 
     private String required(String value, String message) {

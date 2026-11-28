@@ -25,6 +25,7 @@ import QuickAddSheet from "./components/QuickAddSheet";
 import QuickEventSheet from "./components/QuickEventSheet";
 import WelcomeOnboarding from "./components/WelcomeOnboarding";
 import AuthScreen from "./screens/AuthScreen";
+import ConsentScreen from "./screens/ConsentScreen";
 import { hideSplash, useBackHandler, useLaunchLink } from "./hooks/useNativeApp";
 import { clearAgendaWidget, syncAgendaWidget } from "./services/agendaWidget";
 import { useResume } from "./hooks/useResume";
@@ -48,7 +49,9 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(false);
   // Aviso que se muestra en la pantalla de acceso (p. ej. tras eliminar la cuenta).
   const [notice, setNotice] = useState<string | null>(null);
-  const unread = useUnreadNotifications(session !== null);
+  // Sin autorización vigente no se usa la app: ni se piden datos ni se programan avisos.
+  const termsPending = session?.termsPending === true;
+  const unread = useUnreadNotifications(session !== null && !termsPending);
 
   // Con sesión guardada, la animación de arranque cubre solo la confirmación real (como mucho BOOT_MAX_MS): luego se
   // muestra lo guardado y las pantallas siguen con sus esqueletos. Sin sesión no hay nada que esperar.
@@ -110,11 +113,12 @@ export default function App() {
   // agenda: se recalculan al iniciar sesión, al volver a la app y cada vez que cambian los datos. Sin sesión no deben
   // quedar avisos ni datos en el widget.
   const signedIn = session !== null;
+  const active = signedIn && !termsPending;
   useEffect(() => {
-    if (!signedIn || booting) return;
+    if (!active || booting) return;
     syncLocalReminders().catch(() => undefined);
     syncAgendaWidget().catch(() => undefined);
-  }, [signedIn, booting, tasksRefreshTick, habitsRefreshTick]);
+  }, [active, booting, tasksRefreshTick, habitsRefreshTick]);
 
   // Cubre el cierre de sesión y también una sesión vencida o desactivada.
   useEffect(() => {
@@ -125,21 +129,21 @@ export default function App() {
   // y se lleva al ajuste. «Ahora no» lo deja para la próxima vez que se abra la app.
   const [setupOpen, setSetupOpen] = useState(false);
   useEffect(() => {
-    if (!signedIn || booting) return;
+    if (!active || booting) return;
     reminderSetupSteps().then((steps) => { if (steps.some((step) => !step.done)) setSetupOpen(true); }).catch(() => undefined);
-  }, [signedIn, booting]);
+  }, [active, booting]);
 
   // Cambios hechos fuera de la app (otro dispositivo) o parciales editados: al volver a verla se reprograma. El widget
   // se actualiza también al salir, que es cuando se vuelve a mirar la pantalla de inicio.
   useEffect(() => {
-    if (!signedIn || booting) return;
+    if (!active || booting) return;
     const onVisibility = () => {
       if (document.visibilityState === "visible") syncLocalReminders().catch(() => undefined);
       syncAgendaWidget().catch(() => undefined);
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [signedIn, booting]);
+  }, [active, booting]);
 
   // Al recuperar la conexión, las pantallas vuelven a pedir sus datos.
   useEffect(() => {
@@ -156,9 +160,9 @@ export default function App() {
   // Los cambios hechos sin conexión (crear, editar, marcar, borrar tareas) se envían solos al volver la red.
   const [changesOpen, setChangesOpen] = useState(false);
   useEffect(() => {
-    if (!signedIn || booting) return;
+    if (!active || booting) return;
     return startOutboxSync();
-  }, [signedIn, booting]);
+  }, [active, booting]);
 
   const goBack = () => {
     const wasTaskDetail = subScreen === "taskDetail";
@@ -202,6 +206,10 @@ export default function App() {
       setShowWelcome(isNewAccount);
       ensureTimeZone(newSession).then(setSession);
     }} />;
+  }
+
+  if (termsPending) {
+    return <ConsentScreen onAccepted={setSession} onLogout={handleLogout} onAccountDeleted={handleAccountDeleted} />;
   }
 
   return (

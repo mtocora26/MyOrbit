@@ -333,11 +333,21 @@ Ambos: `401` sin sesión.
 | Método | Ruta | Cuerpo | Respuesta |
 |---|---|---|---|
 | `GET` | `/api/auth/me` | | `200` cuenta actual · `401` |
+| `POST` | `/api/auth/me/terms` | `{ acceptedTermsVersion, ageDeclaration }` | `200` cuenta · `400` falta un dato o la versión no es la vigente · `401` |
 | `PUT` | `/api/auth/me/name` | `{ name }` | `200` cuenta con nuevo nombre · `400` nombre en blanco o >100 caracteres · `401` |
 | `PUT` | `/api/auth/me/password` | `{ currentPassword, newPassword }` | `204` · `400` nueva contraseña <8 caracteres · `401` actual incorrecta |
 
 - `newPassword` se cifra con BCrypt. Al cambiarla se cierran todas las sesiones del usuario **excepto la actual** (sigue activa).
 - Errores en español con `ProblemDetail`.
+
+## Registro y aceptación de términos
+
+`POST /api/auth/register` recibe `{ name, email, password, acceptedTermsVersion, ageDeclaration }`. Los dos últimos son obligatorios (**cambio incompatible**: una app anterior no puede crear cuentas).
+
+- `acceptedTermsVersion`: la versión que se mostró; debe ser la vigente (`1.0`), si no `400`.
+- `ageDeclaration`: `ADULT` o `MINOR_AUTHORIZED` (menor con autorización de su representante legal). Es una declaración que no se verifica; no se pide fecha de nacimiento.
+
+Se guardan la versión, la fecha y la declaración. Toda respuesta de cuenta incluye `termsPending`: `true` en cuentas anteriores, en las creadas por un administrador y cuando cambia la versión. La app pide entonces la autorización (`POST /api/auth/me/terms`) antes de dejar usarla; la API no bloquea las demás rutas.
 
 ## Eliminar mi cuenta (`DELETE /api/auth/me`)
 
