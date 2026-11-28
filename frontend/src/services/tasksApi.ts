@@ -1,9 +1,9 @@
-import { cacheKeys, peek, peekMatching, remember } from "./cache";
+import { cacheKeys, clearCache, peek, peekMatching, remember } from "./cache";
 import { enqueue, hasPendingOps, pendingOps, type OutboxOp } from "./outbox";
 import { cacheKeyFor, loadResponse } from "./offlineStore";
 import { isUnreachableStatus } from "./connection";
 import { authHeaders, getSession } from "./authApi";
-import { NETWORK_ERROR_MESSAGE } from "./apiError";
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from "./apiError";
 import { formatTaskDue } from "./taskDue";
 import { API_BASE_URL } from "./apiConfig";
 
@@ -393,6 +393,14 @@ export async function deleteTask(taskId: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`No fue posible eliminar la tarea (${response.status})`);
   }
+}
+
+/** Elimina en el servidor todas las completadas. No se encola: sin conexión falla. */
+export async function deleteCompletedTasks(): Promise<number> {
+  const response = await fetch(`${API_BASE_URL}/api/tasks/completed`, { method: "DELETE", headers: authHeaders() });
+  if (!response.ok) throw new Error(await readErrorMessage(response, "No fue posible eliminar las tareas completadas"));
+  clearCache();
+  return (await response.json() as { deleted: number }).deleted;
 }
 
 export async function createSubtask(taskId: string, title: string, due?: string, parentSubtaskId?: string): Promise<ApiTask> {

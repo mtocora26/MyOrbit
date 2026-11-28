@@ -381,6 +381,10 @@ Cada tarea incluye `completedAt` (instante ISO-8601): cuándo pasó a completada
 
 Ejemplo: `GET /api/tasks?done=false&priority=alta&categoryId=abc&dueFrom=2026-10-01T00:00&dueTo=2026-10-31T23:59`
 
+## Eliminar las completadas (`DELETE /api/tasks/completed`)
+
+Borra todas las tareas completadas del usuario de la sesión, sin importar filtros. Responde `200` con `{ "deleted": 3 }` (`0` si no había) · `401` sin sesión. No se puede deshacer y nunca se ejecuta de forma automática.
+
 ## Categoría de tareas (`categoryId`)
 
 La tarea referencia su categoría; ya no existe el campo libre `tag`.
