@@ -22,6 +22,7 @@ import com.app.myorbit.tasks.domain.TaskOverdueEvent;
 import com.app.myorbit.tasks.domain.Subtask;
 import com.app.myorbit.tasks.domain.Task;
 import com.app.myorbit.tasks.infrastructure.TaskRepository;
+import com.app.myorbit.users.domain.UserDeletedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -274,5 +275,10 @@ public class TaskService {
     private String resolveNewCategory(String userId, String categoryId) {
         if (categoryId == null || categoryId.isBlank()) return null;
         return categoryService.getOwned(userId, categoryId.trim()).getId();
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        taskRepository.deleteByUserId(event.userId());
     }
 }

@@ -339,6 +339,14 @@ Ambos: `401` sin sesión.
 - `newPassword` se cifra con BCrypt. Al cambiarla se cierran todas las sesiones del usuario **excepto la actual** (sigue activa).
 - Errores en español con `ProblemDetail`.
 
+## Eliminar una cuenta (`DELETE /api/admin/users/{id}`)
+
+Solo para administradores; responde `204`. Borra la cuenta y **todos sus datos**: perfil académico, sesiones, tareas, categorías, semestres, materias, evaluaciones, hábitos, eventos, notificaciones y sus preferencias, recordatorios personales y suscripciones push. No se puede deshacer.
+
+La cuenta se borra al final: si falla el borrado de algún dato, la cuenta sigue existiendo (sin sesiones) y se puede repetir la operación.
+
+Errores: `403` sin permisos de administrador, `404` si no existe, `400` al intentar eliminar la propia cuenta o el último administrador activo.
+
 ## Filtros de tareas (`GET /api/tasks`)
 
 `GET /api/tasks` acepta los filtros combinables (todos opcionales, se aplican en conjunto):

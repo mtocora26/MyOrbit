@@ -9,4 +9,5 @@ public interface SubjectRepository extends MongoRepository<Subject, String> {
     List<Subject> findByUserIdOrderBySemesterDescNameAsc(String userId);
 
     List<Subject> findByUserIdAndSemester(String userId, String semester);
+    void deleteByUserId(String userId);
 }

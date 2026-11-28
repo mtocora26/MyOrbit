@@ -3,6 +3,8 @@ package com.app.myorbit.users.application;
 import com.app.myorbit.users.domain.UserProfile;
 import com.app.myorbit.users.infrastructure.UserProfileRepository;
 import java.util.Optional;
+import com.app.myorbit.users.domain.UserDeletedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -28,5 +30,10 @@ public class UserProfileService {
 
     private String textOrEmpty(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        profileRepository.deleteById(event.userId());
     }
 }

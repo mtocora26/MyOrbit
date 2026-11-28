@@ -13,4 +13,5 @@ public interface CategoryRepository extends MongoRepository<Category, String> {
 
     /** Las subcategorías de una categoría. */
     List<Category> findByUserIdAndParentId(String userId, String parentId);
+    void deleteByUserId(String userId);
 }

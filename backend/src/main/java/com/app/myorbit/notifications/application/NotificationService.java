@@ -6,6 +6,8 @@ import com.app.myorbit.users.application.UserZoneService;
 import com.app.myorbit.notifications.domain.NotificationRequest;
 import com.app.myorbit.notifications.domain.NotificationType;
 import com.app.myorbit.notifications.infrastructure.NotificationRepository;
+import com.app.myorbit.users.domain.UserDeletedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -114,5 +116,10 @@ public class NotificationService {
         unread.forEach(notification -> notification.setRead(true));
         repository.saveAll(unread);
         return unread.size();
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        repository.deleteByUserId(event.userId());
     }
 }

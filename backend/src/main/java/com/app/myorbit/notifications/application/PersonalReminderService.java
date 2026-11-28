@@ -7,6 +7,8 @@ import com.app.myorbit.notifications.infrastructure.PersonalReminderRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
 import com.app.myorbit.users.application.UserZoneService;
+import com.app.myorbit.users.domain.UserDeletedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -73,5 +75,10 @@ public class PersonalReminderService {
             notifications.notify(new NotificationRequest(NotificationType.REMINDER, userId, reminder.getId(), reminder.getText(), reminder.getRemindAt()));
         }
         return due.size();
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        repository.deleteByUserId(event.userId());
     }
 }

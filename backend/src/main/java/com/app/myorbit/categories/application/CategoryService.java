@@ -7,7 +7,9 @@ import com.app.myorbit.categories.api.UpdateCategoryRequest;
 import com.app.myorbit.categories.domain.Category;
 import com.app.myorbit.categories.domain.CategoryDeletedEvent;
 import com.app.myorbit.categories.infrastructure.CategoryRepository;
+import com.app.myorbit.users.domain.UserDeletedEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -190,5 +192,10 @@ public class CategoryService {
         universidad.setColor("#7A5AF8");
 
         return categoryRepository.saveAll(List.of(personal, proyecto, universidad));
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        categoryRepository.deleteByUserId(event.userId());
     }
 }

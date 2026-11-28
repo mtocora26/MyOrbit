@@ -9,6 +9,7 @@ import com.app.myorbit.events.domain.CalendarEvent;
 import com.app.myorbit.events.infrastructure.CalendarEventRepository;
 import com.app.myorbit.shared.error.BusinessRuleException;
 import com.app.myorbit.shared.error.NotFoundException;
+import com.app.myorbit.users.domain.UserDeletedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -102,5 +103,10 @@ public class CalendarEventService {
 
     private static boolean blank(String value) {
         return value == null || value.isBlank();
+    }
+
+    @EventListener
+    public void onUserDeleted(UserDeletedEvent event) {
+        repository.deleteByUserId(event.userId());
     }
 }

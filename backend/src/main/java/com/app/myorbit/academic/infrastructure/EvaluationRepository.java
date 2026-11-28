@@ -11,4 +11,5 @@ public interface EvaluationRepository extends MongoRepository<Evaluation, String
     List<Evaluation> findByUserId(String userId);
 
     void deleteBySubjectId(String subjectId);
+    void deleteByUserId(String userId);
 }

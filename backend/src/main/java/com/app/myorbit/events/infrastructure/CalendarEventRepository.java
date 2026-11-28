@@ -11,4 +11,5 @@ public interface CalendarEventRepository extends MongoRepository<CalendarEvent, 
     List<CalendarEvent> findByUserIdAndSubjectId(String userId, String subjectId);
 
     List<CalendarEvent> findByUserIdAndCategoryId(String userId, String categoryId);
+    void deleteByUserId(String userId);
 }
